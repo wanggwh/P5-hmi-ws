@@ -1,13 +1,37 @@
-# Gå til workspace og source environments
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
+# Installation og kørsel af HMI med Kivy/KivyMD
 
-# Send error besked (med --once for kun én besked)
-ros2 topic pub --once /hmi_error hmi_interface/msg/Error "
-stamp:
-  sec: 0
-  nanosec: 0
-severity: 'ERROR'
-message: 'hej med dig'
-node_name: 'test_node'
-"
+## 1. Opret og aktiver virtuelt miljø
+
+```bash
+python3 -m venv kivy_venv
+source kivy_venv/bin/activate
+```
+
+## 2. Installer Kivy og KivyMD
+
+Kør følgende kommandoer i det aktiverede virtuelle miljø:
+
+```bash
+python -m pip install --upgrade pip wheel setuptools
+python -m pip install kivy[base] kivymd
+```
+
+> **Bemærk:** På nogle systemer kan du have brug for ekstra systempakker (fx `libgl1-mesa-dev`, `gstreamer`, `python3-dev`). Se [Kivys dokumentation](https://kivy.org/doc/stable/gettingstarted/installation.html) hvis du får fejl.
+
+## 3. Byg workspace (ROS2)
+
+```bash
+colcon build
+```
+
+## 4. Kør HMI GUI
+
+Aktivér det virtuelle miljø og brug startscriptet:
+
+```bash
+source kivy_venv/bin/activate
+./start_hmi.sh
+```
+
+---
+Scriptet forudsætter at `kivy_venv` ligger i repo root og at workspace er bygget (`colcon build`).
