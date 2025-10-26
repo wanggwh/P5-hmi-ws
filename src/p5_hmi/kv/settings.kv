@@ -1,0 +1,22 @@
+<SettingsPage>:
+    orientation: "vertical"
+    padding: dp(20)
+    spacing: dp(20)
+
+    MDBoxLayout:
+        orientation: "horizontal"
+        size_hint: None, None
+        size: dp(400), dp(60)
+        pos_hint: {"center_x": 0.5}
+
+        MDRaisedButton:
+            text: "Dark"
+            md_bg_color: app.theme_cls.primary_color if app.theme_cls.theme_style == "Dark" else app.theme_cls.bg_normal
+            text_color: app.theme_cls.text_color
+            on_release: root.set_dark_mode()
+
+        MDRaisedButton:
+            text: "Light"
+            md_bg_color: app.theme_cls.primary_color if app.theme_cls.theme_style == "Light" else app.theme_cls.bg_normal
+            text_color: app.theme_cls.text_color
+            on_release: root.set_light_mode()

@@ -1,0 +1,28 @@
+build/
+log/
+install/
+kivy_venv/
+
+# Python bytecode
+__pycache__/
+./p5_hmi/pages/__pycache__/
+./hmi_interface/__pycache__/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+
+# OS generated files
+.DS_Store
+
+# Kivy logs
+*.log
+.kivy/
+
+
+# CMake
+CMakeCache.txt
+

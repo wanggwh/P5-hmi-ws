@@ -1,0 +1,95 @@
+<StartPage>:
+    orientation: "vertical"
+    padding: dp(20)
+    spacing: dp(20)
+    
+    # Button size variables
+    button_width: dp(300)
+    button_height: dp(80)
+    button_font_size: "24sp"
+    
+    # Horizontal layout for buttons (centered)
+    MDBoxLayout:
+        orientation: "horizontal"
+        spacing: dp(20)
+        size_hint_y: None
+        height: root.button_height + dp(20)  # button height + padding
+        adaptive_width: True
+        pos_hint: {'center_x': 0.5}
+        
+        # Start System Button
+        MDRaisedButton:
+            text: "START"
+            md_bg_color: app.colors['success']
+            theme_text_color: "Custom"
+            text_color: app.colors['text_light']
+            font_size: root.button_font_size
+            size_hint_x: None
+            width: root.button_width
+            height: root.button_height
+            elevation: 3
+            on_release: app.system_button_callback("start")
+            
+        # Pause System Button (center)
+        MDRaisedButton:
+            text: "PAUSE"
+            md_bg_color: app.colors['accent_orange']
+            theme_text_color: "Custom"
+            text_color: app.colors['text_light']
+            font_size: root.button_font_size
+            size_hint_x: None
+            width: root.button_width
+            height: root.button_height
+            elevation: 3
+            on_release: app.system_button_callback("pause")
+            
+        # Stop System Button
+        MDRaisedButton:
+            text: "STOP"
+            md_bg_color: app.colors['accent_coral']
+            theme_text_color: "Custom"
+            text_color: app.colors['text_light']
+            font_size: root.button_font_size
+            size_hint_x: None
+            width: root.button_width
+            height: root.button_height
+            elevation: 3
+            on_release: app.system_button_callback("stop")
+    
+    # System Status Card        
+    MDCard:
+        orientation: "vertical"
+        padding: dp(16)
+        spacing: dp(12)
+        md_bg_color: app.colors['bg_secondary']
+        elevation: 4
+        radius: [15, 15, 15, 15]
+        size_hint_y: None
+        height: dp(300)
+        
+        MDLabel:
+            text: "System Status"
+            font_style: "H6"
+            theme_text_color: "Custom"
+            text_color: app.colors['text_light']
+            halign: "left"
+            size_hint_y: None
+            height: dp(40)
+            
+        MDLabel:
+            text: "Recent Errors: WARNING Jon er tyk"
+            font_style: "Subtitle2"
+            theme_text_color: "Custom"
+            text_color: app.colors['text_light']
+            halign: "left"
+            size_hint_y: None
+            height: dp(30)
+            
+        MDScrollView:
+            id: error_scroll
+            size_hint_y: None
+            height: dp(60)
+            
+            MDList:
+                id: error_list
+                # Error messages vil blive tilføjet her dynamisk

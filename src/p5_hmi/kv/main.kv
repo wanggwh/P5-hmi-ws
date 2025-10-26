@@ -1,0 +1,33 @@
+MDBoxLayout:
+    orientation: "vertical"
+    md_bg_color: app.colors['bg_primary']
+
+    FloatLayout:
+        size_hint_y: None
+        height: dp(64)  # Samme højde som din topbar
+
+        MDTopAppBar:
+            id: top_app_bar
+            pos_hint: {"top": 0.98}
+            title: "Start Page"
+            title_text_align: "center"
+            md_bg_color: app.colors['bg_secondary']
+            specific_text_color: app.colors['text_light']
+            left_action_items: [["menu", lambda x: app.callback(x)]]
+            elevation: 2
+
+        MDLabel:
+            id: clock_label
+            text: ""
+            theme_text_color: "Custom"
+            text_color: app.colors['text_light']
+            halign: "right"
+            valign: "middle"
+            size_hint: None, None
+            size: dp(120), dp(64)
+            pos_hint: {"right": 0.95, "top": 1}
+
+    MDBoxLayout:
+        id: content_area
+        orientation: "vertical"
+        # Content will be dynamically loaded here
