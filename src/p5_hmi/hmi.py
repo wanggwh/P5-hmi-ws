@@ -70,6 +70,8 @@ class HMINode(Node):
 
         future = self.robot_configurations_client.call_async(request)
         print("Service call sent, adding callback")
+        # Store configuration in future for use in callback
+        future.configuration = configuration
         future.add_done_callback(self.handle_robot_configuration_response)
 
     
@@ -79,8 +81,9 @@ class HMINode(Node):
             response = future.result()
             success = response.success
             message = response.message
+            configuration = future.configuration  # Get stored configuration
             # Schedule GUI update in main thread
-            Clock.schedule_once(lambda dt: self.app.show_status_popup(success, message), 0)
+            Clock.schedule_once(lambda dt: self.app.show_status_popup(configuration, success, message), 0)
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
 
@@ -286,11 +289,11 @@ class HMIApp(MDApp):
             halign="center"
         )
         container.add_widget(label)
-    
-    def show_status_popup(self, success, message, title="Status"):
+
+    def show_status_popup(self, configuration, success, message):
         """Show a popup dialog with status message"""
         dialog = StatusPopupDialog()
-        dialog.show_status(success, message, title)
+        dialog.show_status(configuration, success, message)
 
 
 def ros_spin(node):

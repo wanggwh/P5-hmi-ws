@@ -14,12 +14,23 @@ class StatusPopupDialog(MDDialog):
         
         super().__init__(**kwargs)
     
-    def show_status(self, success, message, title="Status", auto_dismiss_time=2):
+    def show_status(self, configuration, success, message, auto_dismiss_time=2):
         """Show status popup with message"""
         status_text = "Success" if success else "Error"
+        title = "STATUS UPDATE DIALOG"
+        subtitle = "Robot Operation Update"  # Default subtitle
+        
+        if configuration == "BOB_HOME":
+            subtitle = "Homing of BOB robot arm initiated"
+        elif configuration == "HOME":
+            subtitle = "Homing of both robot arms initiated"
+        elif configuration == "ALICE_HOME":
+            subtitle = "Homing of ALICE robot arm initiated"
+        # Add more configurations as needed
         
         self.ids.status_title.text = title
-        self.ids.status_message.text = f"Status: {status_text}\n{message}"
+        self.ids.status_subtitle.text = subtitle
+        self.ids.status_message.text = f"Command: {configuration}\nStatus: {status_text}\n{message}"
         self.open()
 
         if success and auto_dismiss_time > 0:

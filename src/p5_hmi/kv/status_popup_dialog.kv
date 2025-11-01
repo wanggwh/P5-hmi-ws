@@ -2,12 +2,14 @@
     size_hint: 0.8, 0.6
     md_bg_color: app.colors['bg_secondary']
     auto_dismiss: True
+    radius: [dp(20), dp(20), dp(20), dp(20)]
     
     MDBoxLayout:
         orientation: "vertical"
         spacing: dp(20)
         padding: dp(20)
         md_bg_color: app.colors['bg_secondary']
+        radius: [dp(20), dp(20), dp(20), dp(20)]
         
         MDLabel:
             id: status_title
@@ -18,6 +20,16 @@
             halign: "center"
             size_hint_y: None
             height: dp(40)
+        
+        MDLabel:
+            id: status_subtitle
+            text: "Robot Operation Update"
+            font_style: "Caption"
+            theme_text_color: "Custom"
+            text_color: app.colors['text_muted']
+            halign: "center"
+            size_hint_y: None
+            height: dp(20)
         
         MDSeparator:
             height: dp(1)
