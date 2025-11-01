@@ -1,0 +1,55 @@
+<StatusPopupDialog>:
+    size_hint: 0.8, 0.6
+    md_bg_color: app.colors['bg_secondary']
+    auto_dismiss: True
+    
+    MDBoxLayout:
+        orientation: "vertical"
+        spacing: dp(20)
+        padding: dp(20)
+        md_bg_color: app.colors['bg_secondary']
+        
+        MDLabel:
+            id: status_title
+            text: "Status"
+            font_style: "H6"
+            theme_text_color: "Custom"
+            text_color: app.colors['text_light']
+            halign: "center"
+            size_hint_y: None
+            height: dp(40)
+        
+        MDSeparator:
+            height: dp(1)
+        
+        MDLabel:
+            id: status_message
+            text: "Status message will appear here"
+            theme_text_color: "Custom"
+            text_color: app.colors['text_light']
+            halign: "center"
+            valign: "middle"
+            text_size: self.width, None
+            size_hint_y: 1
+        
+        MDSeparator:
+            height: dp(1)
+        
+        MDBoxLayout:
+            orientation: "horizontal"
+            size_hint_y: None
+            height: dp(50)
+            spacing: dp(10)
+            
+            Widget:
+                size_hint_x: 1
+            
+            MDRaisedButton:
+                id: ok_button
+                text: "OK"
+                size_hint_x: None
+                width: dp(100)
+                md_bg_color: app.colors['accent_orange']
+                theme_text_color: "Custom"
+                text_color: app.colors['text_light']
+                on_release: root.dismiss()

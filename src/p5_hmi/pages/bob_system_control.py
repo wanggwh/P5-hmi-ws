@@ -52,30 +52,16 @@ class BobSystemControlPage(MDFloatLayout):
     def move_to_home(self):
         """Move robot to home position"""
         print("Moving UR5e to HOME position")
-        home_positions = [0, -90, 0, -90, 0, 0]
-        slider_names = ['joint1_slider', 'joint2_slider', 'joint3_slider', 
-                       'joint4_slider', 'joint5_slider', 'joint6_slider']
-        value_names = ['joint1_value', 'joint2_value', 'joint3_value',
-                      'joint4_value', 'joint5_value', 'joint6_value']
-        
-        for i, (pos, slider_name, value_name) in enumerate(zip(home_positions, slider_names, value_names)):
-            if hasattr(self.ids, slider_name):
-                getattr(self.ids, slider_name).value = pos
-            if hasattr(self.ids, value_name):
-                getattr(self.ids, value_name).text = f"{pos}°"
-                
-        # Publish home position
-        self.publish_joint_angles()
-        
-        # Publish "HOME" command on /robot_commands topic via HMINode
         if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.publish_robot_command("HOME")
-            print("Published 'HOME' on /robot_commands")
+            self.app.hmi_node.send_robot_configuration("HOME")
+            print("Sent HOME configuration request")
+        
     
     def move_to_home_bob(self):
-        """Move Bob robot to home position"""
-        print("Moving Bob to HOME position")
+        print("Moving bob to HOME position")
         if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.publish_robot_command("HOME_BOB")
-            print("Published 'HOME_BOB' on /robot_commands")
+            self.app.hmi_node.send_robot_configuration("HOME_BOB")
+            print("Sent HOME_BOB configuration request")
+
+    
 

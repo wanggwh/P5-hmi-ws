@@ -12,6 +12,7 @@ import os
 from kivy.lang import Builder
 from kivy.metrics import dp
 from kivy.clock import Clock
+from kivymd.uix.dialog import MDDialog
 from kivymd.app import MDApp
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.snackbar import Snackbar
@@ -20,6 +21,8 @@ from kivymd.uix.boxlayout import MDBoxLayout
 from kivy.core.window import Window
 import threading
 
+from p5_interfaces.srv import RobotConfigurations 
+
 # Import page classes
 from pages.start_page import StartPage
 from pages.bob_system_control import BobSystemControlPage 
@@ -27,6 +30,7 @@ from pages.alice_system_control import AliceSystemControlPage
 from pages.mir_system_control import MirSystemControlPage
 from pages.system_logging import SystemLoggingPage
 from pages.settings import SettingsPage
+from pages.status_popup_dialog import StatusPopupDialog
 from kivy.core.window import Window
 Window.borderless = True
 Window.left = 2800
@@ -46,118 +50,39 @@ class HMINode(Node):
     def __init__(self):
         super().__init__('hmi_node')
 
-        # Publishers
-        self.joint_publisher = self.create_publisher(JointState, '/joint_states', 10)
-        self.robot_command_publisher = self.create_publisher(String, '/robot_commands', 10)
+        self.app = None  # Reference to the Kivy app
 
-        # Subscribers
-        self.error_subscription = self.create_subscription(Error, 'hmi_error', self.error_callback, 10)
-
+        # Clients
+        self.robot_configurations_client = self.create_client(RobotConfigurations, "/robot_configurations")
 
         self.get_logger().info('HMI Node has been started')
-
-    def error_callback(self, msg):
-        self.get_logger().error(f'Error received: Severity={msg.severity}, Message="{msg.message}"')
-        
-        # Schedule error display on UI thread
-        from kivymd.app import MDApp
-        app = MDApp.get_running_app()
-        if app:
-            Clock.schedule_once(lambda dt: self.display_error_on_ui(app, msg), 0)
     
-    def display_error_on_ui(self, app, error_msg):
-        """Display error message on the UI - prioritize Start Page"""
-        try:
-            print(f"DEBUG: display_error_on_ui called with severity={error_msg.severity}, message={error_msg.message}")
-            print(f"DEBUG: Current page = {getattr(app, 'current_page', 'None')}")
-            
-            # Always try to show on Start Page first, regardless of current page
-            start_page_widget = None
-            
-            # If we're on Start Page, get current widget
-            if hasattr(app, 'current_page') and app.current_page == "Start Page":
-                start_page_widget = app.get_current_page_widget()
-                print(f"DEBUG: Got start page widget = {start_page_widget}")
-                print(f"DEBUG: Has show_ros_error = {hasattr(start_page_widget, 'show_ros_error') if start_page_widget else False}")
-            
-            # Display error on Start Page if available
-            if start_page_widget and hasattr(start_page_widget, 'show_ros_error'):
-                # Convert timestamp to readable format
-                timestamp_str = f"{error_msg.stamp.sec}.{error_msg.stamp.nanosec//1000000:03d}"
-                print(f"DEBUG: Calling show_ros_error with {error_msg.severity}, {error_msg.message}, {timestamp_str}")
-                start_page_widget.show_ros_error(error_msg.severity, error_msg.message, timestamp_str)
-            else:
-                print("DEBUG: Start page widget not available or missing show_ros_error method")
-            
-            # If we're not on Start Page, show a snackbar notification
-            if hasattr(app, 'current_page') and app.current_page != "Start Page":
-                self.show_error_snackbar(app, error_msg)
-                
-        except Exception as e:
-            print(f"DEBUG: Exception in display_error_on_ui: {e}")
-            self.get_logger().error(f"Failed to display error on UI: {e}")
-    
-    def show_error_snackbar(self, app, error_msg):
-        """Show error as snackbar notification when not on Start Page"""
-        try:
-            snackbar = Snackbar(
-                text=f"[{error_msg.severity}] {error_msg.message}",
-                snackbar_x="10dp",
-                snackbar_y="10dp",
-                size_hint_x=(Window.width - 20) / Window.width,
-                bg_color=app.colors['accent_coral'] if error_msg.severity == "ERROR" else app.colors['accent_orange']
-            )
-            snackbar.open()
-        except Exception as e:
-            self.get_logger().error(f"Failed to show snackbar: {e}")
+    def set_app(self, app):
+        self.app = app
 
     
-    def publish_error(self, severity, message, source="system"):
-        """Publish an error message to the error topic"""
-        try:
-            error_msg = Error()
-            error_msg.severity = severity
-            error_msg.message = message
-            error_msg.source = source
-            error_msg.stamp = self.get_clock().now().to_msg()
-            
-            # Create error publisher if it doesn't exist
-            if not hasattr(self, 'error_publisher'):
-                self.error_publisher = self.create_publisher(Error, 'hmi_error', 10)
-            
-            self.error_publisher.publish(error_msg)
-            self.get_logger().info(f'Published error: [{severity}] {message}')
-            
-        except Exception as e:
-            self.get_logger().error(f"Failed to publish error: {e}")
+    def send_robot_configuration(self, configuration):
+        request = RobotConfigurations.Request()
+        request.command = configuration 
 
-    def publish_joint_states(self, joint_positions, joint_names=None):
-        """Publish joint states from HMI"""
-        try:
-            if joint_names is None:
-                joint_names = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
-                              'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
-            
-            joint_msg = JointState()
-            joint_msg.header = Header()
-            joint_msg.header.stamp = self.get_clock().now().to_msg()
-            joint_msg.header.frame_id = ''
-            joint_msg.name = joint_names
-            joint_msg.position = joint_positions
-            joint_msg.velocity = [0.0] * len(joint_positions)
-            joint_msg.effort = [0.0] * len(joint_positions)
-            
-            self.joint_publisher.publish(joint_msg)
-            self.get_logger().info(f"Published joint states: {joint_positions}")
-            
-        except Exception as e:
-            self.get_logger().error(f"Failed to publish joint states: {e}")
+        while not self.robot_configurations_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Waiting on /robot_configurations service...')
 
-    def publish_robot_command(self, command):
-        msg = String()
-        msg.data = command
-        self.robot_command_publisher.publish(msg)
-        self.get_logger().info(f"Published robot command: {command}")
+        future = self.robot_configurations_client.call_async(request)
+        print("Service call sent, adding callback")
+        future.add_done_callback(self.handle_robot_configuration_response)
+
+    
+    def handle_robot_configuration_response(self, future):
+        print("Handling robot configuration response")
+        try:
+            response = future.result()
+            success = response.success
+            message = response.message
+            # Schedule GUI update in main thread
+            Clock.schedule_once(lambda dt: self.app.show_status_popup(success, message), 0)
+        except Exception as e:
+            self.get_logger().error(f"Service call failed: {e}")
 
 
 class HMIApp(MDApp):
@@ -264,7 +189,6 @@ class HMIApp(MDApp):
         self.menu.dismiss()
         # Simple print instead of Snackbar to avoid compatibility issues
         print(f"Selected: {text_item}")
-        # Publish the selected item to ROS2
 
     def navigate_to_page(self, page_name):
         """Navigate to different pages"""
@@ -314,9 +238,6 @@ class HMIApp(MDApp):
                 print("Creating SettingsPage widget")
                 self.current_page_widget = SettingsPage()
                 content.add_widget(self.current_page_widget)
-            # elif self.current_page == "UR Control":
-            #     self.current_page_widget = URControlPage()  # Uncomment when URControlPage is created
-            #     content.add_widget(self.current_page_widget)
     
     def get_current_page_widget(self):
         """Get the current page widget"""
@@ -365,6 +286,11 @@ class HMIApp(MDApp):
             halign="center"
         )
         container.add_widget(label)
+    
+    def show_status_popup(self, success, message, title="Status"):
+        """Show a popup dialog with status message"""
+        dialog = StatusPopupDialog()
+        dialog.show_status(success, message, title)
 
 
 def ros_spin(node):
@@ -384,6 +310,7 @@ def main(args=None):
     
     # Create and run Kivy app
     hmi_app = HMIApp(hmi_node)
+    hmi_node.set_app(hmi_app)
     hmi_app.run()
     
     # Cleanup

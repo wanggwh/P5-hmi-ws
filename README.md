@@ -18,7 +18,7 @@ python -m pip install kivy[base] kivymd
 
 > **Bemærk:** På nogle systemer kan du have brug for ekstra systempakker (fx `libgl1-mesa-dev`, `gstreamer`, `python3-dev`). Se [Kivys dokumentation](https://kivy.org/doc/stable/gettingstarted/installation.html) hvis du får fejl.
 
-## 3. Byg workspace (ROS2)
+## 3. Byg workspace (ROS2)-
 
 ```bash
 colcon build
