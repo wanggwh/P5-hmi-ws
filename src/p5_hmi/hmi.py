@@ -41,6 +41,7 @@ COLORS = {
     'bg_secondary': (0.18, 0.24, 0.35, 1),    # Slate blue  
     'accent_orange': (0.95, 0.61, 0.23, 1),   # Warm orange
     'accent_coral': (0.98, 0.45, 0.32, 1),    # Coral red
+    'button_neutral': (0.55, 0.60, 0.68, 1),  # Neutral gray-blue
     'text_light': (0.96, 0.96, 0.98, 1),      # Off-white
     'text_muted': (0.75, 0.78, 0.82, 1),      # Light gray
     'success': (0.32, 0.78, 0.55, 1),         # Sea green

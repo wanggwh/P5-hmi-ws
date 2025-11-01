@@ -15,7 +15,7 @@ class StatusPopupDialog(MDDialog):
         
         super().__init__(**kwargs)
     
-    def animate_status_bar(self, target_color, duration=0.8):
+    def animate_status_bar(self, target_color, duration=0.3):
         """Animate status bar color with fade effect"""
         if hasattr(self, 'ids') and 'status_title_bar' in self.ids:
             status_bar = self.ids.status_title_bar
@@ -38,7 +38,7 @@ class StatusPopupDialog(MDDialog):
             fade_out.bind(on_complete=lambda *args: fade_in.start(status_bar))
             fade_out.start(status_bar)
     
-    def animate_pulsing_status_bar(self, target_color, pulse_duration=1.0):
+    def animate_pulsing_status_bar(self, target_color, pulse_duration=2.0):
         """Animate status bar with continuous pulsing fade in/out effect"""
         if hasattr(self, 'ids') and 'status_title_bar' in self.ids:
             status_bar = self.ids.status_title_bar
@@ -66,38 +66,50 @@ class StatusPopupDialog(MDDialog):
             # Store reference to stop later if needed
             status_bar._pulse_animation = pulse_sequence
     
-    def show_status(self, configuration, success, message, auto_dismiss_time=2):
+    def show_status(self, configuration, success, message, auto_dismiss_time=3):
         """Show status popup with message and color-coded status bar"""
-        status_text = "Success" if success else "Error"
+        # Check for explicit robot failure
+        if message and str(message).strip().upper() == "FAILED":
+            status_text = "Error, did not complete request"
+            target_color = [0.8, 0.2, 0.2, 1.0]  # Red
+            error_case = True
+        else:
+            status_text = "Completed Request" if success else "In Progress..."
+            target_color = [0.2, 0.8, 0.2, 1.0] if success else [1.0, 0.6, 0.2, 1.0]
+            error_case = False
         title = "STATUS UPDATE DIALOG"
         subtitle = "Robot Operation Update"  # Default subtitle
-        
-        if configuration == "HOME_BOB":
-            subtitle = "Homing of BOB robot arm initiated"
+
+
+        if message and "FAILED" in message.upper():
+            subtitle = "Operation failed to complete"
+        elif success is True:
+            subtitle = "Operation completed successfully"
+        elif configuration == "HOME_BOB":
+            subtitle = "Homing of BOB robot arm initiated..."
         elif configuration == "HOME":
-            subtitle = "Homing of both robot arms initiated"
+            subtitle = "Homing of both robot arms initiated..."
         elif configuration == "HOME_ALICES":
-            subtitle = "Homing of ALICE robot arm initiated"
+            subtitle = "Homing of ALICE robot arm initiated..."
         # Add more configurations as needed
-        
-        # Set title bar color based on status with animation
-        if success:
-            # Green for success - single fade
-            target_color = [0.2, 0.8, 0.2, 1.0]  # Green
-            self.ids.status_title.text = title
-            self.ids.status_subtitle.text = subtitle
-            self.ids.status_message.text = f"Command: {configuration}\nStatus: {status_text}\n{message}"
-            self.open()
-            # Start single fade animation after dialog opens
+
+        if not message:
+            message_display = "No message received yet"
+        else:
+            message_display = message
+        message_text = f"Status: {status_text}\nCommand: {configuration}\nMessage received from robots: {message_display}"
+
+        self.ids.status_title.text = title
+        self.ids.status_subtitle.text = subtitle
+        self.ids.status_message.text = message_text
+        self.open()
+
+        # Animation logic
+        if error_case:
+            Clock.schedule_once(lambda dt: self.animate_status_bar(target_color), 0.1)
+        elif success:
             Clock.schedule_once(lambda dt: self.animate_status_bar(target_color), 0.1)
         else:
-            # Orange for error - pulsing animation like in-progress
-            target_color = [1.0, 0.6, 0.2, 1.0]  # Orange
-            self.ids.status_title.text = title
-            self.ids.status_subtitle.text = subtitle
-            self.ids.status_message.text = f"Command: {configuration}\nStatus: {status_text}\n{message}"
-            self.open()
-            # Start pulsing animation after dialog opens
             Clock.schedule_once(lambda dt: self.animate_pulsing_status_bar(target_color), 0.1)
 
         if success and auto_dismiss_time > 0:
@@ -121,7 +133,7 @@ class StatusPopupDialog(MDDialog):
         
         self.ids.status_title.text = title
         self.ids.status_subtitle.text = subtitle
-        self.ids.status_message.text = f"Command: {configuration}\n{message}"
+        self.ids.status_message.text = f"Status: In Progress\nCommand: {configuration}"
         self.open()
         
         # Start pulsing animation after dialog opens

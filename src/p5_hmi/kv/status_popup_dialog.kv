@@ -48,35 +48,35 @@
             
             MDSeparator:
                 height: dp(1)
-        
-        MDLabel:
-            id: status_message
-            text: "Status message will appear here"
-            theme_text_color: "Custom"
-            text_color: app.colors['text_light']
-            halign: "center"
-            valign: "middle"
-            text_size: self.width, None
-            size_hint_y: 1
+            
+            MDLabel:
+                id: status_message
+                text: "Status message will appear here"
+                font_style: "Body1"  # Larger font style
+                theme_text_color: "Custom"
+                text_color: app.colors['text_light']
+                halign: "center"
+                valign: "top"  # Changed from middle to top
+                text_size: self.width, None
+                size_hint_y: 0.6  # Reduced height to move text up
+                padding: [dp(0), dp(10), dp(0), dp(0)]  # Add top padding
+                line_height: 1.8  # Add more space between lines
         
         MDSeparator:
             height: dp(1)
         
         MDBoxLayout:
-            orientation: "horizontal"
+            orientation: "vertical"
             size_hint_y: None
             height: dp(50)
-            spacing: dp(10)
-            
-            Widget:
-                size_hint_x: 1
-            
+            padding: [0, 0, 0, dp(30)]  # 30px from bottom
             MDRaisedButton:
-                id: ok_button
-                text: "OK"
+                id: close
+                text: "Close"
                 size_hint_x: None
-                width: dp(100)
-                md_bg_color: app.colors['accent_orange']
+                width: dp(150)
+                md_bg_color: app.colors['button_neutral']
                 theme_text_color: "Custom"
                 text_color: app.colors['text_light']
+                pos_hint: {"center_x": 0.5}
                 on_release: root.dismiss()
