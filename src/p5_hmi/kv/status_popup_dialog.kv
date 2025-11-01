@@ -6,10 +6,18 @@
     
     MDBoxLayout:
         orientation: "vertical"
-        spacing: dp(20)
-        padding: dp(20)
+        spacing: dp(0)
+        padding: dp(0)
         md_bg_color: app.colors['bg_secondary']
         radius: [dp(20), dp(20), dp(20), dp(20)]
+        
+        MDCard:
+            id: status_title_bar
+            size_hint_y: None
+            height: dp(20)
+            md_bg_color: [1, 1, 1, 0]  # Start transparent, will animate to status color
+            radius: [dp(20), dp(20), 0, 0]  # Rounded top corners to match dialog
+            elevation: 0
         
         MDLabel:
             id: status_title
@@ -20,19 +28,26 @@
             halign: "center"
             size_hint_y: None
             height: dp(40)
+            padding: [dp(20), dp(0), dp(20), dp(0)]  # Only side padding
         
         MDLabel:
             id: status_subtitle
             text: "Robot Operation Update"
-            font_style: "Caption"
+            font_style: "Body1"  # Larger text (was Caption)
             theme_text_color: "Custom"
             text_color: app.colors['text_muted']
             halign: "center"
             size_hint_y: None
-            height: dp(20)
+            height: dp(25)  # Slightly larger height
+            padding: [dp(20), dp(0), dp(20), dp(0)]  # No spacing between title and subtitle
         
-        MDSeparator:
-            height: dp(1)
+        MDBoxLayout:
+            orientation: "vertical"
+            spacing: dp(5)
+            padding: [dp(20), dp(5), dp(20), dp(20)]  # Small top padding for separation from subtitle
+            
+            MDSeparator:
+                height: dp(1)
         
         MDLabel:
             id: status_message

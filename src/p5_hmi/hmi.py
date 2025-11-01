@@ -32,7 +32,7 @@ from pages.system_logging import SystemLoggingPage
 from pages.settings import SettingsPage
 from pages.status_popup_dialog import StatusPopupDialog
 from kivy.core.window import Window
-Window.borderless = True
+#Window.borderless = True
 Window.left = 2800
 
 
