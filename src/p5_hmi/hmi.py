@@ -261,7 +261,7 @@ class HMIApp(MDApp):
                 content.add_widget(self.current_page_widget)
             elif self.current_page == "Settings":
                 print("Creating SettingsPage widget")
-                self.current_page_widget = SettingsPage()
+                self.current_page_widget = SettingsPage(self.hmi_node)
                 content.add_widget(self.current_page_widget)
     
     def get_current_page_widget(self):
