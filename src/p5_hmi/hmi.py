@@ -31,6 +31,7 @@ from pages.mir_system_control import MirSystemControlPage
 from pages.system_logging import SystemLoggingPage
 from pages.settings import SettingsPage
 from pages.status_popup_dialog import StatusPopupDialog
+from pages.error_msg_popup import ErrorMsgSnackbar
 from kivy.core.window import Window
 #Window.borderless = True
 Window.left = 2800
@@ -50,9 +51,13 @@ COLORS = {
 class HMINode(Node):
     def __init__(self):
         super().__init__('hmi_node')
+        self.error_snackbar = ErrorMsgSnackbar()
 
         self.app = None  # Reference to the Kivy app
 
+        # Subscribers
+        self.error_subscriber = self.create_subscription(Error, '/error_messages', self.handle_error_message_callback, 10)
+        
         # Clients
         self.robot_configurations_client = self.create_client(RobotConfigurations, "/robot_configurations")
 
@@ -87,6 +92,22 @@ class HMINode(Node):
             Clock.schedule_once(lambda dt: self.app.show_status_popup(configuration, success, message), 0)
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
+    
+    def show_md_snackbar(self, severity, message, node_name):
+        self.hmi_node.error_snackbar.show_md_snackbar(severity, message, node_name)
+
+    def handle_error_message_callback(self, msg):
+        try:
+            severity = msg.severity
+            message = msg.message
+            node_name = msg.node_name
+            print(f"Received error message: [{severity}] from {node_name}: {message}")
+            # Show error snackbar in main thread
+            if self.app:
+                Clock.schedule_once(lambda dt: self.app.show_md_snackbar(severity, message, node_name), 0)
+        except Exception as e:
+            self.get_logger().error(f"Failed to handle error message: {e}")
+
 
 
 class HMIApp(MDApp):
@@ -295,6 +316,9 @@ class HMIApp(MDApp):
         """Show a popup dialog with status message"""
         dialog = StatusPopupDialog()
         dialog.show_status(configuration, success, message)
+
+    def show_md_snackbar(self, severity, message, node_name):
+        self.hmi_node.error_snackbar.show_md_snackbar(severity, message, node_name)
 
 
 def ros_spin(node):
