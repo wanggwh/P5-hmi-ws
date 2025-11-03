@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  p5_hmi:
+    image: p5-hmi-ws:latest
+    network_mode: host
+    privileged: true  # <--- gives full device access
+    environment:
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - /dev/dri/:/dev/dri
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - .:/home/P5-hmi-ws
+#    user: "1000:1000"
+    stdin_open: true  # equivalent to -it
+    tty: true         # equivalent to -it
