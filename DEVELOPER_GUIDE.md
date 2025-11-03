@@ -36,6 +36,11 @@ When developing new features, most changes will be in the `p5_hmi` package. If y
 - When extending an existing feature, update the relevant page's `.py` and `.kv` files.
 
 
+## Documentation Links
+
+- [Kivy Documentation](https://kivy.org/doc/stable/)
+- [KivyMD Documentation](https://kivymd.readthedocs.io/en/latest/)
+
 ## Useful Commands
 - Build workspace: `colcon build`
 - Run HMI: `./start_hmi.sh`
