@@ -33,19 +33,18 @@ RUN apt-get update && apt-get install -y \
     python3-lark \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory before creating venv
-WORKDIR /home/P5-hmi-ws/
+
 # Create virtual environment
 RUN python3 -m venv kivy_venv
 
 # Install everything in the venv, not system-wide
-RUN /kivy_venv/bin/pip install --upgrade pip setuptools wheel
-RUN /kivy_venv/bin/pip install numpy 
-RUN /kivy_venv/bin/pip install lark 
-RUN /kivy_venv/bin/pip install empy 
-RUN /kivy_venv/bin/pip install pyyaml
-RUN /kivy_venv/bin/pip install catkin_pkg 
-RUN /kivy_venv/bin/pip install "kivy[base]" kivy_examples kivymd 
+RUN /kivy_venv/bin/pip install --upgrade pip setuptools wheel --break-system-packages
+RUN /kivy_venv/bin/pip install numpy --break-system-packages
+RUN /kivy_venv/bin/pip install lark --break-system-packages
+RUN /kivy_venv/bin/pip install empy --break-system-packages
+RUN /kivy_venv/bin/pip install pyyaml --break-system-packages
+RUN /kivy_venv/bin/pip install catkin_pkg --break-system-packages
+RUN /kivy_venv/bin/pip install "kivy[base]" kivy_examples kivymd --break-system-packages
 
 # Add venv to PATH so it's used by default in the container
 ENV PATH="/kivy_venv/bin:$PATH"
