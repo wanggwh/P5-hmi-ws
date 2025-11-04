@@ -53,14 +53,14 @@ class BobSystemControlPage(MDFloatLayout):
         """Move robot to home position"""
         print("Moving UR5e to HOME position")
         if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.send_robot_configuration("HOME")
+            self.app.hmi_node.send_robot_configuration("BOTH", "HOME")
             print("Sent HOME configuration request")
         
     
     def move_to_home_bob(self):
         print("Moving bob to HOME position")
         if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.send_robot_configuration("HOME_BOB")
+            self.app.hmi_node.send_robot_configuration("BOB", "HOME")
             print("Sent HOME_BOB configuration request")
 
     

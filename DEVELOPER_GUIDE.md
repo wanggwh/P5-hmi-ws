@@ -48,3 +48,11 @@ When developing new features, most changes will be in the `p5_hmi` package. If y
 - Enter Docker container: `docker exec -it p5_hmi_ws-p5_hmi-1 bash`
 - Simuler en error besked: `ros2 topic pub /error_messages p5_interfaces/msg/Error "{stamp: {sec: 0, nanosec: 0}, severity: 'FATAL', message: 'Jensens kode fejler fuldstændig', node_name: 'test_node'}" --once`
 
+## Hardware Note: Raspberry Pi Touch Interface
+
+The HMI is set to run on a Raspberry Pi with a touch interface running Ubuntu Server 24.04. The GUI installed is XFCE4
+
+- Device code: 123
+- The workspace code is located at `/Desktop/P5-hmi-ws` on the rasberry pi
+
+Note: Docker is not installed on the Rasberry Pi. All dependencies are installed locally. For instructions on how to run the HMI on the Rasberry pi, see the README.md file, under locally setup

@@ -67,29 +67,33 @@ class HMINode(Node):
         self.app = app
 
     
-    def send_robot_configuration(self, configuration):
+    def send_robot_configuration(self, robot_name, goal_name):
         request = RobotConfigurations.Request()
-        request.command = configuration 
+        request.robot_name = robot_name
+        request.goal_name = goal_name
 
         while not self.robot_configurations_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('Waiting on /robot_configurations service...')
 
         future = self.robot_configurations_client.call_async(request)
         print("Service call sent, adding callback")
-        # Store configuration in future for use in callback
-        future.configuration = configuration
-        future.add_done_callback(self.handle_robot_configuration_response)
+        # Store both robot_name and goal_name in future for use in callback
+        future.robot_name = robot_name
+        future.goal_name = goal_name
+        future.add_done_callback(self.handle_robot_configuration_response_callback)
 
     
-    def handle_robot_configuration_response(self, future):
+    def handle_robot_configuration_response_callback(self, future):
         print("Handling robot configuration response")
         try:
             response = future.result()
             success = response.success
             message = response.message
-            configuration = future.configuration  # Get stored configuration
+
+            robot_name = getattr(future, "robot_name", None)
+            goal_name = getattr(future, "goal_name", None)
             # Schedule GUI update in main thread
-            Clock.schedule_once(lambda dt: self.app.show_status_popup(configuration, success, message), 0)
+            Clock.schedule_once(lambda dt: self.app.show_status_popup(robot_name, goal_name, success, message), 0)
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
     
@@ -312,10 +316,10 @@ class HMIApp(MDApp):
         )
         container.add_widget(label)
 
-    def show_status_popup(self, configuration, success, message):
+    def show_status_popup(self, robot_name, goal_name, success, message):
         """Show a popup dialog with status message"""
         dialog = StatusPopupDialog()
-        dialog.show_status(configuration, success, message)
+        dialog.show_status(robot_name, goal_name, success, message)
 
     def show_md_snackbar(self, severity, message, node_name):
         self.hmi_node.error_snackbar.show_md_snackbar(severity, message, node_name)

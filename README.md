@@ -21,6 +21,12 @@ docker compose up
 ```bash
 docker exec -it p5_hmi_ws-p5_hmi-1 bash
 ```
+
+If you have permission denied use:
+```bash
+sudo docker exec -it p5_hmi_ws-p5_hmi-1 bash
+```
+
 When you enter the container, the ROS2 Jazzy environment and the HMI workspace are automatically sourced.
 
 The environment variable `ROS_DOMAIN_ID` should also be set to `69` by default. You can check this inside the container with:
@@ -63,13 +69,19 @@ This allows the Docker container (running as root) to access your server for GUI
 
 If you want to run the HMI outside Docker, you must first install Kivy and KivyMD on your local system.
 
-Follow the official installation guide for Kivy here:
+Follow the official installation guide for Kivy here: (Use python3 instead of python)
 https://kivy.org/doc/stable/gettingstarted/installation.html
 
 Once Kivy is installed, follow the KivyMD installation guide here:
 https://kivymd.readthedocs.io/en/latest/getting-started/
 
-After both libraries are installed, you can build the ROS2 workspace:
+After this is done you need to install additional tools (inside the venv)
+```bash
+pip install numpy lark empy setuptools
+```
+
+
+You can now build the ROS2 workspace:
 ```bash
 cd <path-to-hmi-ws>
 colcon build
