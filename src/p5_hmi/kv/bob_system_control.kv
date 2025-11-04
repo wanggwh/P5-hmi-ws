@@ -1,4 +1,4 @@
-<BobSystemControlPage>:
+<BaseSystemControlPage 
     # Joint Control Label - placeret hvor du vil have den
     MDLabel:
         text: "Joint Control"
@@ -214,9 +214,9 @@
             on_release: root.move_to_home()
 
         MDRaisedButton:
-            text: "HOME BOB"
+            text: "HOME " + root.robot_name if root.robot_name else "HOME"
             md_bg_color: app.colors['success']
             size_hint: None, None
             size: dp(300), dp(50)
-            on_release: root.move_to_home_bob()
+            on_release: root.move_to_home_specific_robot()
         

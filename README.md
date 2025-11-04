@@ -2,6 +2,82 @@
 **This file provides the setup and installation guide for running the HMI. For instructions on how to add new features to the HMI and further development, see the separate DEVELOPER_GUIDE.md file.**
 
 ## You can run the HMI workspace either using Docker or directly on your local system. Both methods are described below.
+### VERYYYY IMPORTANT! DOCKER IS NOT WORKING PROPERLY RIGHT NOW – USE LOCAL INSTALLATION!
+
+---------------------------------------------------------
+
+# INSTALLATION GUIDE FOR RUNNING THE HMI ON YOUR LOCAL SYSTEM!!!
+
+The HMI is built using the Kivy and KivyMD Python frameworks, and runs on ROS2. Before you can run the HMI, you need to install both Kivy and KivyMD, and make sure ROS2 Jazzy is installed and sourced on your system.
+
+The following installation is documented here:
+- kivy: https://kivy.org/doc/stable/gettingstarted/installation.html
+- kivyMD: https://kivymd.readthedocs.io/en/1.1.1/getting-started/ 
+
+Note: Before Kivy can be installed, Python and pip needs to be pre-installed on your system.
+Note: Linux users you may have to add a --user flag in the subsequent commands outside the virtual environment
+
+
+# 1. Start af new terminal and run:
+```bash
+python3 -m pip install --upgrade pip setuptools virtualenv
+```
+
+# 2. Create virtual envoirment
+Create a new virtual environment for your Kivy project. A virtual environment will prevent possible installation conflicts with other Python versions and packages. It’s optional but STRONGLY recommended:
+
+```bash
+python3 -m venv kivy_venv
+```
+Note: It is very important that the virtual environment is installed in the root of the HMI workspace. Otherwise, the startup script won't be able to find your installation! 😢
+
+
+# 3. Activate the virtual environment. 
+You will have to do this step from the current directory every time you start a new terminal. This sets up the environment so the new kivy_venv Python is used.
+```bash
+source kivy_venv/bin/activate
+```
+Your terminal should now preface the path with something like (kivy_venv), indicating that the kivy_venv environment is active. If it doesn’t say that, the virtual environment is not active and the following won’t work.
+
+# 4. Install Kivy
+```bash
+python -m pip install "kivy[base]" kivy_examples
+```
+
+# 5. Install kivyMD
+Now install kivyMD:
+```bash
+pip install kivymd
+```
+
+# 6. After this is done you need to install additional tools (inside the venv)
+```bash
+pip install numpy lark empy setuptools pyyaml catkin_pkg
+```
+WUHUUU your installation is now done!! (hopefully😈😈) 
+
+
+# 7. You can now build the ROS2 workspace:
+```bash
+cd <path-to-hmi-ws>
+colcon build
+```
+
+Then start the HMI:
+```bash
+source kivy_venv/bin/activate
+./start_hmi.sh
+```
+
+Note: The script assumes that `kivy_venv` is located in the repo root and that the workspace has been built (`colcon build`).
+
+
+
+
+
+
+
+
 
 
 # Running the HMI with Docker
@@ -65,33 +141,4 @@ This allows the Docker container (running as root) to access your server for GUI
 
 ------------------
 
-# Running the HMI without Docker
-
-If you want to run the HMI outside Docker, you must first install Kivy and KivyMD on your local system.
-
-Follow the official installation guide for Kivy here: (Use python3 instead of python)
-https://kivy.org/doc/stable/gettingstarted/installation.html
-
-Once Kivy is installed, follow the KivyMD installation guide here:
-https://kivymd.readthedocs.io/en/latest/getting-started/
-
-After this is done you need to install additional tools (inside the venv)
-```bash
-pip install numpy lark empy setuptools
-```
-
-
-You can now build the ROS2 workspace:
-```bash
-cd <path-to-hmi-ws>
-colcon build
-```
-
-Then start the HMI GUI:
-```bash
-source kivy_venv/bin/activate
-./start_hmi.sh
-```
-
-Note: The script assumes that `kivy_venv` is located in the repo root and that the workspace has been built (`colcon build`).
 

@@ -25,8 +25,8 @@ from p5_interfaces.srv import RobotConfigurations
 
 # Import page classes
 from pages.start_page import StartPage
-from pages.bob_system_control import BobSystemControlPage 
-from pages.alice_system_control import AliceSystemControlPage 
+from pages.base_system_control_page import AliceSystemControlPage, BobSystemControlPage
+
 from pages.mir_system_control import MirSystemControlPage
 from pages.system_logging import SystemLoggingPage
 from pages.settings import SettingsPage
@@ -97,8 +97,10 @@ class HMINode(Node):
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
     
+
     def show_md_snackbar(self, severity, message, node_name):
         self.hmi_node.error_snackbar.show_md_snackbar(severity, message, node_name)
+
 
     def handle_error_message_callback(self, msg):
         try:
@@ -169,8 +171,8 @@ class HMIApp(MDApp):
         """Load KV files for different pages"""
         kv_files = {
             "Start Page": "kv/start_page.kv",
-            "BOB - System Control": "kv/bob_system_control.kv",
-            "ALICE - System Control": "kv/alice_system_control.kv",
+            "BOB - System Control": "kv/base_system_control_page.kv",
+            "ALICE - System Control": "kv/base_system_control_page.kv",
             "MIR - System Control": "kv/mir_system_control.kv",
             "System Logging": "kv/system_logging.kv",
             "Settings": "kv/settings.kv"
