@@ -33,6 +33,8 @@ RUN apt-get update && apt-get install -y \
     python3-lark \
     && rm -rf /var/lib/apt/lists/*
 
+
+RUN /kivy_venv/bin/pip install --upgrade pip setuptools wheel --break-system-packages
 COPY . /home/P5-hmi-ws/
 WORKDIR /home/P5-hmi-ws/
 
@@ -40,7 +42,6 @@ WORKDIR /home/P5-hmi-ws/
 RUN python3 -m venv kivy_venv
 
 # Install everything in the venv, not system-wide
-RUN /kivy_venv/bin/pip install --upgrade pip setuptools wheel --break-system-packages
 RUN /kivy_venv/bin/pip install numpy --break-system-packages
 RUN /kivy_venv/bin/pip install lark --break-system-packages
 RUN /kivy_venv/bin/pip install empy --break-system-packages
