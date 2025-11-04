@@ -71,14 +71,9 @@ source kivy_venv/bin/activate
 
 Note: The script assumes that `kivy_venv` is located in the repo root and that the workspace has been built (`colcon build`).
 
+Afterwards, please read the DEVELOPER_GUIDE.md file!!!
 
-
-
-
-
-
-
-
+----------------
 
 # Running the HMI with Docker
 
