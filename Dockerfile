@@ -33,6 +33,8 @@ RUN apt-get update && apt-get install -y \
     python3-lark \
     && rm -rf /var/lib/apt/lists/*
 
+COPY . /home/P5-hmi-ws/
+WORKDIR /home/P5-hmi-ws/
 
 # Create virtual environment
 RUN python3 -m venv kivy_venv
@@ -48,9 +50,6 @@ RUN /kivy_venv/bin/pip install "kivy[base]" kivy_examples kivymd --break-system-
 
 # Add venv to PATH so it's used by default in the container
 ENV PATH="/kivy_venv/bin:$PATH"
-
-COPY . /home/P5-hmi-ws/
-WORKDIR /home/P5-hmi-ws/
 
 # Automatically source ROS and workspace setups in bashrc
 RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc && \
