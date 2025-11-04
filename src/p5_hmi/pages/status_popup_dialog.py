@@ -89,7 +89,7 @@ class StatusPopupDialog(MDDialog):
             subtitle = "Homing of BOB robot arm initiated..."
         elif configuration == "HOME":
             subtitle = "Homing of both robot arms initiated..."
-        elif configuration == "HOME_ALICES":
+        elif configuration == "HOME_ALICE":
             subtitle = "Homing of ALICE robot arm initiated..."
         # Add more configurations as needed
 
@@ -124,7 +124,7 @@ class StatusPopupDialog(MDDialog):
             subtitle = "Homing of BOB robot arm in progress"
         elif configuration == "HOME":
             subtitle = "Homing of both robot arms in progress"
-        elif configuration == "HOME_ALICES":
+        elif configuration == "HOME_ALICE":
             subtitle = "Homing of ALICE robot arm in progress"
         # Add more configurations as needed
         
@@ -150,3 +150,22 @@ class StatusPopupDialog(MDDialog):
         """Override dismiss to stop animations"""
         self.stop_pulsing_animation()
         super().dismiss()
+
+    def waiting_on_service_popup(self, service_name):
+        print("Showing waiting for service popup")
+        """Show a waiting popup while waiting for a service to become available"""
+        title = "WAITING FOR SERVICE"
+        subtitle = f"Waiting for {service_name} service to become available..."
+        message = "Please wait while the system establishes connection."
+
+        self.ids.status_title.text = title
+        self.ids.status_subtitle.text = subtitle
+        self.ids.status_message.text = message
+
+        # Set title bar to blue for waiting
+        target_color = [0.2, 0.4, 0.8, 1.0]  # Blue
+
+        # Bind animation to on_open event for reliable triggering
+        self.bind(on_open=lambda instance, value: self.animate_pulsing_status_bar(target_color))
+
+        self.open()

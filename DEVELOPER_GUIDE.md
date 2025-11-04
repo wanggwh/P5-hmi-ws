@@ -35,6 +35,7 @@ When developing new features, most changes will be in the `p5_hmi` package. If y
 
 - When extending an existing feature, update the relevant page's `.py` and `.kv` files.
 
+Pro tip: You only need to run colcon build if you’ve changed something in CMake or the ROS2 interfaces. For pure Python and .kv changes, just restart the app!
 
 ## Documentation Links
 

@@ -45,11 +45,24 @@ class BaseSystemControlPage(MDFloatLayout):
             self.app.hmi_node.send_robot_configuration(self.robot_name, "HOME")
             print(f"Sent HOME configuration request for {self.robot_name}")
 
+    def move_to_home_specific_robot(self):
+        print(f"Moving {self.robot_name} to its specific HOME position")
+        # Default: just call move_to_home
+        self.move_to_home()
+
 
 class AliceSystemControlPage(BaseSystemControlPage):
     robot_name = "ALICE"
-    # Add/override any Alice-specific methods
+    def move_to_home_specific_robot(self):
+        print("Moving ALICE to her very own HOME position!")
+        if self.app and hasattr(self.app, 'hmi_node'):
+            self.app.hmi_node.send_robot_configuration("ALICE", "HOME_ALICE")
+            print("Sent HOME_ALICE configuration request for ALICE")
 
 class BobSystemControlPage(BaseSystemControlPage):
     robot_name = "BOB"
-    # Add/override any Bob-specific methods
+    def move_to_home_specific_robot(self):
+        print("Moving BOB to his very own HOME position!")
+        if self.app and hasattr(self.app, 'hmi_node'):
+            self.app.hmi_node.send_robot_configuration("BOB", "HOME_BOB")
+            print("Sent HOME_BOB configuration request for BOB")

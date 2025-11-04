@@ -54,10 +54,11 @@ class HMINode(Node):
         self.error_snackbar = ErrorMsgSnackbar()
 
         self.app = None  # Reference to the Kivy app
+        self.waiting_popup = None  # Single instance for waiting popup
 
         # Subscribers
         self.error_subscriber = self.create_subscription(Error, '/error_messages', self.handle_error_message_callback, 10)
-        
+
         # Clients
         self.robot_configurations_client = self.create_client(RobotConfigurations, "/robot_configurations")
 
@@ -72,8 +73,20 @@ class HMINode(Node):
         request.robot_name = robot_name
         request.goal_name = goal_name
 
-        while not self.robot_configurations_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Waiting on /robot_configurations service...')
+        # Check if service is available immediately
+        if not self.robot_configurations_client.wait_for_service(timeout_sec=0.1):
+            # Service not available, show waiting popup
+            if self.waiting_popup is None:
+                self.waiting_popup = StatusPopupDialog()
+                Clock.schedule_once(lambda dt: self.waiting_popup.waiting_on_service_popup(service_name="/robot_configurations"), 0)
+
+            while not self.robot_configurations_client.wait_for_service(timeout_sec=1.0):
+                self.get_logger().info('Waiting on /robot_configurations service...')
+
+            # Dismiss the waiting popup after service is available
+            if self.waiting_popup:
+                Clock.schedule_once(lambda dt: self.waiting_popup.dismiss(), 0)
+                self.waiting_popup = None
 
         future = self.robot_configurations_client.call_async(request)
         print("Service call sent, adding callback")
