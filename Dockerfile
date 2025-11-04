@@ -33,24 +33,21 @@ RUN apt-get update && apt-get install -y \
     python3-lark \
     && rm -rf /var/lib/apt/lists/*
 
+RUN apt-get update && apt-get install -y python3-venv python3-pip
 
-RUN /kivy_venv/bin/pip install --upgrade pip setuptools wheel --break-system-packages
 COPY . /home/P5-hmi-ws/
 WORKDIR /home/P5-hmi-ws/
 
-# Create virtual environment
-RUN python3 -m venv kivy_venv
+# Create virtual environment and ensure pip is present
+RUN python3 -m venv kivy_venv && \
+    kivy_venv/bin/python -m ensurepip --upgrade && \
+    kivy_venv/bin/python -m pip install --upgrade pip setuptools wheel --break-system-packages
 
-# Install everything in the venv, not system-wide
-RUN /kivy_venv/bin/pip install numpy --break-system-packages
-RUN /kivy_venv/bin/pip install lark --break-system-packages
-RUN /kivy_venv/bin/pip install empy --break-system-packages
-RUN /kivy_venv/bin/pip install pyyaml --break-system-packages
-RUN /kivy_venv/bin/pip install catkin_pkg --break-system-packages
-RUN /kivy_venv/bin/pip install "kivy[base]" kivy_examples kivymd --break-system-packages
+# Install Python dependencies in the venv
+RUN kivy_venv/bin/python -m pip install numpy lark empy pyyaml catkin_pkg "kivy[base]" kivy_examples kivymd --break-system-packages
 
 # Add venv to PATH so it's used by default in the container
-ENV PATH="/kivy_venv/bin:$PATH"
+ENV PATH="kivy_venv/bin:$PATH"
 
 # Automatically source ROS and workspace setups in bashrc
 RUN echo "source /opt/ros/jazzy/setup.bash" >> /root/.bashrc && \
