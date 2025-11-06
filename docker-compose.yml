@@ -14,3 +14,4 @@ services:
 #    user: "1000:1000"
     stdin_open: true  # equivalent to -it
     tty: true         # equivalent to -it
+    command: bash -c "/home/P5-hmi-ws/setup_kivy_env.sh && echo 'source /home/P5-hmi-ws/kivy_venv/bin/activate' >> /root/.bashrc && exec bash"
