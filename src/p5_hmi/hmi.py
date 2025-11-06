@@ -21,7 +21,7 @@ from kivymd.uix.boxlayout import MDBoxLayout
 from kivy.core.window import Window
 import threading
 
-from p5_interfaces.srv import RobotConfigurations 
+from p5_interfaces.srv import MoveToPreDefPose 
 
 # Import page classes
 from pages.start_page import StartPage
@@ -60,7 +60,7 @@ class HMINode(Node):
         self.error_subscriber = self.create_subscription(Error, '/error_messages', self.handle_error_message_callback, 10)
 
         # Clients
-        self.robot_configurations_client = self.create_client(RobotConfigurations, "/robot_configurations")
+        self.move_to_pre_def_pose_client = self.create_client(MoveToPreDefPose, "/p5_move_to_pre_def_pose")
 
         self.get_logger().info('HMI Node has been started')
     
@@ -68,36 +68,36 @@ class HMINode(Node):
         self.app = app
 
     
-    def send_robot_configuration(self, robot_name, goal_name):
-        request = RobotConfigurations.Request()
+    def send_move_to_pre_def_pose_request(self, robot_name, goal_name):
+        request = MoveToPreDefPose.Request()
         request.robot_name = robot_name
         request.goal_name = goal_name
 
-        # Check if service is available immediately
-        if not self.robot_configurations_client.wait_for_service(timeout_sec=0.1):
+        # Check if service is available
+        if not self.move_to_pre_def_pose_client.wait_for_service(timeout_sec=0.1):
             # Service not available, show waiting popup
             if self.waiting_popup is None:
                 self.waiting_popup = StatusPopupDialog()
-                Clock.schedule_once(lambda dt: self.waiting_popup.waiting_on_service_popup(service_name="/robot_configurations"), 0)
+                Clock.schedule_once(lambda dt: self.waiting_popup.waiting_on_service_popup(service_name="/p5_move_to_pre_def_pose"), 0)
 
-            while not self.robot_configurations_client.wait_for_service(timeout_sec=1.0):
-                self.get_logger().info('Waiting on /robot_configurations service...')
+            while not self.move_to_pre_def_pose_client.wait_for_service(timeout_sec=1.0):
+                self.get_logger().info('Waiting on /p5_move_to_pre_def_pose service...')
 
             # Dismiss the waiting popup after service is available
             if self.waiting_popup:
                 Clock.schedule_once(lambda dt: self.waiting_popup.dismiss(), 0)
                 self.waiting_popup = None
 
-        future = self.robot_configurations_client.call_async(request)
+        future = self.move_to_pre_def_pose_client.call_async(request)
         print("Service call sent, adding callback")
         # Store both robot_name and goal_name in future for use in callback
         future.robot_name = robot_name
         future.goal_name = goal_name
-        future.add_done_callback(self.handle_robot_configuration_response_callback)
+        future.add_done_callback(self.handle_move_to_pre_def_pose_response_callback)
 
     
-    def handle_robot_configuration_response_callback(self, future):
-        print("Handling robot configuration response")
+    def handle_move_to_pre_def_pose_response_callback(self, future):
+        print("Handling move_to_pre_def_pose_response")
         try:
             response = future.result()
             success = response.success

@@ -12,7 +12,6 @@ class StatusPopupDialog(MDDialog):
         if not hasattr(StatusPopupDialog, '_kv_loaded'):
             Builder.load_file(kv_path)
             StatusPopupDialog._kv_loaded = True
-        
         super().__init__(**kwargs)
     
     def animate_status_bar(self, target_color, duration=0.3):
@@ -66,54 +65,53 @@ class StatusPopupDialog(MDDialog):
             # Store reference to stop later if needed
             status_bar._pulse_animation = pulse_sequence
     
-    def show_status(self, configuration, success, message, auto_dismiss_time=3):
+    def show_status(self, robot_name, goal_name, success, message):
         """Show status popup with message and color-coded status bar"""
-        # Check for explicit robot failure
-        if message and str(message).strip().upper() == "FAILED":
-            status_text = "Error, did not complete request"
-            target_color = [0.8, 0.2, 0.2, 1.0]  # Red
-            error_case = True
-        else:
-            status_text = "Completed Request" if success else "In Progress..."
-            target_color = [0.2, 0.8, 0.2, 1.0] if success else [1.0, 0.6, 0.2, 1.0]
-            error_case = False
-        title = "STATUS UPDATE DIALOG"
-        subtitle = "Robot Operation Update"  # Default subtitle
+        title = f"STATUS UPDATE DIALOG"
+        subtitle = "Robot operation updates"  # Default subtitle
+        status_text = ""
+        status_case = -1
+        robot_name_corrected = robot_name
 
+        if robot_name == "bob":
+            robot_name_corrected = "BOB"
+        elif robot_name == "alice":
+            robot_name_corrected = "ALICE"
 
-        if message and "FAILED" in message.upper():
-            subtitle = "Operation failed to complete"
+        if success is False:
+            status_text = "The request failed, possibly due to wrong robot name or configuration"
+            status_case = 0
+
         elif success is True:
-            subtitle = "Operation completed successfully"
-        elif configuration == "HOME_BOB":
-            subtitle = "Homing of BOB robot arm initiated..."
-        elif configuration == "HOME":
-            subtitle = "Homing of both robot arms initiated..."
-        elif configuration == "HOME_ALICE":
-            subtitle = "Homing of ALICE robot arm initiated..."
-        # Add more configurations as needed
+            status_text = "Request send successfully, beginning operation"
+            status_case = 1
+        
+        match status_case:
+            case 0: # Error case
+                target_color = [0.8, 0.2, 0.2, 1.0] # Red
+                Clock.schedule_once(lambda dt: self.animate_status_bar(target_color), 0.1)
+
+            case 1: # In progress case
+                target_color = [0.8, 0.6, 0.2, 1.0] # Orange
+                Clock.schedule_once(lambda dt: self.animate_pulsing_status_bar(target_color), 0.1)
+               
+            case 2: # Success case
+                target_color = [0.2, 0.8, 0.2, 1.0] # Green
+                Clock.schedule_once(lambda dt: self.animate_status_bar(target_color), 0.1)
+
 
         if not message:
             message_display = "No message received yet"
         else:
             message_display = message
-        message_text = f"Status: {status_text}\nCommand: {configuration}\nMessage received from robots: {message_display}"
 
         self.ids.status_title.text = title
         self.ids.status_subtitle.text = subtitle
-        self.ids.status_message.text = message_text
+        self.ids.robot_name.text = f"Robot requested: {robot_name_corrected}"
+        self.ids.goal_name.text = f"Goal requested: {goal_name}"
+        self.ids.status_message.text = status_text
         self.open()
 
-        # Animation logic
-        if error_case:
-            Clock.schedule_once(lambda dt: self.animate_status_bar(target_color), 0.1)
-        elif success:
-            Clock.schedule_once(lambda dt: self.animate_status_bar(target_color), 0.1)
-        else:
-            Clock.schedule_once(lambda dt: self.animate_pulsing_status_bar(target_color), 0.1)
-
-        if success and auto_dismiss_time > 0:
-            Clock.schedule_once(lambda dt: self.dismiss(), auto_dismiss_time)
     
     def show_in_progress(self, configuration, message="Operation in progress..."):
         """Show in-progress status with orange status bar"""
