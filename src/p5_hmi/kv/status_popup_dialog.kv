@@ -48,6 +48,33 @@
             
             MDSeparator:
                 height: dp(1)
+
+            MDLabel:
+                id: robot_name
+                text: "Robot name will appear here"
+                font_style: "Body1"  # Larger font style
+                theme_text_color: "Custom"
+                text_color: app.colors['text_light']
+                halign: "center"
+                valign: "top"  # Changed from middle to top
+                text_size: self.width, None
+                size_hint_y: 0.6  # Reduced height to move text up
+                padding: [dp(0), dp(10), dp(0), dp(0)]  # Add top padding
+                line_height: 1.8  # Add more space between lines
+            
+            MDLabel:
+                id: goal_name
+                text: "Goal name will appear here"
+                font_style: "Body1"  # Larger font style
+                theme_text_color: "Custom"
+                text_color: app.colors['text_light']
+                halign: "center"
+                valign: "top"  # Changed from middle to top
+                text_size: self.width, None
+                size_hint_y: 0.6  # Reduced height to move text up
+                padding: [dp(0), dp(10), dp(0), dp(0)]  # Add top padding
+                line_height: 1.8  # Add more space between lines
+
             
             MDLabel:
                 id: status_message

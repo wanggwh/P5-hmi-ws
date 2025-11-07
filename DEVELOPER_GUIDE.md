@@ -2,13 +2,6 @@
 
 This guide provides instructions for developers who want to contribute to or extend the HMI workspace.
 
-## Project Structure
-- `src/` — Source code for the HMI and ROS2 packages
-- `kivy_venv/` — Python virtual environment for Kivy/KivyMD
-- `Dockerfile` — Container build instructions
-- `start_hmi.sh` — Script to launch the HMI
-- `README.md` — Setup and user instructions
-
 - The main entry point for the HMI is `src/p5_hmi/hmi.py`.
     - All main event loop handling is managed here.
 

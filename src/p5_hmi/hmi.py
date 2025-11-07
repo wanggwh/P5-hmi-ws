@@ -21,7 +21,7 @@ from kivymd.uix.boxlayout import MDBoxLayout
 from kivy.core.window import Window
 import threading
 
-from p5_interfaces.srv import RobotConfigurations 
+from p5_interfaces.srv import MoveToPreDefPose 
 
 # Import page classes
 from pages.start_page import StartPage
@@ -61,7 +61,7 @@ class HMINode(Node):
         self.error_subscriber = self.create_subscription(Error, '/error_messages', self.handle_error_message_callback, 10)
 
         # Clients
-        self.robot_configurations_client = self.create_client(RobotConfigurations, "/robot_configurations")
+        self.move_to_pre_def_pose_client = self.create_client(MoveToPreDefPose, "/p5_move_to_pre_def_pose")
 
         self.get_logger().info('HMI Node has been started')
     
@@ -69,36 +69,49 @@ class HMINode(Node):
         self.app = app
 
     
-    def send_robot_configuration(self, robot_name, goal_name):
-        request = RobotConfigurations.Request()
+    def send_move_to_pre_def_pose_request(self, robot_name, goal_name):
+        request = MoveToPreDefPose.Request()
         request.robot_name = robot_name
         request.goal_name = goal_name
 
-        # Check if service is available immediately
-        if not self.robot_configurations_client.wait_for_service(timeout_sec=0.1):
-            # Service not available, show waiting popup
+        # Non-blocking service wait logic
+        if not self.move_to_pre_def_pose_client.wait_for_service(timeout_sec=0.1):
             if self.waiting_popup is None:
                 self.waiting_popup = StatusPopupDialog()
-                Clock.schedule_once(lambda dt: self.waiting_popup.waiting_on_service_popup(service_name="/robot_configurations"), 0)
+                Clock.schedule_once(lambda dt: self.waiting_popup.waiting_on_service_popup(service_name="/p5_move_to_pre_def_pose"), 0)
+            # Start periodic check for service availability
+            self._pending_service_request = (request, robot_name, goal_name)
+            self._service_check_event = Clock.schedule_interval(self._check_service_available_and_send, 0.5)
+            return  # Exit, will continue when service is available
 
-            while not self.robot_configurations_client.wait_for_service(timeout_sec=1.0):
-                self.get_logger().info('Waiting on /robot_configurations service...')
+        # Service is available, send request immediately
+        self._send_pre_def_pose_request(request, robot_name, goal_name)
 
-            # Dismiss the waiting popup after service is available
+    def _check_service_available_and_send(self, dt):
+        if self.move_to_pre_def_pose_client.wait_for_service(timeout_sec=0.1):
+            # Service is now available
             if self.waiting_popup:
-                Clock.schedule_once(lambda dt: self.waiting_popup.dismiss(), 0)
+                self.waiting_popup.dismiss()
                 self.waiting_popup = None
+            if hasattr(self, '_service_check_event'):
+                self._service_check_event.cancel()
+                del self._service_check_event
+            if hasattr(self, '_pending_service_request'):
+                request, robot_name, goal_name = self._pending_service_request
+                self._send_pre_def_pose_request(request, robot_name, goal_name)
+                del self._pending_service_request
 
-        future = self.robot_configurations_client.call_async(request)
+    def _send_pre_def_pose_request(self, request, robot_name, goal_name):
+        future = self.move_to_pre_def_pose_client.call_async(request)
         print("Service call sent, adding callback")
         # Store both robot_name and goal_name in future for use in callback
         future.robot_name = robot_name
         future.goal_name = goal_name
-        future.add_done_callback(self.handle_robot_configuration_response_callback)
+        future.add_done_callback(self.handle_move_to_pre_def_pose_response_callback)
 
     
-    def handle_robot_configuration_response_callback(self, future):
-        print("Handling robot configuration response")
+    def handle_move_to_pre_def_pose_response_callback(self, future):
+        print("Handling move_to_pre_def_pose_response")
         try:
             response = future.result()
             success = response.success
@@ -133,7 +146,7 @@ class HMINode(Node):
 class HMIApp(MDApp):
     def __init__(self, ros_node, **kwargs):
         super().__init__(**kwargs)
-        self.hmi_node = ros_node  # Rename for clarity
+        self.hmi_node = ros_node  
         self.colors = COLORS  # Make colors available to KV file
         self.current_page = "Start Page"  # Default page
         self.original_content = None  # Store original KV content
@@ -142,11 +155,11 @@ class HMIApp(MDApp):
         Window.size = (800, 480)
         Clock.schedule_interval(self.update_clock, 1)
         
-                # Load main KV file 
+        # Load main KV file 
         kv_file_path = os.path.join(os.path.dirname(__file__), 'kv/main.kv')
         root_widget = Builder.load_file(kv_file_path)
         
-        # Define menu items for navigation
+        # Define menu items
         menu_texts = [
             "Start Page",
             "BOB - System Control",
@@ -163,7 +176,7 @@ class HMIApp(MDApp):
                 "text": menu_texts[i],
                 "height": dp(56),
                 "theme_text_color": "Custom",
-                "text_color": (0, 0, 0, 1),  # Sort tekst (RGBA)
+                "text_color": (0, 0, 0, 1), 
                 "md_bg_color": COLORS['bg_secondary'],
                 "on_release": lambda x=menu_texts[i]: self.navigate_to_page(x),
              } for i in range(len(menu_texts))
