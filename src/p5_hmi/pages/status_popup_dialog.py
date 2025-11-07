@@ -156,9 +156,7 @@ class StatusPopupDialog(MDDialog):
         subtitle = f"Waiting for {service_name} service to become available..."
         message = "Please wait while the system establishes connection."
 
-        self.ids.status_title.text = title
-        self.ids.status_subtitle.text = subtitle
-        self.ids.status_message.text = message
+        self.ids.robot_name.text = message
 
         # Set title bar to blue for waiting
         target_color = [0.2, 0.4, 0.8, 1.0]  # Blue
