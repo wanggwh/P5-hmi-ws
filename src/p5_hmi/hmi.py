@@ -28,6 +28,7 @@ from pages.start_page import StartPage
 from pages.base_system_control_page import AliceSystemControlPage, BobSystemControlPage
 
 from pages.mir_system_control import MirSystemControlPage
+from pages.dragon_drop import DragonDrop
 from pages.system_logging import SystemLoggingPage
 from pages.settings import SettingsPage
 from pages.status_popup_dialog import StatusPopupDialog
@@ -151,6 +152,7 @@ class HMIApp(MDApp):
             "BOB - System Control",
             "ALICE - System Control",
             "MIR - System Control",
+            "Dragon Drop - System Control",
             "System Logging", 
             "Settings"
         ]
@@ -187,6 +189,7 @@ class HMIApp(MDApp):
             "BOB - System Control": "kv/base_system_control_page.kv",
             "ALICE - System Control": "kv/base_system_control_page.kv",
             "MIR - System Control": "kv/mir_system_control.kv",
+            "Dragon Drop - System Control": "kv/dragon_drop.kv",
             "System Logging": "kv/system_logging.kv",
             "Settings": "kv/settings.kv"
         }
@@ -202,7 +205,7 @@ class HMIApp(MDApp):
     def on_start(self):
         """Called when the app starts - load all KV files"""
         # Load all page KV files
-        pages = ["Start Page", "BOB - System Control", "ALICE - System Control", "MIR - System Control", "System Logging", "Settings"]
+        pages = ["Start Page", "BOB - System Control", "ALICE - System Control", "MIR - System Control", "Dragon Drop - System Control", "System Logging", "Settings"]
         for page in pages:
             self.load_page_kv(page)
         
@@ -273,6 +276,10 @@ class HMIApp(MDApp):
             elif self.current_page == "MIR - System Control":
                 print("Creating MirSystemControlPage widget")
                 self.current_page_widget = MirSystemControlPage()
+                content.add_widget(self.current_page_widget)
+            elif self.current_page == "Dragon Drop - System Control":
+                print("Creating DragonDrop widget")
+                self.current_page_widget = DragonDrop()
                 content.add_widget(self.current_page_widget)
             elif self.current_page == "System Logging":
                 print("Creating SystemLoggingPage widget")
