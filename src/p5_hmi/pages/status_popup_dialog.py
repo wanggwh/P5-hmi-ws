@@ -164,6 +164,6 @@ class StatusPopupDialog(MDDialog):
         target_color = [0.2, 0.4, 0.8, 1.0]  # Blue
 
         # Bind animation to on_open event for reliable triggering
-        self.bind(on_open=lambda instance, value: self.animate_pulsing_status_bar(target_color))
+        self.bind(on_open=lambda instance: self.animate_pulsing_status_bar(target_color))
 
         self.open()
