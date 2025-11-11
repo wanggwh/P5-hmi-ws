@@ -1,0 +1,88 @@
+<AdmittanceControl>
+    MDFloatLayout:
+
+        MDBoxLayout:
+            orientation: "vertical"
+            padding: "2dp"
+            spacing: "10dp"
+            size_hint: 0.9, None
+            height: dp(120)
+            pos_hint: {'center_x': 0.5, 'top': 1.0}
+
+            # Horizontal layout for side-by-side buttons
+            MDBoxLayout:
+                orientation: "horizontal"
+                spacing: "10dp"
+                size_hint_y: None
+                height: dp(80)
+
+                # BOB Section
+                MDBoxLayout:
+                    orientation: "vertical"
+                    spacing: "5dp"
+                    size_hint_x: 0.5
+
+                    MDLabel:
+                        adaptive_height: True
+                        text: "BOB - Admittance Control"
+                        theme_text_color: "Custom"
+                        text_color: app.colors['text_light']
+                        halign: "center"
+
+                    MDSegmentedButton:
+                        spacing: "4dp"
+                        size_hint_x: 1
+
+                        MDSegmentedButtonItem:
+                            text: "Enable"
+                            active: False
+                            theme_bg_color: "Custom" 
+                            md_bg_color: app.colors['bg_secondary']
+                            theme_text_color: "Custom"
+                            text_color: app.colors['text_light']
+                            on_active: root.on_admittance_bob_toggle(self, self.active)
+
+                        MDSegmentedButtonItem:
+                            text: "Disable"
+                            active: True
+                            theme_bg_color: "Custom"
+                            md_bg_color: app.colors['bg_secondary']
+                            theme_text_color: "Custom" 
+                            text_color: app.colors['text_light']
+                            on_active: root.on_admittance_bob_toggle(self, self.active)
+
+                # ALICE Section
+                MDBoxLayout:
+                    orientation: "vertical"
+                    spacing: "5dp"
+                    size_hint_x: 0.5
+
+                    MDLabel:
+                        adaptive_height: True
+                        text: "ALICE - Admittance Control"
+                        theme_text_color: "Custom"
+                        text_color: app.colors['text_light']
+                        halign: "center"
+
+                    MDSegmentedButton:
+                        spacing: "4dp"
+                        size_hint_x: 1
+
+                        MDSegmentedButtonItem:
+                            text: "Enable"
+                            active: False
+                            theme_bg_color: "Custom"
+                            md_bg_color: app.colors['bg_secondary']
+                            theme_text_color: "Custom"
+                            text_color: app.colors['text_light']
+                            on_active: root.on_admittance_alice_toggle(self, self.active)
+
+                        MDSegmentedButtonItem:
+                            text: "Disable"
+                            active: True
+                            theme_bg_color: "Custom"
+                            md_bg_color: app.colors['bg_secondary']
+                            theme_text_color: "Custom"
+                            text_color: app.colors['text_light']
+                            on_active: root.on_admittance_alice_toggle(self, self.active)
+

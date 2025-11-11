@@ -24,7 +24,7 @@ class BaseSystemControlPage(MDFloatLayout):
         self.repeat_event = None
         self.repeat_joint_index = None
         self.repeat_direction = None
-        self.repeat_interval = 0.3  # Start with 300ms interval
+        self.repeat_interval = 0.1  # Start with 300ms interval
         self.repeat_count = 0
 
     def on_parent(self, widget, parent):
