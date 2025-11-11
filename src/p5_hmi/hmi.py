@@ -3,6 +3,7 @@
 from datetime import datetime
 import rclpy
 from rclpy.node import Node
+from std_msgs.msg import Bool
 from std_msgs.msg import String
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Header
@@ -56,9 +57,12 @@ class HMINode(Node):
         self.app = None  # Reference to the Kivy app
         self.waiting_popup = None  # Single instance for waiting popup
 
+        self.move_to_pre_def_pose_client = False
+
         # Subscribers
         self.error_subscriber = self.create_subscription(Error, '/error_messages', self.handle_error_message_callback, 10)
-
+        self.status_subscriber = self.create_subscription(Bool, '/joint_mover_status', self.handle_status_message_callback, 10)
+       
         # Clients
         self.move_to_pre_def_pose_client = self.create_client(MoveToPreDefPose, "/p5_move_to_pre_def_pose")
 
@@ -110,6 +114,7 @@ class HMINode(Node):
 
     
     def handle_move_to_pre_def_pose_response_callback(self, future):
+
         print("Handling move_to_pre_def_pose_response")
         try:
             response = future.result()
@@ -119,7 +124,7 @@ class HMINode(Node):
             robot_name = getattr(future, "robot_name", None)
             goal_name = getattr(future, "goal_name", None)
             # Schedule GUI update in main thread
-            Clock.schedule_once(lambda dt: self.app.show_status_popup(robot_name, goal_name, success, message), 0)
+            Clock.schedule_once(lambda dt: self.app.show_status_popup(robot_name, goal_name, success, message, move_to_pre_def_pose_complete), 0)
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
     
@@ -139,6 +144,17 @@ class HMINode(Node):
                 Clock.schedule_once(lambda dt: self.app.show_md_snackbar(severity, message, node_name), 0)
         except Exception as e:
             self.get_logger().error(f"Failed to handle error message: {e}")
+
+    def handle_status_message_callback(self, msg):
+        try:
+            status = msg.data
+            print(f"Received joint mover status: {status}")
+
+            self.move_to_pre_def_pose_complete = msg.data
+
+           # Clock.schedule_once(lambda dt: self.status_popup.get_status_of_request(status), 0)
+        except Exception as e:
+            self.get_logger().error(f"Failed to handle status message: {e}")
 
 
 
@@ -344,10 +360,10 @@ class HMIApp(MDApp):
         )
         container.add_widget(label)
 
-    def show_status_popup(self, robot_name, goal_name, success, message):
+    def show_status_popup(self, robot_name, goal_name, success, message, move_to_pre_def_pose_complete):
         """Show a popup dialog with status message"""
         dialog = StatusPopupDialog()
-        dialog.show_status(robot_name, goal_name, success, message)
+        dialog.show_status(robot_name, goal_name, success, message, move_to_pre_def_pose_complete)
 
     def show_md_snackbar(self, severity, message, node_name):
         self.hmi_node.error_snackbar.show_md_snackbar(severity, message, node_name)
