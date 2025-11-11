@@ -1,31 +1,98 @@
 <DragonDrop>:
-    orientation: "vertical"
-    padding: dp(20)
-    spacing: dp(20)
-    
-    # Button size variables
-    button_width: dp(300)
-    button_height: dp(80)
-    button_font_size: "24sp"
-    
-    # Horizontal layout for buttons (centered)
-    MDBoxLayout:
-        orientation: "horizontal"
-        spacing: dp(20)
-        size_hint_y: None
-        height: root.button_height + dp(20)  # button height + padding
-        adaptive_width: True
-        pos_hint: {'center_x': 0.5}
-        
-        # Start System Button
-        MDRaisedButton:
-            text: "START"
-            md_bg_color: app.colors['success']
-            theme_text_color: "Custom"
-            text_color: app.colors['text_light']
-            font_size: root.button_font_size
-            size_hint_x: None
-            width: root.button_width
-            height: root.button_height
-            elevation: 3
-            on_release: app.system_button_callback("start")
+    MDFloatLayout:
+
+        DragonDropButtonHint:
+            id_name: "1"
+            text: "Func a"
+            size_hint: 0.1, 0.1
+            pos_hint: {"center_x":0.10, "top":0.97}
+            #size: 100, 50
+            #pos: 200, 200
+            font_size: 20
+            color: 0.96, 0.96, 0.98, 1
+            canvas.before:
+                Color:
+                    rgba: 0.23, 0.63, 0.92, 1
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+
+        DragonDropButtonHint:
+            id_name: "2"
+            text: "Func b"
+            size_hint: 0.1, 0.1
+            pos_hint: {"center_x":0.26, "top":0.97}
+            #size: 100, 50
+            #pos: 0, 300
+            font_size: 20
+            color: 0.96, 0.96, 0.98, 1
+            canvas.before:
+                Color:
+                    rgba: 0.11, 0.74, 0.61, 1
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+
+        DragonDropButtonHint:
+            id_name: "3"
+            text: "Func c"
+            size_hint: 0.1, 0.1
+            pos_hint: {"center_x":0.42, "top":0.97}
+            #size: 100, 50
+            #pos: 200, 200
+            font_size: 20
+            color: 0.96, 0.96, 0.98, 1
+            canvas.before:
+                Color:
+                    rgba: 0.54, 0.46, 0.98, 1
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+
+        DragonDropButtonHint:
+            id_name: "4"
+            text: "Func D"
+            size_hint: 0.1, 0.1
+            pos_hint: {"center_x":0.58, "top":0.97}
+            #size: 100, 50
+            #pos: 200, 200
+            font_size: 20
+            color: 0.96, 0.96, 0.98, 1
+            canvas.before:
+                Color:
+                    rgba: 0.98, 0.78, 0.29, 1
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+
+        DragonDropButtonHint:
+            id_name: "5"
+            text: "Func E"
+            size_hint: 0.1, 0.1
+            pos_hint: {"center_x":0.74, "top":0.97}
+            #size: 100, 50
+            #pos: 200, 200
+            font_size: 20
+            color: 0.96, 0.96, 0.98, 1
+            canvas.before:
+                Color:
+                    rgba: 0.94, 0.36, 0.36, 1
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+
+        DragonDropButtonHint:
+            id_name: "6"
+            text: "Sync"
+            size_hint: 0.1, 0.1
+            pos_hint: {"center_x":0.90, "top":0.97}
+            #size: 100, 50
+            #pos: 200, 200
+            font_size: 20
+            color: 0.96, 0.96, 0.98, 1
+            canvas.before:
+                Color:
+                    rgba: 0.62, 0.65, 0.78, 1
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size

@@ -14,6 +14,6 @@ class SettingsPage(MDBoxLayout):
         print("Setting light mode")
     def show_test_error_snackbar(self):
         severity = "FATAL"
-        message = "Jensens kode fucker det hele op."
-        node_name = "JensenNode"
+        message = "Gustav kan ikke finde ud af en skid"
+        node_name = "GulleNode"
         self.hmi_node.error_snackbar.show_md_snackbar(severity, message, node_name)
