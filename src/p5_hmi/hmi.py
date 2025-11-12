@@ -68,7 +68,6 @@ class HMINode(Node):
     
     def set_app(self, app):
         self.app = app
-
     
     def send_move_to_pre_def_pose_request(self, robot_name, goal_name):
         request = MoveToPreDefPose.Request()
@@ -110,7 +109,6 @@ class HMINode(Node):
         future.goal_name = goal_name
         future.add_done_callback(self.handle_move_to_pre_def_pose_response_callback)
 
-    
     def handle_move_to_pre_def_pose_response_callback(self, future):
         print("Handling move_to_pre_def_pose_response")
         try:
@@ -125,10 +123,8 @@ class HMINode(Node):
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
     
-
     def show_md_snackbar(self, severity, message, node_name):
         self.hmi_node.error_snackbar.show_md_snackbar(severity, message, node_name)
-
 
     def handle_error_message_callback(self, msg):
         try:
@@ -141,8 +137,6 @@ class HMINode(Node):
                 Clock.schedule_once(lambda dt: self.app.show_md_snackbar(severity, message, node_name), 0)
         except Exception as e:
             self.get_logger().error(f"Failed to handle error message: {e}")
-
-
 
 class HMIApp(MDApp):
     def __init__(self, ros_node, **kwargs):
@@ -264,7 +258,6 @@ class HMIApp(MDApp):
         # Update the content based on selected page
         self.update_page_content()
         
-
     def update_page_content(self):
         """Update the main content area based on current page"""
         print(f"Loading page: {self.current_page}")
@@ -360,10 +353,8 @@ class HMIApp(MDApp):
     def show_md_snackbar(self, severity, message, node_name):
         self.hmi_node.error_snackbar.show_md_snackbar(severity, message, node_name)
 
-
 def ros_spin(node):
     rclpy.spin(node)
-
 
 def main(args=None):
     rclpy.init(args=args)
@@ -384,7 +375,6 @@ def main(args=None):
     # Cleanup
     hmi_node.destroy_node()
     rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()

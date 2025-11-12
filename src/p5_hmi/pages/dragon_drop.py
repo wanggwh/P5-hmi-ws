@@ -2,11 +2,13 @@
 #from kivy.uix.behaviors import DragBehavior
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivy.uix.label import Label
-from kivy.properties import StringProperty
+from kivy.properties import StringProperty, NumericProperty, ListProperty
+from kivymd.uix.label import MDLabel
+from kivy.graphics import Color, RoundedRectangle
+#from kivy.metrics import dp --- IGNORE ---
 
 class DragonDrop(MDFloatLayout):
     pass
-
 
 class DragonDropButton(Label):
     def on_touch_down(self, touch):
@@ -31,8 +33,10 @@ class DragonDropButton(Label):
         return super().on_touch_up(touch)
     
 class DragonDropButtonHint(MDFloatLayout):
+    id_name = StringProperty("")
+    zone_id = StringProperty("")
+    drop_zones = ListProperty([])
     def on_touch_down(self, touch):
-        id_name = StringProperty("")
         self.startpos = self.pos_hint.copy()
         if self.collide_point(*touch.pos):
             if not self.parent:
@@ -63,10 +67,35 @@ class DragonDropButtonHint(MDFloatLayout):
     def on_touch_up(self, touch):
         if touch.grab_current is self:
             touch.ungrab(self)
-            print(f"Dropped id:{self.id_name}, at absolute pos {self.pos}, relative pos_hint {self.pos_hint}")
+            #print(f"Dropped id:{self.id_name}, at pos {self.pos}")
+
+            # check which zone the button was dropped into
+            if self.drop_zones:
+                for zone in self.drop_zones:
+                    if self._is_inside_zone(zone):
+                        coords = zone.getCoords()
+                        print(f"Dropped func: {self.id_name}, in zone: {zone.zone_id}, at coords: {self.pos}, zone coords: {coords}")
+                        break
+                else:
+                    print("Not dropped in any zone.")
+            else:
+                print("No zones assigned.")
+
             self.reset()
             return True
         return super().on_touch_up(touch)
     
+    def _is_inside_zone(self, zone):
+        """Check if button center is inside a zone."""
+        bx, by = self.center
+        zx, zy = zone.pos
+        zw, zh = zone.size
+        return zx <= bx <= zx + zw and zy <= by <= zy + zh
+    
     def reset(self):
         self.pos_hint = self.startpos
+
+class DragonDropZone(MDFloatLayout):
+    def getCoords(self):
+        print("Did it")
+        return self.pos_hint

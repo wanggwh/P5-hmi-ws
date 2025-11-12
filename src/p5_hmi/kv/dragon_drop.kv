@@ -2,94 +2,118 @@
     MDFloatLayout:
 
         DragonDropButtonHint:
-            id_name: "1"
-            text: "Func a"
+            id_name: "a"
+            drop_zones: [zone_one, zone_two]
             size_hint: 0.1, 0.1
             pos_hint: {"center_x":0.10, "top":0.97}
-            #size: 100, 50
-            #pos: 200, 200
-            font_size: 20
-            color: 0.96, 0.96, 0.98, 1
             canvas.before:
                 Color:
                     rgba: 0.23, 0.63, 0.92, 1
                 RoundedRectangle:
                     pos: self.pos
                     size: self.size
+            MDLabel:
+                text: 'Func A'
+                pos_hint: {'center_x': 0.65, 'center_y': 0.5}
+                color: 0.96, 0.96, 0.98, 1
 
         DragonDropButtonHint:
-            id_name: "2"
-            text: "Func b"
+            id_name: "b"
+            drop_zones: [zone_one, zone_two]
             size_hint: 0.1, 0.1
             pos_hint: {"center_x":0.26, "top":0.97}
-            #size: 100, 50
-            #pos: 0, 300
-            font_size: 20
-            color: 0.96, 0.96, 0.98, 1
             canvas.before:
                 Color:
                     rgba: 0.11, 0.74, 0.61, 1
                 RoundedRectangle:
                     pos: self.pos
                     size: self.size
+            MDLabel:
+                text: 'Func B'
+                pos_hint: {'center_x': 0.65, 'center_y': 0.5}
+                color: 0.96, 0.96, 0.98, 1
 
         DragonDropButtonHint:
-            id_name: "3"
-            text: "Func c"
+            id_name: "c"
+            drop_zones: [zone_one, zone_two]
             size_hint: 0.1, 0.1
             pos_hint: {"center_x":0.42, "top":0.97}
-            #size: 100, 50
-            #pos: 200, 200
-            font_size: 20
-            color: 0.96, 0.96, 0.98, 1
             canvas.before:
                 Color:
                     rgba: 0.54, 0.46, 0.98, 1
                 RoundedRectangle:
                     pos: self.pos
                     size: self.size
+            MDLabel:
+                text: 'Func C'
+                pos_hint: {'center_x': 0.65, 'center_y': 0.5}
+                color: 0.96, 0.96, 0.98, 1
 
         DragonDropButtonHint:
-            id_name: "4"
-            text: "Func D"
+            id_name: "d"
+            drop_zones: [zone_one, zone_two]
             size_hint: 0.1, 0.1
             pos_hint: {"center_x":0.58, "top":0.97}
-            #size: 100, 50
-            #pos: 200, 200
-            font_size: 20
-            color: 0.96, 0.96, 0.98, 1
             canvas.before:
                 Color:
                     rgba: 0.98, 0.78, 0.29, 1
                 RoundedRectangle:
                     pos: self.pos
                     size: self.size
+            MDLabel:
+                text: 'Func D'
+                pos_hint: {'center_x': 0.65, 'center_y': 0.5}
+                color: 0.96, 0.96, 0.98, 1
 
         DragonDropButtonHint:
-            id_name: "5"
-            text: "Func E"
+            id_name: "e"
+            drop_zones: [zone_one, zone_two]
             size_hint: 0.1, 0.1
             pos_hint: {"center_x":0.74, "top":0.97}
-            #size: 100, 50
-            #pos: 200, 200
-            font_size: 20
-            color: 0.96, 0.96, 0.98, 1
             canvas.before:
                 Color:
                     rgba: 0.94, 0.36, 0.36, 1
                 RoundedRectangle:
                     pos: self.pos
                     size: self.size
+            MDLabel:
+                text: 'Func E'
+                pos_hint: {'center_x': 0.65, 'center_y': 0.5}
+                color: 0.96, 0.96, 0.98, 1
 
         DragonDropButtonHint:
-            id_name: "6"
-            text: "Sync"
+            id_name: "f"
+            drop_zones: [zone_one, zone_two]
             size_hint: 0.1, 0.1
             pos_hint: {"center_x":0.90, "top":0.97}
-            #size: 100, 50
-            #pos: 200, 200
-            font_size: 20
-            color: 0.96, 0.96, 0.98, 1
+            canvas.before:
+                Color:
+                    rgba: 0.62, 0.65, 0.78, 1
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+            MDLabel:
+                text: 'Sync (f)'
+                pos_hint: {'center_x': 0.65, 'center_y': 0.5}
+                color: 0.96, 0.96, 0.98, 1
+
+        DragonDropZone:
+            zone_id: "1"
+            id: zone_one
+            size_hint: 0.3, 0.3
+            pos_hint: {"center_x":0.35, "top":0.5}
+            canvas.before:
+                Color:
+                    rgba: 0.62, 0.65, 0.78, 1
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+        
+        DragonDropZone:
+            zone_id: "2"
+            id: zone_two
+            size_hint: 0.3, 0.3
+            pos_hint: {"center_x":0.65, "top":0.5}
             canvas.before:
                 Color:
                     rgba: 0.62, 0.65, 0.78, 1
