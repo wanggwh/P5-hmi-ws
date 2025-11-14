@@ -8,9 +8,9 @@
 Firstly make sure you have docker and docker compose installed.
 
 # First build the image using docker build
-'''bash
+```bash
 docker build -t p5-hmi-ws:latest .
-'''
+```
 
 There are two methods to running the hmi
 
@@ -18,37 +18,37 @@ There are two methods to running the hmi
 You have to do this the first time running it and if you delete the directory kivy_venv. Afterwards you can use method 2 which is easier and quicker and nicer.
 
 1. Remember xhost
-'''bash
+```bash
 xhost +local:root
-'''
+```
 
 2. Run docker compose
-'''bash
+```bash
 docker compose up
-'''
+```
 
 3. Exec into the container
-'''bash
+```bash
 docker exec -it hmi-p5-p5_hmi-1 bash
-'''
+```
 
 4. Run script to launch hmi
-'''bash
+```bash
 ./start_hmi.sh
-'''
+```
 
 # Method 2: Use the script
 This can only be done if method 1 has been done at least once. or if you run the setup script inside the container and source manually the first time.
 
 1. Run the script
-'''bash
+```bash
 ./make_hmi_container.sh
-'''
+```
 
 2. Run hmi launch script
-'''bash
+```bash
 ./start_hmi.sh
-'''
+```
 
 # INSTALLATION GUIDE FOR RUNNING THE HMI ON YOUR LOCAL SYSTEM!!!
 
