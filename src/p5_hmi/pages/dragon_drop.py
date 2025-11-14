@@ -19,7 +19,7 @@ class DragonDrop(MDFloatLayout):
         ]
 
         zones = [
-            {"zone_id": "Alice", "pos_hint": {"x": 0.05, "y": 0.7}, "size_hint": {0.9,0.01}, "bg_color": [0.8, 0.9, 1, 0.3], "split_amount": 15},
+            {"zone_id": "Alice", "pos_hint": {"x": 0.05, "y": 0.7}, "size_hint": {0.9,0.01}, "bg_color": [0.8, 0.9, 1, 0.3], "split_amount": 7},
         ]
 
         zone1 = DragonDropZone(
@@ -130,11 +130,11 @@ class DragonDropButton(MDFloatLayout):
                 for zone in self.drop_zones:
                     if self._is_inside_zone(zone):
                         coords = zone.getCoords()
-                        print(f"Dropped func: {self.id_name}, in zone: {zone.zone_id}, at coords: {self.pos}, zone coords: {coords}")
+                        #print(f"Dropped func: {self.id_name}, in zone: {zone.zone_id}, at coords: {self.pos}, zone coords: {coords}")
                         idx = self._find_placement(zone, zone.split_amount)
+                        self.add_visual_in_zone(zone, idx)
                         zone.addToList(int(self.id_name), idx)
                         print(f"Zone {zone.zone_id} list now: {zone.order}")
-                        self.add_visual_in_zone(zone, idx)
                         break
                 else:
                     print("Not dropped in any zone.")
@@ -177,15 +177,17 @@ class DragonDropButton(MDFloatLayout):
         zone_width_hint = zone.size[0] / zone.split_amount / parent.width
 
         # Create an MDLabel to represent the dropped button
-        label = MDLabel(
+        label = VisualCue(
             #text=self.text,
             halign="center",
             theme_text_color="Custom",
             text_color=self.color,
             font_style="Body1",
-            size_hint=(zone_width_hint, 0.05),     # small width, fixed height
+            size_hint=(zone_width_hint, 0.2),     # small width, fixed height
             #height=dp(24),
             pos_hint={"center_x": center_x_hint, "center_y": center_y_hint},
+            drop_zones=[zone],
+            idx=idx,
         )
 
         # Optional: give it the same background tint as the button
@@ -206,8 +208,6 @@ class DragonDropButton(MDFloatLayout):
 
         parent.add_widget(label)
 
-
-
     def reset(self):
         self.pos_hint = self.startpos
 
@@ -215,7 +215,7 @@ class DragonDropZone(DragonDropButton):
     zone_id = StringProperty("")
     split_amount = NumericProperty(None)
     order = dict()
-    #number = 1
+
     #Make it not draggable
     def on_touch_down(self, touch):
         return False
@@ -225,3 +225,33 @@ class DragonDropZone(DragonDropButton):
     
     def addToList(self, val, pos):
         self.order[pos] = val
+
+    def remove_from_list(self, pos):
+        if pos in self.order:
+            del self.order[pos]
+
+class VisualCue(MDLabel):
+    drop_zones = ListProperty([])
+    idx = NumericProperty(None)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.drop_zones = kwargs.pop("drop_zones", [])
+        self.idx = kwargs.get("idx")
+        for zone in self.drop_zones:
+            print(f'own placement: {self.idx}')
+            print(f'skibidi {zone.order.get(self.idx)}')
+            if zone.order.get(self.idx) is not None:
+                # Remove the one that is already there
+                self.parent.remove_widget(self)
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            if self.parent:
+                if self.drop_zones:
+                    for zone in self.drop_zones:
+                        zone.remove_from_list(self.idx)
+                        print(f"Zone {zone.zone_id} list now: {zone.order}")
+                else: 
+                    print("No zones assigned.")
+                self.parent.remove_widget(self)
