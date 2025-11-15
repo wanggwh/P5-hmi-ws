@@ -26,7 +26,9 @@ from p5_interfaces.srv import MoveToPreDefPose
 
 # Import page classes
 from pages.start_page import StartPage
-from pages.base_system_control_page import AliceSystemControlPage, BobSystemControlPage
+
+from pages.bob_configuration_setup import BobConfigurationSetup
+from pages.alice_configuration_setup import AliceConfigurationSetup
 
 from pages.mir_system_control import MirSystemControlPage
 from pages.admittance_control import AdmittanceControl
@@ -66,6 +68,7 @@ class HMINode(Node):
        
         # Clients
         self.move_to_pre_def_pose_client = self.create_client(MoveToPreDefPose, "/p5_move_to_pre_def_pose")
+        # self.bob_set_admittance_client = self.create_client(AdmittanceSetStatus, )
 
         self.get_logger().info('HMI Node has been started')
     
@@ -115,7 +118,6 @@ class HMINode(Node):
 
     
     def handle_move_to_pre_def_pose_response_callback(self, future):
-
         print("Handling move_to_pre_def_pose_response")
         try:
             response = future.result()
@@ -178,8 +180,8 @@ class HMIApp(MDApp):
         # Define menu items
         menu_texts = [
             "Start Page",
-            "BOB - System Control",
-            "ALICE - System Control",
+            "BOB - Configuration Setup",
+            "ALICE - Configuration Setup",
             "MIR - System Control",
             "Admittance Control",
             "System Logging", 
@@ -215,8 +217,8 @@ class HMIApp(MDApp):
         """Load KV files for different pages"""
         kv_files = {
             "Start Page": "kv/start_page.kv",
-            "BOB - System Control": "kv/base_system_control_page.kv",
-            "ALICE - System Control": "kv/base_system_control_page.kv",
+            "BOB - Configuration Setup": "kv/bob_configuration_setup.kv",
+            "ALICE - Configuration Setup": "kv/alice_configuration_setup.kv",
             "MIR - System Control": "kv/mir_system_control.kv",
             "Admittance Control": "kv/admittance_control.kv",
             "System Logging": "kv/system_logging.kv",
@@ -234,7 +236,7 @@ class HMIApp(MDApp):
     def on_start(self):
         """Called when the app starts - load all KV files"""
         # Load all page KV files
-        pages = ["Start Page", "BOB - System Control", "ALICE - System Control", "MIR - System Control", "Admittance Control","System Logging", "Settings"]
+        pages = ["Start Page", "BOB - Configuration Setup", "ALICE - Configuration Setup", "MIR - System Control", "Admittance Control", "System Logging", "Settings"]
         for page in pages:
             self.load_page_kv(page)
         
@@ -294,13 +296,13 @@ class HMIApp(MDApp):
                 self.current_page_widget = StartPage()
                 content.add_widget(self.current_page_widget)
                 print(f"StartPage added. Children count: {len(content.children)}")
-            elif self.current_page == "BOB - System Control":
-                print("Creating BobSystemControlPage widget")
-                self.current_page_widget = BobSystemControlPage()
+            elif self.current_page == "BOB - Configuration Setup":
+                print("Creating BobConfigurationSetup widget")
+                self.current_page_widget = BobConfigurationSetup()
                 content.add_widget(self.current_page_widget)
-            elif self.current_page == "ALICE - System Control":
-                print("Creating AliceSystemControlPage widget")
-                self.current_page_widget = AliceSystemControlPage()
+            elif self.current_page == "ALICE - Configuration Setup":
+                print("Creating BobConfigurationSetup widget")
+                self.current_page_widget = AliceConfigurationSetup()
                 content.add_widget(self.current_page_widget)
             elif self.current_page == "MIR - System Control":
                 print("Creating MirSystemControlPage widget")

@@ -1,0 +1,118 @@
+<AliceConfigurationSetup>
+    # Instruction 1
+    MDLabel:
+        text: "Use the Teach Pendant to position the robot at the desired configuration"
+        font_style: "H6"
+        theme_text_color: "Custom"
+        text_color: app.colors['text_muted']
+        halign: "center"
+        size_hint: None, None
+        size: dp(600), dp(35)
+        pos_hint: {'center_x': 0.5, 'top': 0.92}
+    
+    # Instruction 2
+    MDLabel:
+        text: "Press the SAVE button to save the configuration"
+        font_style: "Body1"
+        theme_text_color: "Custom"
+        text_color: app.colors['text_muted']
+        halign: "center"
+        size_hint: None, None
+        size: dp(500), dp(30)
+        pos_hint: {'center_x': 0.5, 'top': 0.79}
+
+    # Joint 1 Label
+    MDLabel:
+        id: joint1_label
+        text: "Joint 1"
+        font_style: "Body1"
+        theme_text_color: "Custom"
+        text_color: app.colors['text_light']
+        halign: "center"
+        size_hint: None, None
+        size: dp(80), dp(30)
+        pos_hint: {'center_x': 0.1, 'top': 0.67}
+
+    # Joint 2 Label
+    MDLabel:
+        id: joint2_label
+        text: "Joint 2"
+        font_style: "Body1"
+        theme_text_color: "Custom"
+        text_color: app.colors['text_light']
+        halign: "center"
+        size_hint: None, None
+        size: dp(80), dp(30)
+        pos_hint: {'center_x': 0.24, 'top': 0.67}
+
+    # Joint 3 Label
+    MDLabel:
+        id: joint3_label
+        text: "Joint 3"
+        font_style: "Body1"
+        theme_text_color: "Custom"
+        text_color: app.colors['text_light']
+        halign: "center"
+        size_hint: None, None
+        size: dp(80), dp(30)
+        pos_hint: {'center_x': 0.38, 'top': 0.67}
+
+    # Joint 4 Label
+    MDLabel:
+        id: joint4_label
+        text: "Joint 4"
+        font_style: "Body1"
+        theme_text_color: "Custom"
+        text_color: app.colors['text_light']
+        halign: "center"
+        size_hint: None, None
+        size: dp(80), dp(30)
+        pos_hint: {'center_x': 0.52, 'top': 0.67}
+
+    # Joint 5 Label
+    MDLabel:
+        id: joint5_label
+        text: "Joint 5"
+        font_style: "Body1"
+        theme_text_color: "Custom"
+        text_color: app.colors['text_light']
+        halign: "center"
+        size_hint: None, None
+        size: dp(80), dp(30)
+        pos_hint: {'center_x': 0.66, 'top': 0.67}
+
+    # Joint 6 Label
+    MDLabel:
+        id: joint6_label
+        text: "Joint 6"
+        font_style: "Body1"
+        theme_text_color: "Custom"
+        text_color: app.colors['text_light']
+        halign: "center"
+        size_hint: None, None
+        size: dp(80), dp(30)
+        pos_hint: {'center_x': 0.8, 'top': 0.67}
+
+    
+    MDBoxLayout:
+        orientation: "horizontal"
+        size_hint: None, None
+        size: dp(620), dp(50)  
+        spacing: dp(20)
+        pos_hint: {'center_x': 0.5, 'y': 0.05}
+
+        MDRaisedButton:
+            text: "HOME " + root.robot_name_caps
+            md_bg_color: app.colors['button_neutral']
+            size_hint: None, None
+            size: dp(300), dp(50)
+            on_release: root.move_to_home()
+
+        MDRaisedButton:
+            text: "UPRIGHT " + root.robot_name if root.robot_name else "UPRIGHT"
+            md_bg_color: app.colors['button_neutral']
+            size_hint: None, None
+            size: dp(300), dp(50)
+            on_release: root.move_to_upright()
+       
+ 

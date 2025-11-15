@@ -1,4 +1,18 @@
 from kivymd.uix.floatlayout import MDFloatLayout
+from kivymd.uix.slider import MDSlider
+from kivy.clock import Clock
+import math
+
+class NonInteractiveSlider(MDSlider):
+    """A slider that cannot be interacted with but shows values"""
+    def on_touch_down(self, touch):
+        return False  # Don't handle touch events
+    
+    def on_touch_move(self, touch):
+        return False  # Don't handle touch events
+        
+    def on_touch_up(self, touch):
+        return False  # Don't handle touch events
 
 class AdmittanceControl(MDFloatLayout):
     def __init__(self, **kwargs):
@@ -6,6 +20,13 @@ class AdmittanceControl(MDFloatLayout):
         self.app = None
         self.bob_admittance_enabled = False  # Default state for BOB - DISABLED
         self.alice_admittance_enabled = False  # Default state for ALICE - DISABLED
+        
+        # Slider control variables
+        self.repeat_event = None
+        self.repeat_slider_index = None
+        self.repeat_direction = None
+        self.repeat_interval = 0.3
+        self.repeat_count = 0
 
     def on_parent(self, widget, parent):
         """Called when the widget is added to a parent"""
@@ -72,3 +93,110 @@ class AdmittanceControl(MDFloatLayout):
     def get_alice_status(self):
         """Get current ALICE admittance control status"""
         return self.alice_admittance_enabled
+
+    # Slider control functions
+    def on_joint_change(self, slider_index, value):
+        """Called when any slider value changes"""
+        value_float = round(float(value), 1)
+        slider_names = ["M", "D", "k"]
+        slider_name = slider_names[slider_index]
+        
+        print(f"{slider_name} parameter changed to {value_float}")
+        
+        # Update the corresponding label
+        if hasattr(self.ids, f'{slider_name}_value'):
+            getattr(self.ids, f'{slider_name}_value').text = f"{value_float}"
+        
+        self.publish_admittance_parameters()
+
+    def publish_admittance_parameters(self):
+        """Publish admittance control parameters to ROS2"""
+        if not self.app or not hasattr(self.app, 'hmi_node'):
+            return
+        try:
+            # Get current slider values
+            M_value = getattr(self.ids, 'M_slider').value if hasattr(self.ids, 'M_slider') else 0.0
+            D_value = getattr(self.ids, 'D_slider').value if hasattr(self.ids, 'D_slider') else 0.0
+            k_value = getattr(self.ids, 'k_slider').value if hasattr(self.ids, 'k_slider') else 0.0
+            
+            print(f"Publishing admittance parameters: M={M_value}, D={D_value}, K={k_value}")
+            
+            # Send to ROS2
+            # self.app.hmi_node.publish_admittance_parameters(M_value, D_value, k_value)
+        except Exception as e:
+            print(f"Failed to publish admittance parameters: {e}")
+
+    def increment_parameter(self, slider_index):
+        """Increment parameter by step size"""
+        slider_names = ["M_slider", "D_slider", "k_slider"]
+        slider_name = slider_names[slider_index]
+        if hasattr(self.ids, slider_name):
+            slider = getattr(self.ids, slider_name)
+            new_value = min(slider.value + slider.step, slider.max)
+            slider.value = new_value
+            print(f"Incremented {slider_name} to {new_value}")
+
+    def decrement_parameter(self, slider_index):
+        """Decrement parameter by step size"""
+        slider_names = ["M_slider", "D_slider", "k_slider"]
+        slider_name = slider_names[slider_index]
+        if hasattr(self.ids, slider_name):
+            slider = getattr(self.ids, slider_name)
+            new_value = max(slider.value - slider.step, slider.min)
+            slider.value = new_value
+            print(f"Decremented {slider_name} to {new_value}")
+
+    def start_increment(self, slider_index):
+        """Start incrementing parameter with acceleration"""
+        self.repeat_slider_index = slider_index
+        self.repeat_direction = 1
+        self.repeat_interval = 0.3
+        self.repeat_count = 0
+        # Immediate first increment
+        self.increment_parameter(slider_index)
+        # Start repeat timer
+        self.repeat_event = Clock.schedule_interval(self._repeat_action, self.repeat_interval)
+
+    def start_decrement(self, slider_index):
+        """Start decrementing parameter with acceleration"""
+        self.repeat_slider_index = slider_index
+        self.repeat_direction = -1
+        self.repeat_interval = 0.3
+        self.repeat_count = 0
+        # Immediate first decrement
+        self.decrement_parameter(slider_index)
+        # Start repeat timer
+        self.repeat_event = Clock.schedule_interval(self._repeat_action, self.repeat_interval)
+
+    def stop_increment_decrement(self):
+        """Stop the repeat action"""
+        if self.repeat_event:
+            self.repeat_event.cancel()
+            self.repeat_event = None
+        self.repeat_slider_index = None
+        self.repeat_direction = None
+        self.repeat_count = 0
+
+    def _repeat_action(self, dt):
+        """Internal method to handle repeated increment/decrement with acceleration"""
+        if self.repeat_slider_index is None or self.repeat_direction is None:
+            return False
+        
+        # Perform the action
+        if self.repeat_direction == 1:
+            self.increment_parameter(self.repeat_slider_index)
+        else:
+            self.decrement_parameter(self.repeat_slider_index)
+        
+        self.repeat_count += 1
+        
+        # Accelerate after some repetitions
+        if self.repeat_count > 5 and self.repeat_interval > 0.05:
+            # Cancel current event and start a faster one
+            if self.repeat_event:
+                self.repeat_event.cancel()
+            self.repeat_interval = max(0.05, self.repeat_interval * 0.8)  # Speed up by 20%
+            self.repeat_event = Clock.schedule_interval(self._repeat_action, self.repeat_interval)
+            return False  # Stop this event, new one will continue
+        
+        return True  # Continue this event
