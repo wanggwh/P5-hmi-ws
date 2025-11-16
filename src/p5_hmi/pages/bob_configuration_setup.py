@@ -3,7 +3,7 @@ from kivymd.uix.slider import MDSlider
 from kivy.clock import Clock
 from kivy.properties import ListProperty, StringProperty
 from kivymd.uix.button import MDRaisedButton
-
+from kivymd.app import MDApp
 
 class BobConfigurationSetup(MDFloatLayout):
     saved_configurations = ListProperty([])
@@ -12,7 +12,7 @@ class BobConfigurationSetup(MDFloatLayout):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.app = None
+        self.app = MDApp.get_running_app() #Reference til hovedappen
 
     def move_to_home(self):
         if self.app and hasattr(self.app, 'hmi_node'):
@@ -40,14 +40,12 @@ class BobConfigurationSetup(MDFloatLayout):
         else:
             print("Please enter a valid, unique configuration name")
     
-    def create_custom_config_button(self, config_name):
-        # Find custom configurations container (du skal give den et ID i KV)
-        # Opret ny knap
+    def create_custom_config_button(self, config_name): 
         button = MDRaisedButton(
             text=config_name,
             size_hint=(None, None),
             size=("120dp", "50dp"),
-            md_bg_color=self.app.colors['primary'] if self.app else (0.2, 0.6, 1.0, 1),
+            md_bg_color=self.app.theme_cls.primary_color if self.app else (0.2, 0.6, 1.0, 1),
             on_release=lambda x: self.load_custom_configuration(config_name)
         )
         
@@ -55,5 +53,6 @@ class BobConfigurationSetup(MDFloatLayout):
         self.ids.custom_config_container.add_widget(button)
     
     def load_custom_configuration(self, config_name):
-        print(f"Loading configuration: {config_name}")
-        # Implementer load logik her
+        if self.app and hasattr(self.app, 'hmi_node'):
+            self.app.hmi_node.send_move_to_pre_def_pose_request("BOB", str(config_name))
+            print(f"Sent {config_name} configuration request for BOB")

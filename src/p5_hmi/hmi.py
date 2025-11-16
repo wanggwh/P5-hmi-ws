@@ -80,8 +80,9 @@ class HMINode(Node):
         request = MoveToPreDefPose.Request()
         request.robot_name = robot_name
         request.goal_name = goal_name
+        print(f"Preparing to send move_to_pre_def_pose request for {robot_name} to {goal_name}")
 
-        # Non-blocking service wait logic
+
         if not self.move_to_pre_def_pose_client.wait_for_service(timeout_sec=0.1):
             if self.waiting_popup is None:
                 self.waiting_popup = StatusPopupDialog()
@@ -127,7 +128,7 @@ class HMINode(Node):
             robot_name = getattr(future, "robot_name", None)
             goal_name = getattr(future, "goal_name", None)
             # Schedule GUI update in main thread
-            Clock.schedule_once(lambda dt: self.app.show_status_popup(robot_name, goal_name, success, message, move_to_pre_def_pose_complete), 0)
+            Clock.schedule_once(lambda dt: self.app.show_status_popup(robot_name, goal_name, success, message, move_to_pre_def_pose_complete = False), 0)
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
     
