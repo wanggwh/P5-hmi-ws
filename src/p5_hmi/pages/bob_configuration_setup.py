@@ -46,13 +46,13 @@ class BobConfigurationSetup(MDFloatLayout):
             size_hint=(None, None),
             size=("120dp", "50dp"),
             md_bg_color=self.app.theme_cls.primary_color if self.app else (0.2, 0.6, 1.0, 1),
-            on_release=lambda x: self.load_custom_configuration(config_name)
+            on_release=lambda x: self.send_custom_configuration(config_name)
         )
         
         # Tilføj knappen til custom configurations container
         self.ids.custom_config_container.add_widget(button)
     
-    def load_custom_configuration(self, config_name):
+    def send_custom_configuration(self, config_name):
         if self.app and hasattr(self.app, 'hmi_node'):
             self.app.hmi_node.send_move_to_pre_def_pose_request("BOB", str(config_name))
             print(f"Sent {config_name} configuration request for BOB")

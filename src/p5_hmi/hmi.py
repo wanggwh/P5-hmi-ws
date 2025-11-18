@@ -65,6 +65,7 @@ class HMINode(Node):
         # Subscribers
         self.error_subscriber = self.create_subscription(Error, '/error_messages', self.handle_error_message_callback, 10)
         self.status_subscriber = self.create_subscription(Bool, '/joint_mover_status', self.handle_status_message_callback, 10)
+        self.joint_states_subscriber = self.create_subscription(JointState, '/joint_states', self.handle_joint_states_callback, 10)
        
         # Clients
         self.move_to_pre_def_pose_client = self.create_client(MoveToPreDefPose, "/p5_move_to_pre_def_pose")
@@ -160,6 +161,13 @@ class HMINode(Node):
         except Exception as e:
             self.get_logger().error(f"Failed to handle status message: {e}")
 
+    def handle_joint_states_callback(self, msg):
+        try:
+            joint_positions = msg.position
+            print(f"Received joint states: {joint_positions}")
+
+        except Exception as e:
+            self.get_logger().error(f"Failed to handle joint states message: {e}")
 
 
 class HMIApp(MDApp):
