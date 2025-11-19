@@ -1,9 +1,13 @@
 from kivymd.uix.floatlayout import MDFloatLayout
-from kivy.uix.label import Label
-from kivy.properties import StringProperty, NumericProperty, ListProperty
+from kivy.properties import StringProperty, NumericProperty, ListProperty, DictProperty, ObjectProperty
 from kivymd.uix.label import MDLabel
 from kivy.graphics import Color, RoundedRectangle
 from kivy.metrics import dp
+
+from kivymd.uix.dialog import MDDialog
+from kivymd.uix.button import MDFlatButton
+from kivymd.uix.textfield import MDTextField
+from kivymd.uix.boxlayout import MDBoxLayout
 
 class DragonDrop(MDFloatLayout):
     def __init__(self, **kwargs):
@@ -19,10 +23,21 @@ class DragonDrop(MDFloatLayout):
         ]
 
         zones = [
-            {"zone_id": "Alice", "pos_hint": {"x": 0.05, "y": 0.7}, "size_hint": {0.9,0.01}, "bg_color": [0.8, 0.9, 1, 0.3], "split_amount": 7},
+            {"zone_id": "Alice", "pos_hint": {"x": 0.1, "y": 0.7}, "size_hint": {0.85,0.01}, "bg_color": [0.8, 0.9, 1, 0.3], "split_amount": 7},
+            {"zone_id": "Bob",   "pos_hint": {"x": 0.1, "y": 0.45}, "size_hint": {0.85,0.01}, "bg_color": [0.8, 1, 0.8, 0.3], "split_amount": 7},
+            {"zone_id": "MiR", "pos_hint": {"x": 0.1, "y": 0.2}, "size_hint": {0.85,0.01}, "bg_color": [1, 0.8, 0.8, 0.3], "split_amount": 7},
         ]
 
-        zone1 = DragonDropZone(
+        information = {
+            "1":{"param1": "", "param2": ""},
+            "2":{"param1": "", "param2": "", "param3": ""},
+            "3":{"param1": "", "param2": ""},
+            "4":{"param1": "", "param2": ""},
+            "5":{"param1": "", "param2": ""},
+            "6":{"param1": "", "param2": ""},
+        }
+
+        alice = DragonDropZone(
             zone_id=zones[0]["zone_id"],
             pos_hint=zones[0]["pos_hint"],
             size_hint=zones[0]["size_hint"],
@@ -30,7 +45,25 @@ class DragonDrop(MDFloatLayout):
             split_amount=zones[0]["split_amount"],
         )
 
-        self.add_widget(zone1)
+        bob = DragonDropZone(
+            zone_id=zones[1]["zone_id"],
+            pos_hint=zones[1]["pos_hint"],
+            size_hint=zones[1]["size_hint"],
+            bg_color=zones[1]["bg_color"],
+            split_amount=zones[1]["split_amount"],
+        )
+
+        mir = DragonDropZone(
+            zone_id=zones[2]["zone_id"],
+            pos_hint=zones[2]["pos_hint"],
+            size_hint=zones[2]["size_hint"],
+            bg_color=zones[2]["bg_color"],
+            split_amount=zones[2]["split_amount"],
+        )
+
+        self.add_widget(alice)
+        self.add_widget(bob)
+        self.add_widget(mir)
 
         for spec in buttons:
             w = DragonDropButton(
@@ -41,7 +74,8 @@ class DragonDrop(MDFloatLayout):
                 font_size=20,
                 color=[0.96, 0.96, 0.98, 1],
                 bg_color=spec["bg_color"] or [0.5,0.5,0.5,1],
-                drop_zones=[zone1],
+                drop_zones=[alice, bob, mir],
+                information=information[spec["id_name"]],
             )
             # set per-button background color if needed:
             # you can add a setter or pass bg_color kwarg; for demo reuse same bg
@@ -54,6 +88,7 @@ class DragonDropButton(MDFloatLayout):
     color = ListProperty([0.96, 0.96, 0.98, 1])
     bg_color = ListProperty([0.23, 0.63, 0.92, 1])  # default; override as needed
     drop_zones = ListProperty([])
+    information = DictProperty({})
 
     def __init__(self, **kwargs):
         # allow passing bg_color as kwarg
@@ -133,11 +168,15 @@ class DragonDropButton(MDFloatLayout):
                         #print(f"Dropped func: {self.id_name}, in zone: {zone.zone_id}, at coords: {self.pos}, zone coords: {coords}")
                         idx = self._find_placement(zone, zone.split_amount)
                         self.add_visual_in_zone(zone, idx)
-                        zone.addToList(int(self.id_name), idx)
-                        print(f"Zone {zone.zone_id} list now: {zone.order}")
+                        InfoEncoder(information=self.information, idx=idx, zone=zone, id_name=self.id_name).open()
                         break
                 else:
                     print("Not dropped in any zone.")
+                    #print(f"list: {zone.order}")
+                    print(f"Alice entry {zone.order.get('Alice')}")
+                    print(f"Bob entry {zone.order.get('Bob')}")
+                    print(f"MiR entry {zone.order.get('MiR')}")
+
             else:
                 print("No zones assigned.")
 
@@ -206,7 +245,18 @@ class DragonDropButton(MDFloatLayout):
 
         label.bind(pos=_update_bg_rect, size=_update_bg_rect)
 
-        parent.add_widget(label)
+        self.remove_visual_from_zone(zone, idx)
+
+        # Add the label behind other widgets
+        parent.add_widget(label, index=6)
+
+    def remove_visual_from_zone(self, zone, idx):
+        # Check parent for VisualCue with matching idx if it is in the zone
+        parent = self.parent
+        for child in parent.children:
+            if isinstance(child, VisualCue) and child.idx == idx and zone in child.drop_zones:
+                parent.remove_widget(child)
+                zone.remove_from_list(idx)
 
     def reset(self):
         self.pos_hint = self.startpos
@@ -216,6 +266,20 @@ class DragonDropZone(DragonDropButton):
     split_amount = NumericProperty(None)
     order = dict()
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Add a label with the zone ID
+        label = MDLabel(
+            text=self.zone_id,
+            halign="left",
+            theme_text_color="Custom",
+            text_color=[0.96, 0.96, 0.98, 1] ,
+            font_style="Subtitle1",
+            size_hint=(0.3, 1),
+            pos_hint={"x": -0.1, "center_y": 0.5},
+        )
+        self.add_widget(label)
+
     #Make it not draggable
     def on_touch_down(self, touch):
         return False
@@ -223,12 +287,14 @@ class DragonDropZone(DragonDropButton):
     def getCoords(self):
         return self.pos_hint
     
-    def addToList(self, val, pos):
-        self.order[pos] = val
+    def addToList(self, val, pos, params):
+        theID = {pos:{"Id": val, "Params": params}}
+        
+        self.order[self.zone_id] = theID
 
     def remove_from_list(self, pos):
         if pos in self.order:
-            del self.order[pos]
+            del self.order[self.zone_id][pos]
 
 class VisualCue(MDLabel):
     drop_zones = ListProperty([])
@@ -238,20 +304,74 @@ class VisualCue(MDLabel):
         super().__init__(*args, **kwargs)
         self.drop_zones = kwargs.pop("drop_zones", [])
         self.idx = kwargs.get("idx")
-        for zone in self.drop_zones:
-            print(f'own placement: {self.idx}')
-            print(f'skibidi {zone.order.get(self.idx)}')
-            if zone.order.get(self.idx) is not None:
-                # Remove the one that is already there
-                self.parent.remove_widget(self)
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
             if self.parent:
                 if self.drop_zones:
                     for zone in self.drop_zones:
-                        zone.remove_from_list(self.idx)
+                        zone.remove_from_list(str(int(self.idx)))
                         print(f"Zone {zone.zone_id} list now: {zone.order}")
                 else: 
                     print("No zones assigned.")
                 self.parent.remove_widget(self)
+
+class InfoEncoder(MDDialog):
+    information = DictProperty({})
+    idx = NumericProperty(None)
+    zone = ObjectProperty(None)
+    id_name = StringProperty("")
+
+    def __init__(self, **kwargs):
+        super().__init__(
+            title="Encode Information",
+            type="custom",
+            content_cls=MDBoxLayout(
+                orientation="vertical",
+                spacing=dp(10),
+                size_hint_y=None,
+                height=dp(200),
+            ),
+            buttons=[
+                MDFlatButton(
+                    text="CANCEL",
+                    on_release=self.dismiss
+                ),
+                MDFlatButton(
+                    text="OK",
+                    on_release=self.on_ok
+                ),
+            ],
+            **kwargs
+        )
+
+        self.information = kwargs.get("information", [])
+        self.idx = kwargs.get("idx")
+
+        # keep a mapping of param -> widget for the current dialog only
+        self._fields = {}
+
+        # ensure the information dict has string placeholders
+        for param in list(self.information.keys()):
+            # keep the dict value as a string placeholder
+            self.information[param] = ""
+
+            # create the input widget and keep a reference
+            tf = MDTextField(hint_text=f"{param}")
+            self._fields[param] = tf
+            self.content_cls.add_widget(tf)
+
+    params = dict()
+    def on_ok(self, *args, **kwargs):
+        # copy the entered text back into the information dict for the current func
+        #func_id = str(int(self.idx))
+        n=1
+        for param, widget in self._fields.items():
+            #print(f"param: {n}, value: {widget.text.strip()}")
+            self.params["param"+str(n)] = widget.text.strip()
+            n+=1
+        
+        self.zone.addToList(int(self.id_name), self.idx, self.params)
+        self._fields.clear()
+        print(f"Zone {self.zone.zone_id} list now: {self.zone.order}")
+        self.dismiss()
