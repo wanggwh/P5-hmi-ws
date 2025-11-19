@@ -1,3 +1,4 @@
+from copy import deepcopy
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivy.properties import StringProperty, NumericProperty, ListProperty, DictProperty, ObjectProperty
 from kivymd.uix.label import MDLabel
@@ -167,8 +168,20 @@ class DragonDropButton(MDFloatLayout):
                         coords = zone.getCoords()
                         #print(f"Dropped func: {self.id_name}, in zone: {zone.zone_id}, at coords: {self.pos}, zone coords: {coords}")
                         idx = self._find_placement(zone, zone.split_amount)
-                        self.add_visual_in_zone(zone, idx)
-                        InfoEncoder(information=self.information, idx=idx, zone=zone, id_name=self.id_name).open()
+                        #print(f"Placing at index: {idx} in zone {zone.zone_id}")
+                        #self.add_visual_in_zone(zone, idx)
+                        dialog = InfoEncoder(
+                            information=self.information,
+                            idx=idx,
+                            zone=zone,
+                            id_name=self.id_name,
+                            on_accept=lambda z=zone, i=idx: self.add_visual_in_zone(z, i),
+                        )
+                        dialog.open()
+                        #Only add visual if ok was pressed
+
+
+                        #self.encode_info(zone, idx)
                         break
                 else:
                     print("Not dropped in any zone.")
@@ -255,6 +268,7 @@ class DragonDropButton(MDFloatLayout):
         parent = self.parent
         for child in parent.children:
             if isinstance(child, VisualCue) and child.idx == idx and zone in child.drop_zones:
+                print(f"There is a visual cue at idx {idx} in zone {zone.zone_id}, removing it.")
                 parent.remove_widget(child)
                 zone.remove_from_list(idx)
 
@@ -264,7 +278,7 @@ class DragonDropButton(MDFloatLayout):
 class DragonDropZone(DragonDropButton):
     zone_id = StringProperty("")
     split_amount = NumericProperty(None)
-    order = dict()
+    order = {"Alice": {}, "Bob": {}, "MiR": {}}
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -288,13 +302,15 @@ class DragonDropZone(DragonDropButton):
         return self.pos_hint
     
     def addToList(self, val, pos, params):
-        theID = {pos:{"Id": val, "Params": params}}
-        
-        self.order[self.zone_id] = theID
+        #print(f"Added to zone {self.zone_id} at pos {pos} value {val} with params {params}")
+        if self.zone_id not in self.order:
+            self.order[self.zone_id] = dict()
+        self.order[self.zone_id][str(int(pos))] = {"value": val, "params": deepcopy(params)}
+
 
     def remove_from_list(self, pos):
-        if pos in self.order:
-            del self.order[self.zone_id][pos]
+        if self.zone_id in self.order and str(int(pos)) in self.order[self.zone_id]:
+            del self.order[self.zone_id][str(int(pos))]
 
 class VisualCue(MDLabel):
     drop_zones = ListProperty([])
@@ -323,6 +339,7 @@ class InfoEncoder(MDDialog):
     id_name = StringProperty("")
 
     def __init__(self, **kwargs):
+        self._on_accept = kwargs.pop("on_accept", None)
         super().__init__(
             title="Encode Information",
             type="custom",
@@ -336,6 +353,7 @@ class InfoEncoder(MDDialog):
                 MDFlatButton(
                     text="CANCEL",
                     on_release=self.dismiss
+                    
                 ),
                 MDFlatButton(
                     text="OK",
@@ -346,7 +364,9 @@ class InfoEncoder(MDDialog):
         )
 
         self.information = kwargs.get("information", [])
+        #print(f"InfoEncoder received information: {self.information}")
         self.idx = kwargs.get("idx")
+        #print(f"Idx: {self.idx}, Zone: {self.zone.zone_id}, id: {self.id_name}, Info: {self.information}")
 
         # keep a mapping of param -> widget for the current dialog only
         self._fields = {}
@@ -373,5 +393,16 @@ class InfoEncoder(MDDialog):
         
         self.zone.addToList(int(self.id_name), self.idx, self.params)
         self._fields.clear()
-        print(f"Zone {self.zone.zone_id} list now: {self.zone.order}")
+        self.params.clear()
+        print(f"List now: {self.zone.order}")
+
+        # call the stored accept callback (adds the visual) only when OK pressed
+        if callable(getattr(self, "_on_accept", None)):
+            try:
+                self._on_accept()
+            except Exception as e:
+                print("on_accept callback error:", e)
+
         self.dismiss()
+
+        
