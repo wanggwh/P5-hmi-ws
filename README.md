@@ -1,10 +1,54 @@
-
 **This file provides the setup and installation guide for running the HMI. For instructions on how to add new features to the HMI and further development, see the separate DEVELOPER_GUIDE.md file.**
 
-## You can run the HMI workspace either using Docker or directly on your local system. Both methods are described below.
-### VERYYYY IMPORTANT! DOCKER IS NOT WORKING PROPERLY RIGHT NOW – USE LOCAL INSTALLATION!
+## You can run the HMI workspace either using Docker or directly on your local system. Both methods are described below. But use Docker or you're a noob.
 
 ---------------------------------------------------------
+# Docker guide:
+
+Firstly make sure you have docker and docker compose installed.
+
+# First build the image using docker build
+```bash
+docker build -t p5-hmi-ws:latest .
+```
+
+There are two methods to running the hmi
+
+# Method 1: Manual docker composing and such
+You have to do this the first time running it and if you delete the directory kivy_venv. Afterwards you can use method 2 which is easier and quicker and nicer.
+
+1. Remember xhost
+```bash
+xhost +local:root
+```
+
+2. Run docker compose
+```bash
+docker compose up
+```
+
+3. Exec into the container
+```bash
+docker exec -it hmi-p5-p5_hmi-1 bash
+```
+
+4. Run script to launch hmi
+```bash
+./start_hmi.sh
+```
+
+# Method 2: Use the script
+This can only be done if method 1 has been done at least once. or if you run the setup script inside the container and source manually the first time.
+
+1. Run the script
+```bash
+./make_hmi_container.sh
+```
+
+2. Run hmi launch script
+```bash
+./start_hmi.sh
+```
 
 # INSTALLATION GUIDE FOR RUNNING THE HMI ON YOUR LOCAL SYSTEM!!!
 
