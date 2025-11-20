@@ -56,3 +56,12 @@ class BobConfigurationSetup(MDFloatLayout):
         if self.app and hasattr(self.app, 'hmi_node'):
             self.app.hmi_node.send_move_to_pre_def_pose_request("BOB", str(config_name))
             print(f"Sent {config_name} configuration request for BOB")
+
+    def bob_update_joint_positions(self, joint_positions):
+        joint_label_ids = ['joint1_label', 'joint2_label', 'joint3_label', 
+                        'joint4_label', 'joint5_label', 'joint6_label']
+        
+        for i, slider_id in enumerate(joint_label_ids):
+            if i < len(joint_positions) and hasattr(self.ids, slider_id):
+                self.ids[slider_id].value = joint_positions[i]        
+

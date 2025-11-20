@@ -85,9 +85,9 @@ class HMINode(Node):
 
 
         if not self.move_to_pre_def_pose_client.wait_for_service(timeout_sec=0.1):
-            if self.waiting_popup is None:
-                self.waiting_popup = StatusPopupDialog()
-                Clock.schedule_once(lambda dt: self.waiting_popup.waiting_on_service_popup(service_name="/p5_move_to_pre_def_pose"), 0)
+            # Always create new dialog instance
+            self.waiting_popup = StatusPopupDialog.create_new_dialog()
+            Clock.schedule_once(lambda dt: self.waiting_popup.waiting_on_service_popup(service_name="/p5_move_to_pre_def_pose"), 0)
             # Start periodic check for service availability
             self._pending_service_request = (request, robot_name, goal_name)
             self._service_check_event = Clock.schedule_interval(self._check_service_available_and_send, 0.5)
@@ -163,8 +163,16 @@ class HMINode(Node):
 
     def handle_joint_states_callback(self, msg):
         try:
-            joint_positions = msg.position
-            print(f"Received joint states: {joint_positions}")
+            bob_joint_positions = msg.position[6:12]
+            alice_joint_positions = msg.position[0:6]
+
+            if self.app:
+                Clock.schedule_once(lambda dt: self.app.bob_update_joint_positions(bob_joint_positions), 0)
+                Clock.schedule_once(lambda dt: self.app.alice_update_joint_positions(bob_joint_positions), 0)
+
+
+            print(f"Bob joint positions: {bob_joint_positions}")
+            print(f"Alice joint positions: {alice_joint_positions}")
 
         except Exception as e:
             self.get_logger().error(f"Failed to handle joint states message: {e}")
@@ -250,11 +258,7 @@ class HMIApp(MDApp):
             self.load_page_kv(page)
         
         # Wait for the next frame to ensure widgets are built
-        Clock.schedule_once(self.load_start_page_content, 0.1)
-    
-    def load_start_page_content(self, dt):
-        """Load start page as default content"""
-        self.update_page_content()
+        Clock.schedule_once(lambda dt: self.update_page_content(), 0.1)
     
     def update_clock(self, dt):
         if hasattr(self.root.ids, "clock_label"):
@@ -342,12 +346,6 @@ class HMIApp(MDApp):
         else:
             print(f"No handler for system action: {action}")
 
-    def load_start_page(self, container):
-        """Load Start Page content with control buttons"""
-        # This recreates the original KV content programmatically
-        # For now, we'll add a simple message and refer to original KV layout
-        pass  # The original KV layout will show when no dynamic content is loaded
-
     def load_bob_system_control_page(self, container):
         """Load BOB System Control page content"""
         label = MDLabel(
@@ -380,7 +378,7 @@ class HMIApp(MDApp):
 
     def show_status_popup(self, robot_name, goal_name, success, message, move_to_pre_def_pose_complete):
         """Show a popup dialog with status message"""
-        dialog = StatusPopupDialog()
+        dialog = StatusPopupDialog.create_new_dialog()
         dialog.show_status(robot_name, goal_name, success, message, move_to_pre_def_pose_complete)
 
     def show_md_snackbar(self, severity, message, node_name):
