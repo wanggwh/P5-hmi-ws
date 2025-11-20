@@ -6,11 +6,36 @@ from kivy.graphics import Color, RoundedRectangle
 from kivy.metrics import dp
 
 from kivymd.uix.dialog import MDDialog
-from kivymd.uix.button import MDFlatButton
+from kivymd.uix.button import MDFlatButton, MDIconButton
 from kivymd.uix.textfield import MDTextField
 from kivymd.uix.boxlayout import MDBoxLayout
 
+"""""
+Structure of dictionary is as follows:
+{
+  page_number: {
+    zone_id: {
+      position_index: {
+        "value": function_id,
+        "params": {
+          "param1": value1,
+          "param2": value2,
+          ...
+        }
+      },
+      ...
+    },
+    ...
+  },
+  ...
+}
+"""""
+
+page = 1
+
 class DragonDrop(MDFloatLayout):
+    #global page
+    #page = NumericProperty(1)
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # build buttons programmatically
@@ -44,6 +69,7 @@ class DragonDrop(MDFloatLayout):
             size_hint=zones[0]["size_hint"],
             bg_color=zones[0]["bg_color"],
             split_amount=zones[0]["split_amount"],
+            #page=self.page,
         )
 
         bob = DragonDropZone(
@@ -52,6 +78,7 @@ class DragonDrop(MDFloatLayout):
             size_hint=zones[1]["size_hint"],
             bg_color=zones[1]["bg_color"],
             split_amount=zones[1]["split_amount"],
+            #page=self.page,
         )
 
         mir = DragonDropZone(
@@ -60,6 +87,7 @@ class DragonDrop(MDFloatLayout):
             size_hint=zones[2]["size_hint"],
             bg_color=zones[2]["bg_color"],
             split_amount=zones[2]["split_amount"],
+            #page=self.page,
         )
 
         self.add_widget(alice)
@@ -81,6 +109,91 @@ class DragonDrop(MDFloatLayout):
             # set per-button background color if needed:
             # you can add a setter or pass bg_color kwarg; for demo reuse same bg
             self.add_widget(w)
+
+        leftScroll = MDIconButton(
+            icon="arrow-left",
+            pos_hint={"center_x": 0.05, "top": 0.1},
+            on_release=lambda x: self.scroll_left(zones=[alice, bob, mir], buttons=buttons, instance=x)
+            )
+
+        rightScroll = MDIconButton(
+            icon="arrow-right",
+            pos_hint={"center_x": 0.95, "top": 0.1},
+            on_release=lambda x: self.scroll_right(zones=[alice, bob, mir], buttons=buttons, instance=x)
+        )
+
+        restartButton = MDIconButton(
+            icon="restart",
+            pos_hint={"center_x": 0.5, "top": 0.1},
+            on_release=lambda x: self.reset_all(zones=[alice, bob, mir], visual_only=False)
+        )
+
+        self.add_widget(leftScroll)
+        self.add_widget(rightScroll)
+        self.add_widget(restartButton)
+
+    def scroll_left(self, zones, buttons, instance):
+        global page
+        #print("Scroll left Pressed")
+        page -= 1
+        #print(f"Switched to page {page}")
+        self.reset_all(zones=zones, visual_only=True)
+        self._make_visuals_from_dict(zones=zones, buttons=buttons)
+
+    def scroll_right(self, zones, buttons, instance):
+        global page
+        #print("Scroll right Pressed")
+        page += 1
+        #print(f"Switched to page {page}")
+        self.reset_all(zones=zones, visual_only=True)
+        self._make_visuals_from_dict(zones=zones, buttons=buttons)
+
+    def reset_all(self, zones=[], visual_only=False):
+        global page
+        # remove all VisualCues from parent
+        for child in self.children[:]:
+            if isinstance(child, VisualCue):
+                self.remove_widget(child)
+
+        # clear all zone order dicts
+        if not visual_only:
+            for zone in zones:
+                zone.order.clear()
+                page = 1
+                #print(f"Cleared zone {zone.zone_id} list.")
+
+    def _make_visuals_from_dict(self, zones=[], buttons=[]):
+        # recreate VisualCues from zone order dicts
+        global page
+        for zone in zones:
+            for page_num in zone.order:
+                if page_num != page:
+                    continue
+            if page not in zone.order:
+                continue
+            for pos_str, entry in zone.order[page].get(zone.zone_id, {}).items():
+                idx = int(pos_str)
+                val = entry.get("value")
+                params = entry.get("params", {})
+                #print(f"Recreating visual for zone {zone.zone_id} at idx {idx} with value {val} and params {params}")
+                # create a DragonDropButton to use its method for adding visual
+                temp_button = DragonDropButton(
+                    id_name=str(val),
+                    text=f"Func {val}",
+                    color=[0.96, 0.96, 0.98, 1],
+                    bg_color=buttons[int(val)-1]["bg_color"] if int(val)-1 < len(buttons) else [0.5,0.5,0.5,1],
+                    drop_zones=[zone],
+                    information=params,
+                )
+                temp_button.opacity = 0
+                temp_button.disabled = True
+                self.add_widget(temp_button)
+                try:
+                    temp_button.add_visual_in_zone(zone, idx)
+                finally:
+                    # remove the helper button; visual remains because add_visual_in_zone added it to layout
+                    if temp_button.parent is self:
+                        self.remove_widget(temp_button)
 
 class DragonDropButton(MDFloatLayout):
     id_name = StringProperty("")
@@ -186,9 +299,9 @@ class DragonDropButton(MDFloatLayout):
                 else:
                     print("Not dropped in any zone.")
                     #print(f"list: {zone.order}")
-                    print(f"Alice entry {zone.order.get('Alice')}")
-                    print(f"Bob entry {zone.order.get('Bob')}")
-                    print(f"MiR entry {zone.order.get('MiR')}")
+                    #print(f"Alice entry {zone.order.get('Alice')}")
+                    #print(f"Bob entry {zone.order.get('Bob')}")
+                    #print(f"MiR entry {zone.order.get('MiR')}")
 
             else:
                 print("No zones assigned.")
@@ -217,11 +330,14 @@ class DragonDropButton(MDFloatLayout):
         idx = int((self.center_x - zx) / zone_width) + 1
         return idx
 
-    def add_visual_in_zone(self, zone, idx):
-        parent = self.parent
+    def add_visual_in_zone(self, zone, idx, parent=None):
+        if parent is None:
+            parent = self.parent
 
         # Place label in the middle of the zone segment
+        #print(f"parent is {parent}")
         center_x_hint = (zone.pos[0] + (idx - 0.5) * (zone.size[0] / zone.split_amount)) / parent.width
+        
         # Place label at the vertical center of the zone
         center_y_hint = (zone.pos[1] + zone.size[1] / 2) / parent.height
 
@@ -261,14 +377,16 @@ class DragonDropButton(MDFloatLayout):
         self.remove_visual_from_zone(zone, idx)
 
         # Add the label behind other widgets
-        parent.add_widget(label, index=6)
+        parent.add_widget(label, index=8)
 
-    def remove_visual_from_zone(self, zone, idx):
+    def remove_visual_from_zone(self, zone, idx, parent=None):
         # Check parent for VisualCue with matching idx if it is in the zone
-        parent = self.parent
+        if parent is None:
+            parent = self.parent
         for child in parent.children:
+            #print(f"Checking child: {child}")
             if isinstance(child, VisualCue) and child.idx == idx and zone in child.drop_zones:
-                print(f"There is a visual cue at idx {idx} in zone {zone.zone_id}, removing it.")
+                #print(f"There is a visual cue at idx {idx} in zone {zone.zone_id}, removing it.")
                 parent.remove_widget(child)
                 zone.remove_from_list(idx)
 
@@ -278,7 +396,8 @@ class DragonDropButton(MDFloatLayout):
 class DragonDropZone(DragonDropButton):
     zone_id = StringProperty("")
     split_amount = NumericProperty(None)
-    order = {"Alice": {}, "Bob": {}, "MiR": {}}
+    order = dict()
+    global page
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -293,9 +412,13 @@ class DragonDropZone(DragonDropButton):
             pos_hint={"x": -0.1, "center_y": 0.5},
         )
         self.add_widget(label)
+        #print(f"Created drop zone: {self.zone_id} parent is {self.parent}")
 
     #Make it not draggable
     def on_touch_down(self, touch):
+        #self.page = kwargs.get("page", 1)
+        global page
+        print(page)
         return False
 
     def getCoords(self):
@@ -303,14 +426,20 @@ class DragonDropZone(DragonDropButton):
     
     def addToList(self, val, pos, params):
         #print(f"Added to zone {self.zone_id} at pos {pos} value {val} with params {params}")
-        if self.zone_id not in self.order:
-            self.order[self.zone_id] = dict()
-        self.order[self.zone_id][str(int(pos))] = {"value": val, "params": deepcopy(params)}
-
+        global page
+        #if self.zone_id not in self.order:
+        #    self.order[self.zone_id] = dict()
+        #self.order[self.zone_id][str(int(pos))] = {"value": val, "params": deepcopy(params)}
+        if page not in self.order:
+            self.order[deepcopy(page)] = dict()
+        if self.zone_id not in self.order[page]:
+            self.order[page][self.zone_id] = dict()
+        self.order[page][self.zone_id][str(int(pos))] = {"value": val, "params": deepcopy(params)}
 
     def remove_from_list(self, pos):
-        if self.zone_id in self.order and str(int(pos)) in self.order[self.zone_id]:
-            del self.order[self.zone_id][str(int(pos))]
+        global page
+        if page in self.order and self.zone_id in self.order[page] and str(int(pos)) in self.order[page][self.zone_id]:
+            del self.order[page][self.zone_id][str(int(pos))]
 
 class VisualCue(MDLabel):
     drop_zones = ListProperty([])
@@ -327,7 +456,7 @@ class VisualCue(MDLabel):
                 if self.drop_zones:
                     for zone in self.drop_zones:
                         zone.remove_from_list(str(int(self.idx)))
-                        print(f"Zone {zone.zone_id} list now: {zone.order}")
+                        #print(f"Zone {zone.zone_id} list now: {zone.order}")
                 else: 
                     print("No zones assigned.")
                 self.parent.remove_widget(self)
@@ -382,9 +511,16 @@ class InfoEncoder(MDDialog):
             self.content_cls.add_widget(tf)
 
     params = dict()
+
     def on_ok(self, *args, **kwargs):
         # copy the entered text back into the information dict for the current func
         #func_id = str(int(self.idx))
+        # call the stored accept callback (adds the visual) only when OK pressed
+        if callable(getattr(self, "_on_accept", None)):
+            try:
+                self._on_accept()
+            except Exception as e:
+                print("on_accept callback error:", e)
         n=1
         for param, widget in self._fields.items():
             #print(f"param: {n}, value: {widget.text.strip()}")
@@ -396,13 +532,5 @@ class InfoEncoder(MDDialog):
         self.params.clear()
         print(f"List now: {self.zone.order}")
 
-        # call the stored accept callback (adds the visual) only when OK pressed
-        if callable(getattr(self, "_on_accept", None)):
-            try:
-                self._on_accept()
-            except Exception as e:
-                print("on_accept callback error:", e)
-
         self.dismiss()
 
-        
