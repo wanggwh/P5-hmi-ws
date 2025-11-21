@@ -32,7 +32,7 @@ Structure of dictionary is as follows:
 """""
 
 page = 1
-
+#dsafg
 class DragonDrop(MDFloatLayout):
     #global page
     #page = NumericProperty(1)
