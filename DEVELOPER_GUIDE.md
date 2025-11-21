@@ -1,15 +1,13 @@
 # Developer Guide for HMI Workspace
 
-This guide provides instructions for developers who want to contribute to or extend the HMI workspace.
-
 - The main entry point for the HMI is `src/p5_hmi/hmi.py`.
     - All main event loop handling is managed here.
 
 ## Packages Overview
 
-This workspace contains two main ROS2 packages:
+This workspace contains the following ROS packages:
 
-- **p5_hmi**: The main Human-Machine Interface application. Contains all GUI logic, page modules, and Kivy/KivyMD integration.
+- **p5_hmi**: The main pkg for the HMI and ROS Node
 - **p5_interfaces**: Custom ROS2 message and service definitions used for communication between the HMI and other ROS2 nodes.
 
 When developing new features, most changes will be in the `p5_hmi` package. If you need new message or service types for ROS2 communication, add them to `p5_interfaces` and rebuild the workspace with `colcon build`.

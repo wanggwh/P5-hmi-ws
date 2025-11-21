@@ -3,6 +3,7 @@
 from datetime import datetime
 import rclpy
 from rclpy.node import Node
+from std_msgs.msg import Bool
 from std_msgs.msg import String
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Header
@@ -25,9 +26,12 @@ from p5_interfaces.srv import MoveToPreDefPose
 
 # Import page classes
 from pages.start_page import StartPage
-from pages.base_system_control_page import AliceSystemControlPage, BobSystemControlPage
+
+from pages.bob_configuration_setup import BobConfigurationSetup
+from pages.alice_configuration_setup import AliceConfigurationSetup
 
 from pages.mir_system_control import MirSystemControlPage
+from pages.admittance_control import AdmittanceControl
 from pages.dragon_drop import DragonDrop
 from pages.system_logging import SystemLoggingPage
 from pages.settings import SettingsPage
@@ -57,12 +61,18 @@ class HMINode(Node):
 
         self.app = None  # Reference to the Kivy app
         self.waiting_popup = None  # Single instance for waiting popup
+        self.current_status_dialog = None  # Reference to current status dialog
+
+        self.move_to_pre_def_pose_client = False
 
         # Subscribers
         self.error_subscriber = self.create_subscription(Error, '/error_messages', self.handle_error_message_callback, 10)
-
+        self.status_subscriber = self.create_subscription(Bool, '/joint_mover_status', self.handle_status_message_callback, 10)
+        self.joint_states_subscriber = self.create_subscription(JointState, '/joint_states', self.handle_joint_states_callback, 10)
+       
         # Clients
         self.move_to_pre_def_pose_client = self.create_client(MoveToPreDefPose, "/p5_move_to_pre_def_pose")
+        # self.bob_set_admittance_client = self.create_client(AdmittanceSetStatus, )
 
         self.get_logger().info('HMI Node has been started')
     
@@ -73,12 +83,13 @@ class HMINode(Node):
         request = MoveToPreDefPose.Request()
         request.robot_name = robot_name
         request.goal_name = goal_name
+        print(f"Preparing to send move_to_pre_def_pose request for {robot_name} to {goal_name}")
 
-        # Non-blocking service wait logic
+
         if not self.move_to_pre_def_pose_client.wait_for_service(timeout_sec=0.1):
-            if self.waiting_popup is None:
-                self.waiting_popup = StatusPopupDialog()
-                Clock.schedule_once(lambda dt: self.waiting_popup.waiting_on_service_popup(service_name="/p5_move_to_pre_def_pose"), 0)
+            # Always create new dialog instance
+            self.waiting_popup = StatusPopupDialog.create_new_dialog()
+            Clock.schedule_once(lambda dt: self.waiting_popup.waiting_on_service_popup(service_name="/p5_move_to_pre_def_pose"), 0)
             # Start periodic check for service availability
             self._pending_service_request = (request, robot_name, goal_name)
             self._service_check_event = Clock.schedule_interval(self._check_service_available_and_send, 0.5)
@@ -102,6 +113,10 @@ class HMINode(Node):
                 del self._pending_service_request
 
     def _send_pre_def_pose_request(self, request, robot_name, goal_name):
+        # Gem robot_name og goal_name til brug i status callback
+        self._current_robot_name = robot_name
+        self._current_goal_name = goal_name
+        
         future = self.move_to_pre_def_pose_client.call_async(request)
         print("Service call sent, adding callback")
         # Store both robot_name and goal_name in future for use in callback
@@ -118,8 +133,14 @@ class HMINode(Node):
 
             robot_name = getattr(future, "robot_name", None)
             goal_name = getattr(future, "goal_name", None)
+            
+            # Gem reference til den orange dialog
+            def create_and_store_dialog(dt):
+                self.current_status_dialog = StatusPopupDialog.create_new_dialog()
+                self.current_status_dialog.show_status(robot_name, goal_name, success, message, move_to_pre_def_pose_complete=False)
+            
             # Schedule GUI update in main thread
-            Clock.schedule_once(lambda dt: self.app.show_status_popup(robot_name, goal_name, success, message), 0)
+            Clock.schedule_once(create_and_store_dialog, 0)
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
     
@@ -137,6 +158,52 @@ class HMINode(Node):
                 Clock.schedule_once(lambda dt: self.app.show_md_snackbar(severity, message, node_name), 0)
         except Exception as e:
             self.get_logger().error(f"Failed to handle error message: {e}")
+
+    def handle_status_message_callback(self, msg):
+        try:
+            status = msg.data
+            print(f"Received joint mover status: {status}")
+
+            self.move_to_pre_def_pose_complete = msg.data
+
+            # Hvis operation er complete (True), vis success dialog
+            if status and self.app:
+                # Få robot_name og goal_name fra den pending request hvis den findes
+                robot_name = getattr(self, '_current_robot_name', 'Unknown')
+                goal_name = getattr(self, '_current_goal_name', 'Unknown')
+                
+                def show_success_and_close_previous(dt):
+                    # Luk den orange dialog først hvis den eksisterer (i main thread)
+                    if self.current_status_dialog:
+                        self.current_status_dialog.dismiss()
+                        self.current_status_dialog = None
+                    
+                    # Vis den grønne success dialog
+                    self.app.show_status_popup(
+                        robot_name, goal_name, True, "Operation completed successfully", 
+                        move_to_pre_def_pose_complete=True)
+                
+                Clock.schedule_once(show_success_and_close_previous, 0)
+
+        except Exception as e:
+            self.get_logger().error(f"Failed to handle status message: {e}")
+
+    def handle_joint_states_callback(self, msg):
+        try:
+            bob_joint_positions = msg.position[6:12]
+            alice_joint_positions = msg.position[0:6]
+
+            if self.app:
+                Clock.schedule_once(lambda dt: self.app.bob_update_joint_positions(bob_joint_positions), 0)
+                Clock.schedule_once(lambda dt: self.app.alice_update_joint_positions(bob_joint_positions), 0)
+
+
+            print(f"Bob joint positions: {bob_joint_positions}")
+            print(f"Alice joint positions: {alice_joint_positions}")
+
+        except Exception as e:
+            self.get_logger().error(f"Failed to handle joint states message: {e}")
+
 
 class HMIApp(MDApp):
     def __init__(self, ros_node, **kwargs):
@@ -157,9 +224,10 @@ class HMIApp(MDApp):
         # Define menu items
         menu_texts = [
             "Start Page",
-            "BOB - System Control",
-            "ALICE - System Control",
+            "BOB - Configuration Setup",
+            "ALICE - Configuration Setup",
             "MIR - System Control",
+            "Admittance Control",
             "Dragon Drop - System Control",
             "System Logging", 
             "Settings"
@@ -194,9 +262,10 @@ class HMIApp(MDApp):
         """Load KV files for different pages"""
         kv_files = {
             "Start Page": "kv/start_page.kv",
-            "BOB - System Control": "kv/base_system_control_page.kv",
-            "ALICE - System Control": "kv/base_system_control_page.kv",
+            "BOB - Configuration Setup": "kv/bob_configuration_setup.kv",
+            "ALICE - Configuration Setup": "kv/alice_configuration_setup.kv",
             "MIR - System Control": "kv/mir_system_control.kv",
+            "Admittance Control": "kv/admittance_control.kv",
             "Dragon Drop - System Control": "kv/dragon_drop.kv",
             "System Logging": "kv/system_logging.kv",
             "Settings": "kv/settings.kv"
@@ -213,16 +282,12 @@ class HMIApp(MDApp):
     def on_start(self):
         """Called when the app starts - load all KV files"""
         # Load all page KV files
-        pages = ["Start Page", "BOB - System Control", "ALICE - System Control", "MIR - System Control", "Dragon Drop - System Control", "System Logging", "Settings"]
+        pages = ["Start Page", "BOB - Configuration Setup", "ALICE - Configuration Setup", "MIR - System Control", "Admittance Control", "Dragon Drop - System Control", "System Logging", "Settings"]
         for page in pages:
             self.load_page_kv(page)
         
         # Wait for the next frame to ensure widgets are built
-        Clock.schedule_once(self.load_start_page_content, 0.1)
-    
-    def load_start_page_content(self, dt):
-        """Load start page as default content"""
-        self.update_page_content()
+        Clock.schedule_once(lambda dt: self.update_page_content(), 0.1)
     
     def update_clock(self, dt):
         if hasattr(self.root.ids, "clock_label"):
@@ -272,17 +337,21 @@ class HMIApp(MDApp):
                 self.current_page_widget = StartPage()
                 content.add_widget(self.current_page_widget)
                 print(f"StartPage added. Children count: {len(content.children)}")
-            elif self.current_page == "BOB - System Control":
-                print("Creating BobSystemControlPage widget")
-                self.current_page_widget = BobSystemControlPage()
+            elif self.current_page == "BOB - Configuration Setup":
+                print("Creating BobConfigurationSetup widget")
+                self.current_page_widget = BobConfigurationSetup()
                 content.add_widget(self.current_page_widget)
-            elif self.current_page == "ALICE - System Control":
-                print("Creating AliceSystemControlPage widget")
-                self.current_page_widget = AliceSystemControlPage()
+            elif self.current_page == "ALICE - Configuration Setup":
+                print("Creating BobConfigurationSetup widget")
+                self.current_page_widget = AliceConfigurationSetup()
                 content.add_widget(self.current_page_widget)
             elif self.current_page == "MIR - System Control":
                 print("Creating MirSystemControlPage widget")
                 self.current_page_widget = MirSystemControlPage()
+                content.add_widget(self.current_page_widget)
+            elif self.current_page == "Admittance Control":
+                print("Creating AdmittanceControl widget")
+                self.current_page_widget = AdmittanceControl()
                 content.add_widget(self.current_page_widget)
             elif self.current_page == "Dragon Drop - System Control":
                 print("Creating DragonDrop widget")
@@ -308,12 +377,6 @@ class HMIApp(MDApp):
             current_widget.system_button_callback(action)
         else:
             print(f"No handler for system action: {action}")
-
-    def load_start_page(self, container):
-        """Load Start Page content with control buttons"""
-        # This recreates the original KV content programmatically
-        # For now, we'll add a simple message and refer to original KV layout
-        pass  # The original KV layout will show when no dynamic content is loaded
 
     def load_bob_system_control_page(self, container):
         """Load BOB System Control page content"""
@@ -345,10 +408,10 @@ class HMIApp(MDApp):
         )
         container.add_widget(label)
 
-    def show_status_popup(self, robot_name, goal_name, success, message):
+    def show_status_popup(self, robot_name, goal_name, success, message, move_to_pre_def_pose_complete):
         """Show a popup dialog with status message"""
-        dialog = StatusPopupDialog()
-        dialog.show_status(robot_name, goal_name, success, message)
+        dialog = StatusPopupDialog.create_new_dialog()
+        dialog.show_status(robot_name, goal_name, success, message, move_to_pre_def_pose_complete)
 
     def show_md_snackbar(self, severity, message, node_name):
         self.hmi_node.error_snackbar.show_md_snackbar(severity, message, node_name)

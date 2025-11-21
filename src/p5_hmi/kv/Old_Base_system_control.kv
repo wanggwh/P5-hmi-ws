@@ -1,0 +1,390 @@
+<BaseSystemControlPage>
+    # Joint Control Label - placeret hvor du vil have den
+    MDLabel:
+        text: "Joint Control"
+        font_style: "H6"
+        theme_text_color: "Custom"
+        text_color: app.colors['text_light']
+        halign: "center"
+        size_hint: None, None
+        size: dp(200), dp(36)
+        pos_hint: {'center_x': 0.5, 'top': 0.96}
+            
+    # Joint Sliders - placeret under label
+    MDBoxLayout:
+        orientation: "vertical"
+        padding: dp(4)
+        spacing: dp(10)
+        size_hint: 0.9, 0.7
+        pos_hint: {'center_x': 0.5, 'top': 0.88}
+            
+        # Joint 1
+        MDBoxLayout:
+            orientation: "horizontal"
+            spacing: dp(5)
+            size_hint_y: None
+            height: dp(40)
+                
+            MDLabel:
+                text: "J1:"
+                size_hint_x: None
+                width: dp(30)
+                theme_text_color: "Custom"
+                text_color: app.colors['text_light']
+                
+            MDIconButton:
+                icon: "minus"
+                size_hint: None, None
+                size: dp(30), dp(30)
+                theme_icon_color: "Custom"
+                theme_icon_size: "Custom"
+                icon_size: dp(20)
+                icon_color: app.colors['text_light']
+                on_press: root.start_decrement(0)
+                on_release: root.stop_increment_decrement()
+                    
+            NonInteractiveSlider:
+                id: joint1_slider
+                min: -360
+                max: 360
+                value: 0
+                step: 1
+                theme_thumb_color: "Custom"
+                theme_track_color: "Custom"
+                thumb_color_inactive: (0.3, 0.7, 1.0, 1)
+                thumb_color_active: (0.3, 0.7, 1.0, 1)
+                track_color_active: (0.3, 0.7, 1.0, 1)
+                track_color_inactive: app.colors['button_neutral']
+                on_value: root.on_joint_change(0, self.value)
+                
+            MDIconButton:
+                icon: "plus"
+                size_hint: None, None
+                size: dp(30), dp(30)
+                theme_icon_color: "Custom"
+                theme_icon_size: "Custom"
+                icon_size: dp(20)
+                icon_color: app.colors['text_light']
+                on_press: root.start_increment(0)
+                on_release: root.stop_increment_decrement()
+                    
+            MDLabel:
+                id: joint1_value
+                text: "0°"
+                size_hint_x: None
+                width: dp(50)
+                theme_text_color: "Custom"
+                text_color: app.colors['text_muted']
+            
+        # Joint 2
+        MDBoxLayout:
+            orientation: "horizontal"
+            spacing: dp(5)
+            size_hint_y: None
+            height: dp(40)
+            
+            MDLabel:
+                text: "J2:"
+                size_hint_x: None
+                width: dp(30)
+                theme_text_color: "Custom"
+                text_color: app.colors['text_light']
+                
+            MDIconButton:
+                icon: "minus"
+                size_hint: None, None
+                size: dp(30), dp(30)
+                theme_icon_color: "Custom"
+                theme_icon_size: "Custom"
+                icon_size: dp(20)
+                icon_color: app.colors['text_light']
+                on_press: root.start_decrement(1)
+                on_release: root.stop_increment_decrement()
+                
+            NonInteractiveSlider:
+                id: joint2_slider
+                min: -360
+                max: 360
+                value: -90
+                step: 1
+                theme_thumb_color: "Custom"
+                theme_track_color: "Custom"
+                thumb_color_inactive: (0.3, 0.7, 1.0, 1)
+                thumb_color_active: (0.3, 0.7, 1.0, 1)
+                track_color_active: (0.3, 0.7, 1.0, 1)
+                track_color_inactive: app.colors['button_neutral']
+                on_value: root.on_joint_change(1, self.value)
+                
+            MDIconButton:
+                icon: "plus"
+                size_hint: None, None
+                size: dp(30), dp(30)
+                theme_icon_color: "Custom"
+                theme_icon_size: "Custom"
+                icon_size: dp(20)
+                icon_color: app.colors['text_light']
+                on_press: root.start_increment(1)
+                on_release: root.stop_increment_decrement()
+                
+            MDLabel:
+                id: joint2_value
+                text: "-90°"
+                size_hint_x: None
+                width: dp(50)
+                theme_text_color: "Custom"
+                text_color: app.colors['text_muted']
+        
+        # Joint 3
+        MDBoxLayout:
+            orientation: "horizontal"
+            spacing: dp(5)
+            size_hint_y: None
+            height: dp(40)
+            
+            MDLabel:
+                text: "J3:"
+                size_hint_x: None
+                width: dp(30)
+                theme_text_color: "Custom"
+                text_color: app.colors['text_light']
+                
+            MDIconButton:
+                icon: "minus"
+                size_hint: None, None
+                size: dp(30), dp(30)
+                theme_icon_color: "Custom"
+                theme_icon_size: "Custom"
+                icon_size: dp(20)
+                icon_color: app.colors['text_light']
+                on_press: root.start_decrement(2)
+                on_release: root.stop_increment_decrement()
+                
+            NonInteractiveSlider:
+                id: joint3_slider
+                min: -360
+                max: 360
+                value: 0
+                step: 1
+                theme_thumb_color: "Custom"
+                theme_track_color: "Custom"
+                thumb_color_inactive: (0.3, 0.7, 1.0, 1)
+                thumb_color_active: (0.3, 0.7, 1.0, 1)
+                track_color_active: (0.3, 0.7, 1.0, 1)
+                track_color_inactive: app.colors['button_neutral']
+                on_value: root.on_joint_change(2, self.value)
+                
+            MDIconButton:
+                icon: "plus"
+                size_hint: None, None
+                size: dp(30), dp(30)
+                theme_icon_color: "Custom"
+                theme_icon_size: "Custom"
+                icon_size: dp(20)
+                icon_color: app.colors['text_light']
+                on_press: root.start_increment(2)
+                on_release: root.stop_increment_decrement()
+                
+            MDLabel:
+                id: joint3_value
+                text: "0°"
+                size_hint_x: None
+                width: dp(50)
+                theme_text_color: "Custom"
+                text_color: app.colors['text_muted']
+        
+        # Joint 4
+        MDBoxLayout:
+            orientation: "horizontal"
+            spacing: dp(5)
+            size_hint_y: None
+            height: dp(40)
+            
+            MDLabel:
+                text: "J4:"
+                size_hint_x: None
+                width: dp(30)
+                theme_text_color: "Custom"
+                text_color: app.colors['text_light']
+                
+            MDIconButton:
+                icon: "minus"
+                size_hint: None, None
+                size: dp(30), dp(30)
+                theme_icon_color: "Custom"
+                theme_icon_size: "Custom"
+                icon_size: dp(20)
+                icon_color: app.colors['text_light']
+                on_press: root.start_decrement(3)
+                on_release: root.stop_increment_decrement()
+                
+            NonInteractiveSlider:
+                id: joint4_slider
+                min: -360
+                max: 360
+                value: -90
+                step: 1
+                theme_thumb_color: "Custom"
+                theme_track_color: "Custom"
+                thumb_color_inactive: (0.3, 0.7, 1.0, 1)
+                thumb_color_active: (0.3, 0.7, 1.0, 1)
+                track_color_active: (0.3, 0.7, 1.0, 1)
+                track_color_inactive: app.colors['button_neutral']
+                on_value: root.on_joint_change(3, self.value)
+                
+            MDIconButton:
+                icon: "plus"
+                size_hint: None, None
+                size: dp(30), dp(30)
+                theme_icon_color: "Custom"
+                theme_icon_size: "Custom"
+                icon_size: dp(20)
+                icon_color: app.colors['text_light']
+                on_press: root.start_increment(3)
+                on_release: root.stop_increment_decrement()
+                
+            MDLabel:
+                id: joint4_value
+                text: "-90°"
+                size_hint_x: None
+                width: dp(50)
+                theme_text_color: "Custom"
+                text_color: app.colors['text_muted']
+        
+        # Joint 5
+        MDBoxLayout:
+            orientation: "horizontal"
+            spacing: dp(5)
+            size_hint_y: None
+            height: dp(40)
+            
+            MDLabel:
+                text: "J5:"
+                size_hint_x: None
+                width: dp(30)
+                theme_text_color: "Custom"
+                text_color: app.colors['text_light']
+                
+            MDIconButton:
+                icon: "minus"
+                size_hint: None, None
+                size: dp(30), dp(30)
+                theme_icon_color: "Custom"
+                theme_icon_size: "Custom"
+                icon_size: dp(20)
+                icon_color: app.colors['text_light']
+                on_press: root.start_decrement(4)
+                on_release: root.stop_increment_decrement()
+                
+            NonInteractiveSlider:
+                id: joint5_slider
+                min: -360
+                max: 360
+                value: 0
+                step: 1
+                theme_thumb_color: "Custom"
+                theme_track_color: "Custom"
+                thumb_color_inactive: (0.3, 0.7, 1.0, 1)
+                thumb_color_active: (0.3, 0.7, 1.0, 1)
+                track_color_active: (0.3, 0.7, 1.0, 1)
+                track_color_inactive: app.colors['button_neutral']
+                on_value: root.on_joint_change(4, self.value)
+                
+            MDIconButton:
+                icon: "plus"
+                size_hint: None, None
+                size: dp(30), dp(30)
+                theme_icon_color: "Custom"
+                theme_icon_size: "Custom"
+                icon_size: dp(20)
+                icon_color: app.colors['text_light']
+                on_press: root.start_increment(4)
+                on_release: root.stop_increment_decrement()
+                
+            MDLabel:
+                id: joint5_value
+                text: "0°"
+                size_hint_x: None
+                width: dp(50)
+                theme_text_color: "Custom"
+                text_color: app.colors['text_muted']
+        
+        # Joint 6
+        MDBoxLayout:
+            orientation: "horizontal"
+            spacing: dp(5)
+            size_hint_y: None
+            height: dp(40)
+            
+            MDLabel:
+                text: "J6:"
+                size_hint_x: None
+                width: dp(30)
+                theme_text_color: "Custom"
+                text_color: app.colors['text_light']
+                
+            MDIconButton:
+                icon: "minus"
+                size_hint: None, None
+                size: dp(30), dp(30)
+                theme_icon_color: "Custom"
+                theme_icon_size: "Custom"
+                icon_size: dp(20)
+                icon_color: app.colors['text_light']
+                on_press: root.start_decrement(5)
+                on_release: root.stop_increment_decrement()
+                
+            NonInteractiveSlider:
+                id: joint6_slider
+                min: -360
+                max: 360
+                value: 0
+                step: 1
+                theme_thumb_color: "Custom"
+                theme_track_color: "Custom"
+                thumb_color_inactive: (0.3, 0.7, 1.0, 1)
+                thumb_color_active: (0.3, 0.7, 1.0, 1)
+                track_color_active: (0.3, 0.7, 1.0, 1)
+                track_color_inactive: app.colors['button_neutral']
+                on_value: root.on_joint_change(5, self.value)
+                
+            MDIconButton:
+                icon: "plus"
+                size_hint: None, None
+                size: dp(30), dp(30)
+                theme_icon_color: "Custom"
+                theme_icon_size: "Custom"
+                icon_size: dp(20)
+                icon_color: app.colors['text_light']
+                on_press: root.start_increment(5)
+                on_release: root.stop_increment_decrement()
+                
+            MDLabel:
+                id: joint6_value
+                text: "0°"
+                size_hint_x: None
+                width: dp(50)
+                theme_text_color: "Custom"
+                text_color: app.colors['text_muted']
+
+    # Control Buttons - allernederst
+    MDBoxLayout:
+        orientation: "horizontal"
+        size_hint: None, None
+        size: dp(620), dp(50)  # 2 x 300 + spacing
+        spacing: dp(20)
+        pos_hint: {'center_x': 0.5, 'y': 0.05}
+
+        MDRaisedButton:
+            text: "HOME BOTH ROBOTS"
+            md_bg_color: app.colors['success']
+            size_hint: None, None
+            size: dp(300), dp(50)
+            on_release: root.move_to_home()
+
+        MDRaisedButton:
+            text: "HOME " + root.robot_name if root.robot_name else "HOME"
+            md_bg_color: app.colors['success']
+            size_hint: None, None
+            size: dp(300), dp(50)
+            on_release: root.move_to_home_specific_robot()
+        

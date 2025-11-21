@@ -1,0 +1,4 @@
+string pose
+float32[6] joints
+---
+bool message

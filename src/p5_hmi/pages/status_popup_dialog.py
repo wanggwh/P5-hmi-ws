@@ -6,6 +6,7 @@ import os
 
 
 class StatusPopupDialog(MDDialog):
+
     def __init__(self, **kwargs):
         # Load KV file if not already loaded
         kv_path = os.path.join(os.path.dirname(__file__), '..', 'kv', 'status_popup_dialog.kv')
@@ -13,6 +14,12 @@ class StatusPopupDialog(MDDialog):
             Builder.load_file(kv_path)
             StatusPopupDialog._kv_loaded = True
         super().__init__(**kwargs)
+        self._is_dismissed = False
+    
+    @classmethod
+    def create_new_dialog(cls):
+        """Factory method to create a new dialog instance"""
+        return cls()
     
     def animate_status_bar(self, target_color, duration=0.3):
         """Animate status bar color with fade effect"""
@@ -65,8 +72,15 @@ class StatusPopupDialog(MDDialog):
             # Store reference to stop later if needed
             status_bar._pulse_animation = pulse_sequence
     
-    def show_status(self, robot_name, goal_name, success, message):
+    def show_status(self, robot_name, goal_name, success, message, move_to_pre_def_pose_complete):
         """Show status popup with message and color-coded status bar"""
+        # Don't show if already dismissed
+        if self._is_dismissed:
+            return
+            
+        # Reset dialog state first
+        self.stop_pulsing_animation()
+        
         title = f"STATUS UPDATE DIALOG"
         subtitle = "Robot operation updates"  # Default subtitle
         status_text = ""
@@ -78,13 +92,32 @@ class StatusPopupDialog(MDDialog):
         elif robot_name == "alice":
             robot_name_corrected = "ALICE"
 
-        if success is False:
+        if success is False and move_to_pre_def_pose_complete is not True:
             status_text = "The request failed, possibly due to wrong robot name or configuration"
             status_case = 0
 
-        elif success is True:
+        elif success is True and move_to_pre_def_pose_complete is not True:
             status_text = "Request send successfully, beginning operation"
             status_case = 1
+        
+        if move_to_pre_def_pose_complete is True:
+            status_text = "The operation completed successfully"
+            status_case = 2
+        
+        # Update content first
+        if not message:
+            message_display = "No message received yet"
+        else:
+            message_display = message
+
+        self.ids.status_title.text = title
+        self.ids.status_subtitle.text = subtitle
+        self.ids.robot_name.text = f"Robot requested: {robot_name_corrected}"
+        self.ids.goal_name.text = f"Goal requested: {goal_name}"
+        self.ids.status_message.text = status_text
+        
+        # Open dialog first, then animate
+        self.open()
         
         match status_case:
             case 0: # Error case
@@ -98,19 +131,6 @@ class StatusPopupDialog(MDDialog):
             case 2: # Success case
                 target_color = [0.2, 0.8, 0.2, 1.0] # Green
                 Clock.schedule_once(lambda dt: self.animate_status_bar(target_color), 0.1)
-
-
-        if not message:
-            message_display = "No message received yet"
-        else:
-            message_display = message
-
-        self.ids.status_title.text = title
-        self.ids.status_subtitle.text = subtitle
-        self.ids.robot_name.text = f"Robot requested: {robot_name_corrected}"
-        self.ids.goal_name.text = f"Goal requested: {goal_name}"
-        self.ids.status_message.text = status_text
-        self.open()
 
     
     def show_in_progress(self, configuration, message="Operation in progress..."):
@@ -137,6 +157,9 @@ class StatusPopupDialog(MDDialog):
         # Start pulsing animation after dialog opens
         Clock.schedule_once(lambda dt: self.animate_pulsing_status_bar(target_color), 0.1)
     
+    def get_status_of_request(self, status):
+        status_of_request = status
+    
     def stop_pulsing_animation(self):
         """Stop the pulsing animation"""
         if hasattr(self, 'ids') and 'status_title_bar' in self.ids:
@@ -145,25 +168,34 @@ class StatusPopupDialog(MDDialog):
                 status_bar._pulse_animation.stop(status_bar)
     
     def dismiss(self):
-        """Override dismiss to stop animations"""
+        """Override dismiss to stop animations and mark as dismissed"""
         self.stop_pulsing_animation()
+        self._is_dismissed = True
         super().dismiss()
 
     def waiting_on_service_popup(self, service_name):
-        print("Showing waiting for service popup")
         """Show a waiting popup while waiting for a service to become available"""
+        print("Showing waiting for service popup")
+        
+        # Don't show if already dismissed
+        if self._is_dismissed:
+            return
+            
+        # Reset dialog state first
+        self.stop_pulsing_animation()
+        
         title = "WAITING FOR SERVICE"
         subtitle = f"Waiting for {service_name} service to become available..."
         message = "Please wait while the system establishes connection."
 
+        # Update content first
         self.ids.status_title.text = title
         self.ids.status_subtitle.text = subtitle
-        self.ids.status_message.text = message
+        self.ids.robot_name.text = message
 
-        # Set title bar to blue for waiting
-        target_color = [0.2, 0.4, 0.8, 1.0]  # Blue
-
-        # Bind animation to on_open event for reliable triggering
-        self.bind(on_open=lambda instance: self.animate_pulsing_status_bar(target_color))
-
+        # Open dialog first
         self.open()
+
+        # Set title bar to blue for waiting and start animation
+        target_color = [0.2, 0.4, 0.8, 1.0]  # Blue
+        Clock.schedule_once(lambda dt: self.animate_pulsing_status_bar(target_color), 0.1)
