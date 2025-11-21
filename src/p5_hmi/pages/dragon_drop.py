@@ -1,6 +1,6 @@
 from copy import deepcopy
 from kivymd.uix.floatlayout import MDFloatLayout
-from kivy.properties import StringProperty, NumericProperty, ListProperty, DictProperty, ObjectProperty
+from kivy.properties import StringProperty, NumericProperty, ListProperty, DictProperty, ObjectProperty, BooleanProperty
 from kivymd.uix.label import MDLabel
 from kivy.graphics import Color, RoundedRectangle
 from kivy.metrics import dp
@@ -132,6 +132,26 @@ class DragonDrop(MDFloatLayout):
         self.add_widget(rightScroll)
         self.add_widget(restartButton)
 
+        pageCounter = MDLabel(
+            text=f" {page}",
+            halign="center",
+            theme_text_color="Custom",
+            text_color=[0.96, 0.96, 0.98, 1],
+            font_style="Subtitle1",
+            size_hint=(0.2, 0.1),
+            pos_hint={"center_x": 0.02, "top": 0.97},
+        )
+
+        self.add_widget(pageCounter)
+
+    def update_page_counter(self, instance):
+        # update page counter label
+        global page
+        for child in self.children:
+            if isinstance(child, MDLabel) and child.text.startswith(" "):
+                child.text = f" {page}"
+                break
+
     def scroll_left(self, zones, buttons, instance):
         global page
         #print("Scroll left Pressed")
@@ -161,6 +181,8 @@ class DragonDrop(MDFloatLayout):
                 zone.order.clear()
                 page = 1
                 #print(f"Cleared zone {zone.zone_id} list.")
+
+        self.update_page_counter(self)
 
     def _make_visuals_from_dict(self, zones=[], buttons=[]):
         # recreate VisualCues from zone order dicts
@@ -354,7 +376,7 @@ class DragonDropButton(MDFloatLayout):
             size_hint=(zone_width_hint, 0.2),     # small width, fixed height
             #height=dp(24),
             pos_hint={"center_x": center_x_hint, "center_y": center_y_hint},
-            drop_zones=[zone],
+            zone=zone,
             idx=idx,
         )
 
@@ -377,15 +399,16 @@ class DragonDropButton(MDFloatLayout):
         self.remove_visual_from_zone(zone, idx)
 
         # Add the label behind other widgets
-        parent.add_widget(label, index=8)
+        parent.add_widget(label, index=11)
 
     def remove_visual_from_zone(self, zone, idx, parent=None):
+        global page
         # Check parent for VisualCue with matching idx if it is in the zone
         if parent is None:
             parent = self.parent
         for child in parent.children:
             #print(f"Checking child: {child}")
-            if isinstance(child, VisualCue) and child.idx == idx and zone in child.drop_zones:
+            if isinstance(child, VisualCue) and child.idx == idx and child.zone is zone and zone.order.get(page, {}).get(zone.zone_id, {}).get(str(int(idx))):
                 #print(f"There is a visual cue at idx {idx} in zone {zone.zone_id}, removing it.")
                 parent.remove_widget(child)
                 zone.remove_from_list(idx)
@@ -418,7 +441,7 @@ class DragonDropZone(DragonDropButton):
     def on_touch_down(self, touch):
         #self.page = kwargs.get("page", 1)
         global page
-        print(page)
+        #print(self.order)
         return False
 
     def getCoords(self):
@@ -442,30 +465,65 @@ class DragonDropZone(DragonDropButton):
             del self.order[page][self.zone_id][str(int(pos))]
 
 class VisualCue(MDLabel):
-    drop_zones = ListProperty([])
+    #drop_zones = ListProperty([])
+    zone = ObjectProperty(None)
     idx = NumericProperty(None)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.drop_zones = kwargs.pop("drop_zones", [])
+        self.zone = kwargs.get("zone")
         self.idx = kwargs.get("idx")
 
     def on_touch_down(self, touch):
+        global page
+        touch_x, _ = touch.pos
+        cue_center_x, _ = self.center
+
+        edit_params = InfoEncoder(
+            information=self.zone.order[page][self.zone.zone_id][str(int(self.idx))]['params'],
+            idx=self.idx,
+            zone=self.zone,
+            id_name=str(self.zone.order[page][self.zone.zone_id][str(int(self.idx))]['value']),
+            add_visual=False,
+        )
+
         if self.collide_point(*touch.pos):
-            if self.parent:
-                if self.drop_zones:
-                    for zone in self.drop_zones:
-                        zone.remove_from_list(str(int(self.idx)))
+            if touch_x >= cue_center_x:
+                if self.parent:
+                    if self.zone:
+                        self.zone.remove_from_list(str(int(self.idx)))
                         #print(f"Zone {zone.zone_id} list now: {zone.order}")
-                else: 
-                    print("No zones assigned.")
-                self.parent.remove_widget(self)
+                    else: 
+                        print("No zones assigned.")
+                    self.parent.remove_widget(self)
+            elif touch_x < cue_center_x:
+                text_ = f"Function {self.zone.order[page][self.zone.zone_id][str(int(self.idx))]['value']} at position {self.idx}.\n\nParameters:\n"
+                for param, value in self.zone.order[page][self.zone.zone_id][str(int(self.idx))]['params'].items():
+                    text_ += f" - {param}: {value}\n"
+                info_screen = MDDialog(
+                    title="Information",
+                    text=text_,
+                    buttons=[
+                        MDFlatButton(
+                            text="CLOSE",
+                            on_release=lambda x: info_screen.dismiss()
+                        ),
+                        MDFlatButton(
+                            text="EDIT",
+                            #open edit dialog and close info dialog
+                            on_release=lambda x: (info_screen.dismiss(), edit_params.open())
+                        ),
+                    ],
+                )
+                info_screen.open()
+            
 
 class InfoEncoder(MDDialog):
     information = DictProperty({})
     idx = NumericProperty(None)
     zone = ObjectProperty(None)
     id_name = StringProperty("")
+    add_visual = BooleanProperty(True)
 
     def __init__(self, **kwargs):
         self._on_accept = kwargs.pop("on_accept", None)
@@ -516,11 +574,12 @@ class InfoEncoder(MDDialog):
         # copy the entered text back into the information dict for the current func
         #func_id = str(int(self.idx))
         # call the stored accept callback (adds the visual) only when OK pressed
-        if callable(getattr(self, "_on_accept", None)):
-            try:
-                self._on_accept()
-            except Exception as e:
-                print("on_accept callback error:", e)
+        if self.add_visual:
+            if callable(getattr(self, "_on_accept", None)):
+                try:
+                    self._on_accept()
+                except Exception as e:
+                    print("on_accept callback error:", e)
         n=1
         for param, widget in self._fields.items():
             #print(f"param: {n}, value: {widget.text.strip()}")
@@ -530,7 +589,7 @@ class InfoEncoder(MDDialog):
         self.zone.addToList(int(self.id_name), self.idx, self.params)
         self._fields.clear()
         self.params.clear()
-        print(f"List now: {self.zone.order}")
+        #print(f"List now: {self.zone.order}")
 
         self.dismiss()
 
