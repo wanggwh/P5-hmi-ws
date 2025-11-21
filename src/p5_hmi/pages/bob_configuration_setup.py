@@ -7,7 +7,6 @@ from kivymd.app import MDApp
 
 class BobConfigurationSetup(MDFloatLayout):
     robot_name = "bob"
-    robot_name_caps = "BOB"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
