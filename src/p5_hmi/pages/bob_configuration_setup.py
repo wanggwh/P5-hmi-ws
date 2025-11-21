@@ -6,13 +6,19 @@ from kivymd.uix.button import MDRaisedButton
 from kivymd.app import MDApp
 
 class BobConfigurationSetup(MDFloatLayout):
-    saved_configurations = ListProperty([])
     robot_name = "bob"
     robot_name_caps = "BOB"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.app = MDApp.get_running_app() #Reference til hovedappen
+        
+        # Initialiser app storage for konfigurationer hvis det ikke findes
+        if not hasattr(self.app, 'bob_saved_configurations'):
+            self.app.bob_saved_configurations = []
+        
+        # Gendan gemte konfigurationer når siden loades
+        Clock.schedule_once(self.restore_saved_configurations, 0.1)
 
     def move_to_home(self):
         if self.app and hasattr(self.app, 'hmi_node'):
@@ -28,9 +34,9 @@ class BobConfigurationSetup(MDFloatLayout):
     def save_configuration(self):
         config_name = self.ids.configuration_name_field.text.strip()
         
-        if config_name and config_name not in self.saved_configurations:
-            # Gem konfigurationen
-            self.saved_configurations.append(config_name)
+        if config_name and config_name not in self.app.bob_saved_configurations:
+            # Gem konfigurationen i app storage
+            self.app.bob_saved_configurations.append(config_name)
             print(f"Saved configuration: {config_name}")
             
             self.create_custom_config_button(config_name)
@@ -56,6 +62,12 @@ class BobConfigurationSetup(MDFloatLayout):
         if self.app and hasattr(self.app, 'hmi_node'):
             self.app.hmi_node.send_move_to_pre_def_pose_request("BOB", str(config_name))
             print(f"Sent {config_name} configuration request for BOB")
+
+    def restore_saved_configurations(self, dt):
+        """Gendan alle gemte konfigurationer når siden loades"""
+        if hasattr(self.app, 'bob_saved_configurations'):
+            for config_name in self.app.bob_saved_configurations:
+                self.create_custom_config_button(config_name)
 
     def bob_update_joint_positions(self, joint_positions):
         joint_label_ids = ['joint1_label', 'joint2_label', 'joint3_label', 

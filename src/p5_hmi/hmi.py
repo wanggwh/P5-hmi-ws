@@ -59,6 +59,7 @@ class HMINode(Node):
 
         self.app = None  # Reference to the Kivy app
         self.waiting_popup = None  # Single instance for waiting popup
+        self.current_status_dialog = None  # Reference to current status dialog
 
         self.move_to_pre_def_pose_client = False
 
@@ -111,6 +112,10 @@ class HMINode(Node):
                 del self._pending_service_request
 
     def _send_pre_def_pose_request(self, request, robot_name, goal_name):
+        # Gem robot_name og goal_name til brug i status callback
+        self._current_robot_name = robot_name
+        self._current_goal_name = goal_name
+        
         future = self.move_to_pre_def_pose_client.call_async(request)
         print("Service call sent, adding callback")
         # Store both robot_name and goal_name in future for use in callback
@@ -128,8 +133,14 @@ class HMINode(Node):
 
             robot_name = getattr(future, "robot_name", None)
             goal_name = getattr(future, "goal_name", None)
+            
+            # Gem reference til den orange dialog
+            def create_and_store_dialog(dt):
+                self.current_status_dialog = StatusPopupDialog.create_new_dialog()
+                self.current_status_dialog.show_status(robot_name, goal_name, success, message, move_to_pre_def_pose_complete=False)
+            
             # Schedule GUI update in main thread
-            Clock.schedule_once(lambda dt: self.app.show_status_popup(robot_name, goal_name, success, message, move_to_pre_def_pose_complete = False), 0)
+            Clock.schedule_once(create_and_store_dialog, 0)
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
     
@@ -157,7 +168,25 @@ class HMINode(Node):
 
             self.move_to_pre_def_pose_complete = msg.data
 
-           # Clock.schedule_once(lambda dt: self.status_popup.get_status_of_request(status), 0)
+            # Hvis operation er complete (True), vis success dialog
+            if status and self.app:
+                # Få robot_name og goal_name fra den pending request hvis den findes
+                robot_name = getattr(self, '_current_robot_name', 'Unknown')
+                goal_name = getattr(self, '_current_goal_name', 'Unknown')
+                
+                def show_success_and_close_previous(dt):
+                    # Luk den orange dialog først hvis den eksisterer (i main thread)
+                    if self.current_status_dialog:
+                        self.current_status_dialog.dismiss()
+                        self.current_status_dialog = None
+                    
+                    # Vis den grønne success dialog
+                    self.app.show_status_popup(
+                        robot_name, goal_name, True, "Operation completed successfully", 
+                        move_to_pre_def_pose_complete=True)
+                
+                Clock.schedule_once(show_success_and_close_previous, 0)
+
         except Exception as e:
             self.get_logger().error(f"Failed to handle status message: {e}")
 

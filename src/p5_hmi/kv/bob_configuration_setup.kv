@@ -244,12 +244,21 @@
                 size_hint: None, None
                 size: dp(180), dp(30)
 
-            MDBoxLayout:
-                id: custom_config_container
-                orientation: "horizontal"
-                spacing: dp(5)
-                size_hint_x: None
-                width: self.minimum_width
+            ScrollView:
+                size_hint: None, None
+                size: dp(500), dp(60)  # Fast bredde og højde for scroll area
+                do_scroll_x: True      # Tillad horizontal scroll
+                do_scroll_y: False     # Ingen vertikal scroll
+                bar_width: dp(10)      # Bredde af scrollbar
+                scroll_type: ['bars']  # Vis scrollbars
+
+                MDBoxLayout:
+                    id: custom_config_container
+                    orientation: "horizontal"
+                    spacing: dp(5)
+                    size_hint_x: None
+                    width: self.minimum_width
+                    height: dp(50)     # Fast højde for knapperne
 
 
  
