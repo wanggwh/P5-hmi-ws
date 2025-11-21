@@ -62,6 +62,7 @@ class HMINode(Node):
         self.app = None  # Reference to the Kivy app
         self.waiting_popup = None  # Single instance for waiting popup
         self.current_status_dialog = None  # Reference to current status dialog
+        self.start_page_widget = None  # Reference to start page widget for error logging
 
         self.move_to_pre_def_pose_client = False
 
@@ -152,10 +153,19 @@ class HMINode(Node):
             severity = msg.severity
             message = msg.message
             node_name = msg.node_name
-            print(f"Received error message: [{severity}] from {node_name}: {message}")
+            print(f"HMI: Received error message: [{severity}] from {node_name}: {message}")
+            
             # Show error snackbar in main thread
             if self.app:
                 Clock.schedule_once(lambda dt: self.app.show_md_snackbar(severity, message, node_name), 0)
+            
+            # Also add to start page error list if available
+            if hasattr(self, 'start_page_widget') and self.start_page_widget:
+                print(f"HMI: Sending error to start page widget: {self.start_page_widget}")
+                Clock.schedule_once(lambda dt: self.start_page_widget.add_error_message(severity, message, node_name), 0)
+            else:
+                print("HMI: No start page widget registered for error logging")
+                
         except Exception as e:
             self.get_logger().error(f"Failed to handle error message: {e}")
 

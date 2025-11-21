@@ -67,28 +67,55 @@
         size_hint_y: None
         height: dp(300)
         
-        MDLabel:
-            text: "System Status"
-            font_style: "H6"
-            theme_text_color: "Custom"
-            text_color: app.colors['text_light']
-            halign: "left"
+        # Header with title and clear button
+        MDBoxLayout:
+            orientation: "horizontal"
             size_hint_y: None
             height: dp(40)
+            spacing: dp(10)
             
-        MDLabel:
-            text: "Recent Errors: WARNING Jon er tyk"
-            font_style: "Subtitle2"
-            theme_text_color: "Custom"
-            text_color: app.colors['text_light']
-            halign: "left"
-            size_hint_y: None
-            height: dp(30)
+            MDLabel:
+                text: "Recent System Errors:"
+                font_style: "H6"
+                theme_text_color: "Custom"
+                text_color: app.colors['text_light']
+                halign: "left"
+                
+            MDBoxLayout:
+                orientation: "horizontal"
+                size_hint_x: None
+                width: dp(100)
+                height: dp(35)
+                md_bg_color: app.colors['button_neutral']
+                radius: [5, 5, 5, 5]
+                spacing: dp(5)
+                padding: [dp(8), dp(5)]
+                pos_hint: {'center_y': 0.5}
+                
+                MDIconButton:
+                    icon: "delete-sweep"
+                    theme_icon_color: "Custom"
+                    icon_color: app.colors['text_light']
+                    size_hint: None, None
+                    size: dp(25), dp(25)
+                    pos_hint: {'center_y': 0.5}
+                    on_release: root.clear_error_messages()
+                    
+                MDLabel:
+                    text: "Clear"
+                    font_size: "14sp"
+                    theme_text_color: "Custom"
+                    text_color: app.colors['text_light']
+                    size_hint_x: None
+                    width: dp(40)
+                    halign: "left"
+                    valign: "center"
             
+        # Error logging section (flyttet op under Recent Errors label)
         MDScrollView:
             id: error_scroll
             size_hint_y: None
-            height: dp(60)
+            height: dp(220)  # Increased height for more error messages
             
             MDList:
                 id: error_list
