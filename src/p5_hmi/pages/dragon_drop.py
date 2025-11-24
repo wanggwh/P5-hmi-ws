@@ -42,6 +42,8 @@ class DragonDrop(MDFloatLayout):
         # pool for reusing VisualCue widgets to avoid frequent create/destroy
         self._visual_pool = []
         self._visual_pool_max = 200
+        # map of active visuals for fast lookup: (zone_id, idx) -> VisualCue
+        self._visual_map = {}
         # build buttons programmatically
         buttons = [
             {"id_name": "1", "text": "Func A", "center_x": 0.10, "bg_color": [0.23, 0.63, 0.92, 1]},
@@ -183,16 +185,16 @@ class DragonDrop(MDFloatLayout):
         #print("Scroll left Pressed")
         page -= 1
         #print(f"Switched to page {page}")
-        self.reset_all(zones=zones, visual_only=True)
-        self._make_visuals_from_array(zones=zones, buttons=buttons, page_mappings=[zone.which_page for zone in zones])
+        # rebuild visuals in-place to avoid churn
+        self.rebuild_visuals(zones=zones, buttons=buttons, page_mappings=[zone.which_page for zone in zones])
 
     def scroll_right(self, zones, buttons, instance):
         global page
         #print("Scroll right Pressed")
         page += 1
         #print(f"Switched to page {page}")
-        self.reset_all(zones=zones, visual_only=True)
-        self._make_visuals_from_array(zones=zones, buttons=buttons, page_mappings=[zone.which_page for zone in zones])
+        # rebuild visuals in-place to avoid churn
+        self.rebuild_visuals(zones=zones, buttons=buttons, page_mappings=[zone.which_page for zone in zones])
 
     def reset_all(self, zones=[], visual_only=False):
         global page
@@ -228,24 +230,13 @@ class DragonDrop(MDFloatLayout):
                 val = entry.get("value")
                 params = entry.get("params", {})
                 #print(f"Recreating visual for zone {zone.zone_id} at idx {idx} with value {val} and params {params}")
-                # create a DragonDropButton to use its method for adding visual
-                temp_button = DragonDropButton(
-                    id_name=str(val),
-                    text=f"Func {val}",
-                    color=[0.96, 0.96, 0.98, 1],
-                    bg_color=buttons[int(val)-1]["bg_color"] if int(val)-1 < len(buttons) else [0.5,0.5,0.5,1],
-                    drop_zones=[zone],
-                    information=params,
-                )
-                temp_button.opacity = 0
-                temp_button.disabled = True
-                self.add_widget(temp_button)
-                try:
-                    temp_button.add_visual_in_zone(zone, idx)
-                finally:
-                    # remove the helper button; visual remains because add_visual_in_zone added it to layout
-                    if temp_button.parent is self:
-                        self.remove_widget(temp_button)
+                # Directly acquire a VisualCue from the pool and add it to layout
+                bg = buttons[int(val)-1]["bg_color"] if int(val)-1 < len(buttons) else [0.5,0.5,0.5,1]
+                size_hint = (zone.size[0] / zone.split_amount / self.width, 0.2) if self.width else (0.1, 0.2)
+                center_x_hint = (zone.pos[0] + (idx - 0.5) * (zone.size[0] / zone.split_amount)) / self.width if self.width else 0
+                center_y_hint = (zone.pos[1] + zone.size[1] / 2) / self.height if self.height else 0
+                pos_hint = {"center_x": center_x_hint, "center_y": center_y_hint}
+                self.acquire_visual(zone=zone, idx=idx, color=[0.96,0.96,0.98,1], bg_color=bg, size_hint=size_hint, pos_hint=pos_hint)
 
     def _make_visuals_from_array(self, zones=[], buttons=[], page_mappings=[]):
         # Recreate VisualCues from zone arrays and page mappings
@@ -262,24 +253,85 @@ class DragonDrop(MDFloatLayout):
                         if which_page.get(page) and (placement, index) in which_page[page]:
                             val = entry.get("value")
                             params = entry.get("params", {})
-                            # Create a DragonDropButton to use its method for adding visual
-                            temp_button = DragonDropButton(
-                                id_name=str(val),
-                                text=f"Func {val}",
-                                color=[0.96, 0.96, 0.98, 1],
-                                bg_color=buttons[int(val)-1]["bg_color"] if int(val)-1 < len(buttons) else [0.5,0.5,0.5,1],
-                                drop_zones=[zone],
-                                information=params,
-                            )
-                            temp_button.opacity = 0
-                            temp_button.disabled = True
-                            self.add_widget(temp_button)
-                            try:
-                                temp_button.add_visual_in_zone(zone, placement + 1)
-                            finally:
-                                # remove the helper button; visual remains because add_visual_in_zone added it to layout
-                                if temp_button.parent is self:
-                                    self.remove_widget(temp_button)
+                            # Directly acquire a VisualCue from the pool and add it to layout
+                            bg = buttons[int(val)-1]["bg_color"] if int(val)-1 < len(buttons) else [0.5,0.5,0.5,1]
+                            idx_pos = placement + 1
+                            size_hint = (zone.size[0] / zone.split_amount / self.width, 0.2) if self.width else (0.1, 0.2)
+                            center_x_hint = (zone.pos[0] + (idx_pos - 0.5) * (zone.size[0] / zone.split_amount)) / self.width if self.width else 0
+                            center_y_hint = (zone.pos[1] + zone.size[1] / 2) / self.height if self.height else 0
+                            pos_hint = {"center_x": center_x_hint, "center_y": center_y_hint}
+                            self.acquire_visual(zone=zone, idx=idx_pos, color=[0.96,0.96,0.98,1], bg_color=bg, size_hint=size_hint, pos_hint=pos_hint)
+
+    def _collect_needed_visuals_from_array(self, zones, buttons, page_mappings):
+        """Return a list of needed visuals as tuples (zone, idx, bg_color, pos_hint, size_hint)."""
+        needed = []
+        global page
+        for i in range(len(zones)):
+            zone = zones[i]
+            array = zone.array
+            which_page = page_mappings[i]
+            for placement in range(array.shape[0]):
+                for index in range(array.shape[1]):
+                    entry = array[placement][index]
+                    if entry is not None:
+                        if which_page.get(page) and (placement, index) in which_page[page]:
+                            val = entry.get("value")
+                            bg = buttons[int(val)-1]["bg_color"] if int(val)-1 < len(buttons) else [0.5,0.5,0.5,1]
+                            idx_pos = placement + 1
+                            size_hint = (zone.size[0] / zone.split_amount / self.width, 0.2) if self.width else (0.1, 0.2)
+                            center_x_hint = (zone.pos[0] + (idx_pos - 0.5) * (zone.size[0] / zone.split_amount)) / self.width if self.width else 0
+                            center_y_hint = (zone.pos[1] + zone.size[1] / 2) / self.height if self.height else 0
+                            pos_hint = {"center_x": center_x_hint, "center_y": center_y_hint}
+                            needed.append((zone, idx_pos, bg, pos_hint, size_hint))
+        return needed
+
+    def rebuild_visuals(self, zones, buttons, page_mappings):
+        """Reuse existing VisualCue widgets when possible; acquire new ones for missing slots and release extras."""
+        # compute needed visuals
+        needed = self._collect_needed_visuals_from_array(zones, buttons, page_mappings)
+        needed_keys = {(z.zone_id, idx) for (z, idx, *_ ) in needed}
+
+        # map existing visuals by (zone_id, idx)
+        existing = {}
+        for child in list(self.children):
+            if isinstance(child, VisualCue) and getattr(child, 'zone', None) and getattr(child, 'idx', None):
+                try:
+                    key = (child.zone.zone_id, int(child.idx))
+                except Exception:
+                    continue
+                existing[key] = child
+
+        # Reuse or create visuals for needed slots
+        for zone, idx, bg, pos_hint, size_hint in needed:
+            key = (zone.zone_id, idx)
+            if key in existing:
+                v = existing.pop(key)
+                # update position and appearance in-place
+                try:
+                    v.pos_hint = pos_hint
+                    v.size_hint = size_hint
+                    # update bg color if present
+                    if hasattr(v, '_bg_color'):
+                        try:
+                            v._bg_color.rgba = bg
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+            else:
+                # acquire a new visual and configure
+                self.acquire_visual(zone=zone, idx=idx, color=[0.96,0.96,0.98,1], bg_color=bg, size_hint=size_hint, pos_hint=pos_hint)
+
+        # any visuals left in existing are no longer needed -> release them
+        for leftover in existing.values():
+            try:
+                self.release_visual(leftover)
+            except Exception:
+                try:
+                    if leftover.parent:
+                        leftover.parent.remove_widget(leftover)
+                except Exception:
+                    pass
 
     # Pool management for VisualCue widgets
     def acquire_visual(self, zone, idx, color, bg_color, size_hint, pos_hint, index=11):
@@ -298,7 +350,10 @@ class DragonDrop(MDFloatLayout):
             v.idx = idx
             v.size_hint = size_hint
             v.pos_hint = pos_hint
-            v.text_color = color
+            try:
+                v.text_color = color
+            except Exception:
+                pass
 
         # ensure it's visible and enabled
         v.opacity = 1
@@ -306,10 +361,26 @@ class DragonDrop(MDFloatLayout):
 
         # add back to layout
         self.add_widget(v, index=index)
+        # register in visual map for quick lookup
+        try:
+            self._visual_map[(zone.zone_id, int(idx))] = v
+        except Exception:
+            pass
         return v
 
     def release_visual(self, visual):
         """Remove a VisualCue from its parent and store it in the pool for reuse."""
+        # unregister from visual map first if possible
+        try:
+            key = (visual.zone.zone_id, int(visual.idx)) if (visual.zone and visual.idx is not None) else None
+        except Exception:
+            key = None
+        if key and key in getattr(self, '_visual_map', {}):
+            try:
+                del self._visual_map[key]
+            except Exception:
+                pass
+
         try:
             parent = visual.parent
             if parent is not None:
@@ -321,10 +392,17 @@ class DragonDrop(MDFloatLayout):
         visual.opacity = 0
         visual.disabled = True
         # detach any heavy references
-        visual.zone = None
-        visual.idx = None
+        try:
+            visual.zone = None
+        except Exception:
+            pass
+        try:
+            visual.idx = None
+        except Exception:
+            pass
 
         if len(self._visual_pool) < getattr(self, "_visual_pool_max", 200):
+            # keep the canvas instructions (bg rect) so reuse is cheaper
             self._visual_pool.append(visual)
         # otherwise let it be garbage collected
 
@@ -527,19 +605,63 @@ class DragonDropButton(MDFloatLayout):
         if parent is None:
             parent = self.parent
 
+        # If we don't have a mapping for this idx on this page, nothing to remove
+        if not what_did_i_click:
+            return
+
+        # If the parent provides a fast map, use it for O(1) lookup
+        if parent is not None and hasattr(parent, '_visual_map'):
+            key = (zone.zone_id, int(idx))
+            v = parent._visual_map.get(key)
+            if v is not None:
+                # verify backing array cell still exists
+                page_list_index = what_did_i_click[0][1]
+                try:
+                    backing = zone.array[idx - 1][page_list_index]
+                except Exception:
+                    backing = None
+
+                if backing is not None:
+                    try:
+                        parent.release_visual(v)
+                    except Exception:
+                        try:
+                            if v.parent:
+                                v.parent.remove_widget(v)
+                        except Exception:
+                            pass
+                    print("Removing from array at:", what_did_i_click)
+                    zone.array = zone.remove_from_array(idx, page_list_index, zone.array)
+                return
+
+        # Fallback: iterate children (rare path)
         for child in list(parent.children):
             #print("Checking child:", child)
-            if isinstance(child, VisualCue) and child.idx == idx and child.zone is zone and zone.array[idx -1][what_did_i_click[0][1]] is not None:
+            try:
+                matches = isinstance(child, VisualCue) and child.idx == idx and child.zone is zone
+            except Exception:
+                matches = False
+
+            if not matches:
+                continue
+
+            # verify backing array cell still exists
+            page_list_index = what_did_i_click[0][1]
+            try:
+                backing = zone.array[idx - 1][page_list_index]
+            except Exception:
+                backing = None
+
+            if backing is not None:
                 # prefer releasing into pool if container supports it
                 if hasattr(parent, 'release_visual'):
                     parent.release_visual(child)
                 else:
                     parent.remove_widget(child)
-                # only try to remove from the backing array if we have an index mapping
-                #if what_did_i_click:
                 print("Removing from array at:", what_did_i_click)
-                zone.array = zone.remove_from_array(idx, what_did_i_click[0][1], zone.array)
-                #break
+                zone.array = zone.remove_from_array(idx, page_list_index, zone.array)
+                # break after first removal
+                break
 
     def reset(self):
         self.pos_hint = self.startpos
@@ -548,8 +670,8 @@ class DragonDropZone(DragonDropButton):
     zone_id = StringProperty("")
     split_amount = NumericProperty(None)
     #order = dict()
-    array = ObjectProperty(None)
-    which_page = ObjectProperty(None)
+    array = ObjectProperty(None, force_dispatch=True)
+    which_page = ObjectProperty(None, force_dispatch=True)
     global page
 
     def __init__(self, **kwargs):
