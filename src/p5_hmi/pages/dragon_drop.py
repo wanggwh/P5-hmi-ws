@@ -9,6 +9,7 @@ from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton, MDIconButton
 from kivymd.uix.textfield import MDTextField
 from kivymd.uix.boxlayout import MDBoxLayout
+import numpy as np
 
 """""
 Structure of dictionary is as follows:
@@ -32,7 +33,7 @@ Structure of dictionary is as follows:
 """""
 
 page = 1
-#dsafg
+
 class DragonDrop(MDFloatLayout):
     #global page
     #page = NumericProperty(1)
@@ -48,11 +49,27 @@ class DragonDrop(MDFloatLayout):
             {"id_name": "6", "text": "Sync",   "center_x": 0.90, "bg_color": [0.62, 0.65, 0.78, 1]},
         ]
 
+        split_amount = 7
+
         zones = [
-            {"zone_id": "Alice", "pos_hint": {"x": 0.1, "y": 0.7}, "size_hint": {0.85,0.01}, "bg_color": [0.8, 0.9, 1, 0.3], "split_amount": 7},
-            {"zone_id": "Bob",   "pos_hint": {"x": 0.1, "y": 0.45}, "size_hint": {0.85,0.01}, "bg_color": [0.8, 1, 0.8, 0.3], "split_amount": 7},
-            {"zone_id": "MiR", "pos_hint": {"x": 0.1, "y": 0.2}, "size_hint": {0.85,0.01}, "bg_color": [1, 0.8, 0.8, 0.3], "split_amount": 7},
+            {"zone_id": "Alice", "pos_hint": {"x": 0.1, "y": 0.7}, "size_hint": {0.85,0.01}, "bg_color": [0.8, 0.9, 1, 0.3], "split_amount": split_amount},
+            {"zone_id": "Bob",   "pos_hint": {"x": 0.1, "y": 0.45}, "size_hint": {0.85,0.01}, "bg_color": [0.8, 1, 0.8, 0.3], "split_amount": split_amount},
+            {"zone_id": "MiR", "pos_hint": {"x": 0.1, "y": 0.2}, "size_hint": {0.85,0.01}, "bg_color": [1, 0.8, 0.8, 0.3], "split_amount": split_amount},
         ]
+
+        # Create arrays with split_amounts of other arrays
+        alice_array = np.empty((split_amount,1), dtype=object)
+        which_page_alice = dict()
+        bob_array = np.empty((split_amount,1), dtype=object)
+        which_page_bob = dict()
+        mir_array = np.empty((split_amount,1), dtype=object)
+        which_page_mir = dict()
+
+        # storage = np.array([
+        #     alice_array,
+        #     bob_array,
+        #     mir_array,
+        # ])
 
         information = {
             "1":{"param1": "", "param2": ""},
@@ -68,6 +85,8 @@ class DragonDrop(MDFloatLayout):
             pos_hint=zones[0]["pos_hint"],
             size_hint=zones[0]["size_hint"],
             bg_color=zones[0]["bg_color"],
+            array = alice_array,
+            which_page = which_page_alice,
             split_amount=zones[0]["split_amount"],
             #page=self.page,
         )
@@ -77,6 +96,8 @@ class DragonDrop(MDFloatLayout):
             pos_hint=zones[1]["pos_hint"],
             size_hint=zones[1]["size_hint"],
             bg_color=zones[1]["bg_color"],
+            array = bob_array,
+            which_page = which_page_bob,
             split_amount=zones[1]["split_amount"],
             #page=self.page,
         )
@@ -86,6 +107,8 @@ class DragonDrop(MDFloatLayout):
             pos_hint=zones[2]["pos_hint"],
             size_hint=zones[2]["size_hint"],
             bg_color=zones[2]["bg_color"],
+            array = mir_array,
+            which_page = which_page_mir,
             split_amount=zones[2]["split_amount"],
             #page=self.page,
         )
@@ -158,7 +181,7 @@ class DragonDrop(MDFloatLayout):
         page -= 1
         #print(f"Switched to page {page}")
         self.reset_all(zones=zones, visual_only=True)
-        self._make_visuals_from_dict(zones=zones, buttons=buttons)
+        self._make_visuals_from_array(zones=zones, buttons=buttons, page_mappings=[zone.which_page for zone in zones])
 
     def scroll_right(self, zones, buttons, instance):
         global page
@@ -166,7 +189,7 @@ class DragonDrop(MDFloatLayout):
         page += 1
         #print(f"Switched to page {page}")
         self.reset_all(zones=zones, visual_only=True)
-        self._make_visuals_from_dict(zones=zones, buttons=buttons)
+        self._make_visuals_from_array(zones=zones, buttons=buttons, page_mappings=[zone.which_page for zone in zones])
 
     def reset_all(self, zones=[], visual_only=False):
         global page
@@ -178,7 +201,7 @@ class DragonDrop(MDFloatLayout):
         # clear all zone order dicts
         if not visual_only:
             for zone in zones:
-                zone.order.clear()
+                zone.array = np.empty((zone.split_amount,1), dtype=object)
                 page = 1
                 #print(f"Cleared zone {zone.zone_id} list.")
 
@@ -216,6 +239,40 @@ class DragonDrop(MDFloatLayout):
                     # remove the helper button; visual remains because add_visual_in_zone added it to layout
                     if temp_button.parent is self:
                         self.remove_widget(temp_button)
+
+    def _make_visuals_from_array(self, zones=[], buttons=[], page_mappings=[]):
+        # Recreate VisualCues from zone arrays and page mappings
+        global page
+        for i in range(len(zones)):
+            zone = zones[i]
+            array = zone.array
+            which_page = page_mappings[i]
+            for placement in range(array.shape[0]):
+                for index in range(array.shape[1]):
+                    entry = array[placement][index]
+                    if entry is not None:
+                        # Check if this entry belongs to the current page
+                        if which_page.get(page) and (placement, index) in which_page[page]:
+                            val = entry.get("value")
+                            params = entry.get("params", {})
+                            # Create a DragonDropButton to use its method for adding visual
+                            temp_button = DragonDropButton(
+                                id_name=str(val),
+                                text=f"Func {val}",
+                                color=[0.96, 0.96, 0.98, 1],
+                                bg_color=buttons[int(val)-1]["bg_color"] if int(val)-1 < len(buttons) else [0.5,0.5,0.5,1],
+                                drop_zones=[zone],
+                                information=params,
+                            )
+                            temp_button.opacity = 0
+                            temp_button.disabled = True
+                            self.add_widget(temp_button)
+                            try:
+                                temp_button.add_visual_in_zone(zone, placement + 1)
+                            finally:
+                                # remove the helper button; visual remains because add_visual_in_zone added it to layout
+                                if temp_button.parent is self:
+                                    self.remove_widget(temp_button)
 
 class DragonDropButton(MDFloatLayout):
     id_name = StringProperty("")
@@ -300,7 +357,7 @@ class DragonDropButton(MDFloatLayout):
             if self.drop_zones:
                 for zone in self.drop_zones:
                     if self._is_inside_zone(zone):
-                        coords = zone.getCoords()
+                        #coords = zone.getCoords()
                         #print(f"Dropped func: {self.id_name}, in zone: {zone.zone_id}, at coords: {self.pos}, zone coords: {coords}")
                         idx = self._find_placement(zone, zone.split_amount)
                         #print(f"Placing at index: {idx} in zone {zone.zone_id}")
@@ -403,15 +460,26 @@ class DragonDropButton(MDFloatLayout):
 
     def remove_visual_from_zone(self, zone, idx, parent=None):
         global page
+        # Safely get the which_page entries for the given zone/page
+        what_did_i_click = []
+        if getattr(zone, "which_page", None):
+            tmp = zone.which_page.get(page)
+            if tmp:
+                what_did_i_click = [item for item in tmp if item[0] == idx - 1]
+
         # Check parent for VisualCue with matching idx if it is in the zone
         if parent is None:
             parent = self.parent
-        for child in parent.children:
-            #print(f"Checking child: {child}")
-            if isinstance(child, VisualCue) and child.idx == idx and child.zone is zone and zone.order.get(page, {}).get(zone.zone_id, {}).get(str(int(idx))):
-                #print(f"There is a visual cue at idx {idx} in zone {zone.zone_id}, removing it.")
+
+        for child in list(parent.children):
+            #print("Checking child:", child)
+            if isinstance(child, VisualCue) and child.idx == idx and child.zone is zone and zone.array[idx -1][what_did_i_click[0][1]] is not None:
                 parent.remove_widget(child)
-                zone.remove_from_list(idx)
+                # only try to remove from the backing array if we have an index mapping
+                #if what_did_i_click:
+                print("Removing from array at:", what_did_i_click)
+                zone.array = zone.remove_from_array(idx, what_did_i_click[0][1], zone.array)
+                #break
 
     def reset(self):
         self.pos_hint = self.startpos
@@ -419,7 +487,9 @@ class DragonDropButton(MDFloatLayout):
 class DragonDropZone(DragonDropButton):
     zone_id = StringProperty("")
     split_amount = NumericProperty(None)
-    order = dict()
+    #order = dict()
+    array = ObjectProperty(None)
+    which_page = ObjectProperty(None)
     global page
 
     def __init__(self, **kwargs):
@@ -447,22 +517,49 @@ class DragonDropZone(DragonDropButton):
     def getCoords(self):
         return self.pos_hint
     
-    def addToList(self, val, pos, params):
-        #print(f"Added to zone {self.zone_id} at pos {pos} value {val} with params {params}")
-        global page
-        #if self.zone_id not in self.order:
-        #    self.order[self.zone_id] = dict()
-        #self.order[self.zone_id][str(int(pos))] = {"value": val, "params": deepcopy(params)}
-        if page not in self.order:
-            self.order[deepcopy(page)] = dict()
-        if self.zone_id not in self.order[page]:
-            self.order[page][self.zone_id] = dict()
-        self.order[page][self.zone_id][str(int(pos))] = {"value": val, "params": deepcopy(params)}
+    # def addToList(self, val, pos, params):
+    #     #print(f"Added to zone {self.zone_id} at pos {pos} value {val} with params {params}")
+    #     global page
+    #     #if self.zone_id not in self.order:
+    #     #    self.order[self.zone_id] = dict()
+    #     #self.order[self.zone_id][str(int(pos))] = {"value": val, "params": deepcopy(params)}
+    #     if page not in self.order:
+    #         self.order[deepcopy(page)] = dict()
+    #     if self.zone_id not in self.order[page]:
+    #         self.order[page][self.zone_id] = dict()
+    #     self.order[page][self.zone_id][str(int(pos))] = {"value": val, "params": deepcopy(params)}
 
-    def remove_from_list(self, pos):
+    def addToArray(self, dict, placement, struc):
         global page
-        if page in self.order and self.zone_id in self.order[page] and str(int(pos)) in self.order[page][self.zone_id]:
-            del self.order[page][self.zone_id][str(int(pos))]
+        #print(len(struc[device][placement-1]))
+        for i in range(len(struc[placement-1])):
+            #print(i)
+            if struc[placement-1][i] is None:
+                struc[placement-1][i] = dict
+                if self.which_page.get(page) is None:
+                    self.which_page[page] = list()
+                self.which_page[page].append((placement-1, i))
+                return struc
+        struc = np.concatenate((struc, np.empty((self.split_amount,1), dtype=object)), axis=1)
+        struc[placement-1][len(struc[placement-1])-1] = dict
+        if self.which_page.get(page) is None:
+            self.which_page[page] = list()
+        self.which_page[page].append((placement-1, len(struc[placement-1])-1))
+        return struc
+
+    # def remove_from_list(self, pos):
+    #     global page
+    #     if page in self.order and self.zone_id in self.order[page] and str(int(pos)) in self.order[page][self.zone_id]:
+    #         del self.order[page][self.zone_id][str(int(pos))]
+
+    def remove_from_array(self, placement, pos, struc):
+        global page
+        if struc[placement-1][pos] is not None:
+            struc[placement-1][pos] = None
+            if self.which_page.get(page) is not None:
+                if (placement-1, pos) in self.which_page[page]:
+                    self.which_page[page].remove((placement-1, pos))
+        return struc
 
 class VisualCue(MDLabel):
     #drop_zones = ListProperty([])
@@ -479,11 +576,22 @@ class VisualCue(MDLabel):
         touch_x, _ = touch.pos
         cue_center_x, _ = self.center
 
+        # edit_params = InfoEncoder(
+        #     information=self.zone.order[page][self.zone.zone_id][str(int(self.idx))]['params'],
+        #     idx=self.idx,
+        #     zone=self.zone,
+        #     id_name=str(self.zone.order[page][self.zone.zone_id][str(int(self.idx))]['value']),
+        #     add_visual=False,
+        # )
+
+        what_did_i_click = self.zone.which_page.get(page)
+        what_did_i_click = [item for item in what_did_i_click if item[0] == self.idx -1]
+
         edit_params = InfoEncoder(
-            information=self.zone.order[page][self.zone.zone_id][str(int(self.idx))]['params'],
+            information=self.zone.array[self.idx -1][what_did_i_click[0][1]]['params'],
             idx=self.idx,
             zone=self.zone,
-            id_name=str(self.zone.order[page][self.zone.zone_id][str(int(self.idx))]['value']),
+            id_name=str(self.zone.array[self.idx -1][what_did_i_click[0][1]]['value']),
             add_visual=False,
         )
 
@@ -491,14 +599,18 @@ class VisualCue(MDLabel):
             if touch_x >= cue_center_x:
                 if self.parent:
                     if self.zone:
-                        self.zone.remove_from_list(str(int(self.idx)))
+                        # index_to_remove = self.zone.which_page.get(page)
+                        # index_to_remove = [item for item in index_to_remove if item[0] == self.idx -1]
+                        print(f"index to remove: {what_did_i_click}")
+                        self.zone.array = self.zone.remove_from_array(self.idx, what_did_i_click[0][1], self.zone.array)
+                        print("zone array after removal:\n", self.zone.array)
                         #print(f"Zone {zone.zone_id} list now: {zone.order}")
                     else: 
                         print("No zones assigned.")
                     self.parent.remove_widget(self)
             elif touch_x < cue_center_x:
-                text_ = f"Function {self.zone.order[page][self.zone.zone_id][str(int(self.idx))]['value']} at position {self.idx}.\n\nParameters:\n"
-                for param, value in self.zone.order[page][self.zone.zone_id][str(int(self.idx))]['params'].items():
+                text_ = f"Function {self.zone.array[self.idx -1][what_did_i_click[0][1]]['value']} at position {self.idx}.\n\nParameters:\n"
+                for param, value in self.zone.array[self.idx -1][what_did_i_click[0][1]]['params'].items():
                     text_ += f" - {param}: {value}\n"
                 info_screen = MDDialog(
                     title="Information",
@@ -516,7 +628,28 @@ class VisualCue(MDLabel):
                     ],
                 )
                 info_screen.open()
-            
+
+
+            # elif touch_x < cue_center_x:
+            #     text_ = f"Function {self.zone.order[page][self.zone.zone_id][str(int(self.idx))]['value']} at position {self.idx}.\n\nParameters:\n"
+            #     for param, value in self.zone.order[page][self.zone.zone_id][str(int(self.idx))]['params'].items():
+            #         text_ += f" - {param}: {value}\n"
+            #     info_screen = MDDialog(
+            #         title="Information",
+            #         text=text_,
+            #         buttons=[
+            #             MDFlatButton(
+            #                 text="CLOSE",
+            #                 on_release=lambda x: info_screen.dismiss()
+            #             ),
+            #             MDFlatButton(
+            #                 text="EDIT",
+            #                 #open edit dialog and close info dialog
+            #                 on_release=lambda x: (info_screen.dismiss(), edit_params.open())
+            #             ),
+            #         ],
+            #     )
+            #     info_screen.open()
 
 class InfoEncoder(MDDialog):
     information = DictProperty({})
@@ -586,10 +719,13 @@ class InfoEncoder(MDDialog):
             self.params["param"+str(n)] = widget.text.strip()
             n+=1
         
-        self.zone.addToList(int(self.id_name), self.idx, self.params)
+        dict = {"value": deepcopy(int(self.id_name)), "params": deepcopy(self.params)}
+        self.zone.array = self.zone.addToArray(dict, self.idx, self.zone.array)
         self._fields.clear()
         self.params.clear()
         #print(f"List now: {self.zone.order}")
+
+        print("zone array: \n", self.zone.array, "\nfor zone:", self.zone.zone_id, "\npage mapping:\n", self.zone.which_page)
 
         self.dismiss()
 
