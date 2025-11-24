@@ -39,6 +39,9 @@ class DragonDrop(MDFloatLayout):
     #page = NumericProperty(1)
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        # pool for reusing VisualCue widgets to avoid frequent create/destroy
+        self._visual_pool = []
+        self._visual_pool_max = 200
         # build buttons programmatically
         buttons = [
             {"id_name": "1", "text": "Func A", "center_x": 0.10, "bg_color": [0.23, 0.63, 0.92, 1]},
@@ -196,7 +199,11 @@ class DragonDrop(MDFloatLayout):
         # remove all VisualCues from parent
         for child in self.children[:]:
             if isinstance(child, VisualCue):
-                self.remove_widget(child)
+                # prefer releasing into pool if available
+                if hasattr(self, 'release_visual'):
+                    self.release_visual(child)
+                else:
+                    self.remove_widget(child)
 
         # clear all zone order dicts
         if not visual_only:
@@ -273,6 +280,53 @@ class DragonDrop(MDFloatLayout):
                                 # remove the helper button; visual remains because add_visual_in_zone added it to layout
                                 if temp_button.parent is self:
                                     self.remove_widget(temp_button)
+
+    # Pool management for VisualCue widgets
+    def acquire_visual(self, zone, idx, color, bg_color, size_hint, pos_hint, index=11):
+        """Get a VisualCue either from pool or create a new one, add to this layout and return it."""
+        if self._visual_pool:
+            v = self._visual_pool.pop()
+        else:
+            v = VisualCue(halign="center", theme_text_color="Custom", font_style="Body1")
+
+        # initialize properties on the visual
+        try:
+            v.initialize(zone=zone, idx=idx, size_hint=size_hint, pos_hint=pos_hint, color=color, bg_color=bg_color)
+        except Exception:
+            # fallback: set attributes directly
+            v.zone = zone
+            v.idx = idx
+            v.size_hint = size_hint
+            v.pos_hint = pos_hint
+            v.text_color = color
+
+        # ensure it's visible and enabled
+        v.opacity = 1
+        v.disabled = False
+
+        # add back to layout
+        self.add_widget(v, index=index)
+        return v
+
+    def release_visual(self, visual):
+        """Remove a VisualCue from its parent and store it in the pool for reuse."""
+        try:
+            parent = visual.parent
+            if parent is not None:
+                parent.remove_widget(visual)
+        except Exception:
+            pass
+
+        # reset visual to a neutral state and store in pool if we haven't reached max
+        visual.opacity = 0
+        visual.disabled = True
+        # detach any heavy references
+        visual.zone = None
+        visual.idx = None
+
+        if len(self._visual_pool) < getattr(self, "_visual_pool_max", 200):
+            self._visual_pool.append(visual)
+        # otherwise let it be garbage collected
 
 class DragonDropButton(MDFloatLayout):
     id_name = StringProperty("")
@@ -423,40 +477,42 @@ class DragonDropButton(MDFloatLayout):
         # Finding zone segment width
         zone_width_hint = zone.size[0] / zone.split_amount / parent.width
 
-        # Create an MDLabel to represent the dropped button
-        label = VisualCue(
-            #text=self.text,
-            halign="center",
-            theme_text_color="Custom",
-            text_color=self.color,
-            font_style="Body1",
-            size_hint=(zone_width_hint, 0.2),     # small width, fixed height
-            #height=dp(24),
-            pos_hint={"center_x": center_x_hint, "center_y": center_y_hint},
-            zone=zone,
-            idx=idx,
-        )
+        # Create or acquire a VisualCue to represent the dropped button
+        size_hint = (zone_width_hint, 0.2)
+        pos_hint = {"center_x": center_x_hint, "center_y": center_y_hint}
 
-        # Optional: give it the same background tint as the button
-        with label.canvas.before:
-            Color(*self.bg_color)
-            label._bg_rect = RoundedRectangle(
-                pos=label.pos,
-                size=(parent.width * 0.1, dp(24)),
-                radius=[8]
-            )
-
-        # Keep background in sync with label’s position
-        def _update_bg_rect(instance, value):
-            label._bg_rect.pos = instance.pos
-            label._bg_rect.size = (instance.width, instance.height)
-
-        label.bind(pos=_update_bg_rect, size=_update_bg_rect)
-
+        # remove existing visual at this slot first
         self.remove_visual_from_zone(zone, idx)
 
-        # Add the label behind other widgets
-        parent.add_widget(label, index=11)
+        if hasattr(parent, 'acquire_visual'):
+            # let the container manage pooling and adding
+            parent.acquire_visual(zone=zone, idx=idx, color=self.color, bg_color=self.bg_color, size_hint=size_hint, pos_hint=pos_hint, index=11)
+        else:
+            # fallback: create as before
+            label = VisualCue(
+                halign="center",
+                theme_text_color="Custom",
+                text_color=self.color,
+                font_style="Body1",
+                size_hint=size_hint,
+                pos_hint=pos_hint,
+                zone=zone,
+                idx=idx,
+            )
+            with label.canvas.before:
+                Color(*self.bg_color)
+                label._bg_rect = RoundedRectangle(
+                    pos=label.pos,
+                    size=(parent.width * 0.1, dp(24)),
+                    radius=[8]
+                )
+
+            def _update_bg_rect(instance, value):
+                label._bg_rect.pos = instance.pos
+                label._bg_rect.size = (instance.width, instance.height)
+
+            label.bind(pos=_update_bg_rect, size=_update_bg_rect)
+            parent.add_widget(label, index=11)
 
     def remove_visual_from_zone(self, zone, idx, parent=None):
         global page
@@ -474,7 +530,11 @@ class DragonDropButton(MDFloatLayout):
         for child in list(parent.children):
             #print("Checking child:", child)
             if isinstance(child, VisualCue) and child.idx == idx and child.zone is zone and zone.array[idx -1][what_did_i_click[0][1]] is not None:
-                parent.remove_widget(child)
+                # prefer releasing into pool if container supports it
+                if hasattr(parent, 'release_visual'):
+                    parent.release_visual(child)
+                else:
+                    parent.remove_widget(child)
                 # only try to remove from the backing array if we have an index mapping
                 #if what_did_i_click:
                 print("Removing from array at:", what_did_i_click)
@@ -563,13 +623,41 @@ class DragonDropZone(DragonDropButton):
 
 class VisualCue(MDLabel):
     #drop_zones = ListProperty([])
-    zone = ObjectProperty(None)
-    idx = NumericProperty(None)
+    zone = ObjectProperty(None, allownone=True)
+    idx = NumericProperty(None, allownone=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.zone = kwargs.get("zone")
         self.idx = kwargs.get("idx")
+
+    def initialize(self, zone, idx, size_hint, pos_hint, color, bg_color):
+        """Prepare or reset this VisualCue for reuse."""
+        self.zone = zone
+        self.idx = idx
+        self.size_hint = size_hint
+        self.pos_hint = pos_hint
+        self.text_color = color
+
+        # create or update background rect and color
+        if not hasattr(self, '_bg_rect'):
+            with self.canvas.before:
+                self._bg_color = Color(*bg_color)
+                self._bg_rect = RoundedRectangle(pos=self.pos, size=(0, 0), radius=[8])
+
+            def _update_bg_rect(instance, value):
+                try:
+                    self._bg_rect.pos = instance.pos
+                    self._bg_rect.size = (instance.width, instance.height)
+                except Exception:
+                    pass
+
+            self.bind(pos=_update_bg_rect, size=_update_bg_rect)
+        else:
+            try:
+                self._bg_color.rgba = bg_color
+            except Exception:
+                pass
 
     def on_touch_down(self, touch):
         global page
@@ -607,7 +695,11 @@ class VisualCue(MDLabel):
                         #print(f"Zone {zone.zone_id} list now: {zone.order}")
                     else: 
                         print("No zones assigned.")
-                    self.parent.remove_widget(self)
+                    # release visual back to pool if available
+                    if hasattr(self.parent, 'release_visual'):
+                        self.parent.release_visual(self)
+                    else:
+                        self.parent.remove_widget(self)
             elif touch_x < cue_center_x:
                 text_ = f"Function {self.zone.array[self.idx -1][what_did_i_click[0][1]]['value']} at position {self.idx}.\n\nParameters:\n"
                 for param, value in self.zone.array[self.idx -1][what_did_i_click[0][1]]['params'].items():
