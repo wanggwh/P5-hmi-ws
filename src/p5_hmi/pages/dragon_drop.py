@@ -11,27 +11,6 @@ from kivymd.uix.textfield import MDTextField
 from kivymd.uix.boxlayout import MDBoxLayout
 import numpy as np
 
-"""""
-Structure of dictionary is as follows:
-{
-  page_number: {
-    zone_id: {
-      position_index: {
-        "value": function_id,
-        "params": {
-          "param1": value1,
-          "param2": value2,
-          ...
-        }
-      },
-      ...
-    },
-    ...
-  },
-  ...
-}
-"""""
-
 page = 1
 
 class DragonDrop(MDFloatLayout):
