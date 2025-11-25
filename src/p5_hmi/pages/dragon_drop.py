@@ -34,10 +34,8 @@ Structure of dictionary is as follows:
 """""
 
 page = 1
-#dsafg
+
 class DragonDrop(MDFloatLayout):
-    #global page
-    #page = NumericProperty(1)
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # build buttons programmatically
@@ -72,7 +70,6 @@ class DragonDrop(MDFloatLayout):
             bg_color=zones[0]["bg_color"],
             split_amount=zones[0]["split_amount"],
             order=dict(),
-            #page=self.page,
         )
 
         bob = DragonDropZone(
@@ -82,7 +79,6 @@ class DragonDrop(MDFloatLayout):
             bg_color=zones[1]["bg_color"],
             split_amount=zones[1]["split_amount"],
             order=dict(),
-            #page=self.page,
         )
 
         mir = DragonDropZone(
@@ -92,7 +88,6 @@ class DragonDrop(MDFloatLayout):
             bg_color=zones[2]["bg_color"],
             split_amount=zones[2]["split_amount"],
             order=dict(),
-            #page=self.page,
         )
 
         self.add_widget(alice)
@@ -111,8 +106,6 @@ class DragonDrop(MDFloatLayout):
                 drop_zones=[alice, bob, mir],
                 information=information[spec["id_name"]],
             )
-            # set per-button background color if needed:
-            # you can add a setter or pass bg_color kwarg; for demo reuse same bg
             self.add_widget(w)
 
         leftScroll = MDIconButton(
@@ -368,8 +361,6 @@ class DragonDrop(MDFloatLayout):
                 save_it.dismiss()
 
             naming_dialog.dismiss()
-
-
 
 class DragonDropButton(MDFloatLayout):
     id_name = StringProperty("")
