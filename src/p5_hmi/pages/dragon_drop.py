@@ -1,4 +1,6 @@
 from copy import deepcopy
+import json
+import os
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivy.properties import StringProperty, NumericProperty, ListProperty, DictProperty, ObjectProperty, BooleanProperty
 from kivymd.uix.label import MDLabel
@@ -40,12 +42,12 @@ class DragonDrop(MDFloatLayout):
         super().__init__(**kwargs)
         # build buttons programmatically
         buttons = [
-            {"id_name": "1", "text": "Func A", "center_x": 0.10, "bg_color": [0.23, 0.63, 0.92, 1]},
-            {"id_name": "2", "text": "Func B", "center_x": 0.26, "bg_color": [0.11, 0.74, 0.61, 1]},
-            {"id_name": "3", "text": "Func C", "center_x": 0.42, "bg_color": [0.54, 0.46, 0.98, 1]},
-            {"id_name": "4", "text": "Func D", "center_x": 0.58, "bg_color": [0.98, 0.78, 0.29, 1]},
-            {"id_name": "5", "text": "Func E", "center_x": 0.74, "bg_color": [0.94, 0.36, 0.36, 1]},
-            {"id_name": "6", "text": "Sync",   "center_x": 0.90, "bg_color": [0.62, 0.65, 0.78, 1]},
+            {"id_name": "1", "text": "c_move", "center_x": 0.10, "bg_color": [0.23, 0.63, 0.92, 1]},
+            {"id_name": "2", "text": "r_move", "center_x": 0.26, "bg_color": [0.11, 0.74, 0.61, 1]},
+            {"id_name": "3", "text": "fra_ava", "center_x": 0.42, "bg_color": [0.54, 0.46, 0.98, 1]},
+            {"id_name": "4", "text": "grip", "center_x": 0.58, "bg_color": [0.98, 0.78, 0.29, 1]},
+            {"id_name": "5", "text": "admit", "center_x": 0.74, "bg_color": [0.94, 0.36, 0.36, 1]},
+            {"id_name": "6", "text": "sync",   "center_x": 0.90, "bg_color": [0.62, 0.65, 0.78, 1]},
         ]
 
         zones = [
@@ -55,12 +57,12 @@ class DragonDrop(MDFloatLayout):
         ]
 
         information = {
-            "1":{"param1": "", "param2": ""},
-            "2":{"param1": "", "param2": "", "param3": ""},
-            "3":{"param1": "", "param2": ""},
-            "4":{"param1": "", "param2": ""},
-            "5":{"param1": "", "param2": ""},
-            "6":{"param1": "", "param2": ""},
+            "1":{"config_name": ""},
+            "2":{"frame": "", "linear": "", "use_tracking_velocity": "", "pose": ""},
+            "3":{"frame_name": ""},
+            "4":{"action": ""},
+            "5":{"action": ""},
+            "6":{"sync_id": "", "threads": ""},
         }
 
         alice = DragonDropZone(
@@ -69,6 +71,7 @@ class DragonDrop(MDFloatLayout):
             size_hint=zones[0]["size_hint"],
             bg_color=zones[0]["bg_color"],
             split_amount=zones[0]["split_amount"],
+            order=dict(),
             #page=self.page,
         )
 
@@ -78,6 +81,7 @@ class DragonDrop(MDFloatLayout):
             size_hint=zones[1]["size_hint"],
             bg_color=zones[1]["bg_color"],
             split_amount=zones[1]["split_amount"],
+            order=dict(),
             #page=self.page,
         )
 
@@ -87,6 +91,7 @@ class DragonDrop(MDFloatLayout):
             size_hint=zones[2]["size_hint"],
             bg_color=zones[2]["bg_color"],
             split_amount=zones[2]["split_amount"],
+            order=dict(),
             #page=self.page,
         )
 
@@ -112,25 +117,39 @@ class DragonDrop(MDFloatLayout):
 
         leftScroll = MDIconButton(
             icon="arrow-left",
-            pos_hint={"center_x": 0.05, "top": 0.1},
+            pos_hint={"center_x": 0.9, "top": 0.115},
             on_release=lambda x: self.scroll_left(zones=[alice, bob, mir], buttons=buttons, instance=x)
             )
 
         rightScroll = MDIconButton(
             icon="arrow-right",
-            pos_hint={"center_x": 0.95, "top": 0.1},
+            pos_hint={"center_x": 0.95, "top": 0.115},
             on_release=lambda x: self.scroll_right(zones=[alice, bob, mir], buttons=buttons, instance=x)
         )
 
         restartButton = MDIconButton(
             icon="restart",
-            pos_hint={"center_x": 0.5, "top": 0.1},
+            pos_hint={"center_x": 0.05, "top": 0.115},
             on_release=lambda x: self.reset_all(zones=[alice, bob, mir], visual_only=False)
+        )
+
+        showdictButton = MDIconButton(
+            icon="printer-outline",
+            pos_hint={"center_x": 0.1, "top": 0.115},
+            on_release=lambda x: print(f"Current zone orders:\n\nAlice: {alice.order}\n\nBob: {bob.order}\n\nMiR: {mir.order}\n")
+        )
+
+        saveAndParse = MDIconButton(
+            icon="content-save",
+            pos_hint={"center_x": 0.15, "top": 0.115},
+            on_release=lambda x: self._parse_json(zones=[alice, bob, mir], buttons=buttons)
         )
 
         self.add_widget(leftScroll)
         self.add_widget(rightScroll)
         self.add_widget(restartButton)
+        self.add_widget(showdictButton)
+        self.add_widget(saveAndParse)
 
         pageCounter = MDLabel(
             text=f" {page}",
@@ -216,6 +235,141 @@ class DragonDrop(MDFloatLayout):
                     # remove the helper button; visual remains because add_visual_in_zone added it to layout
                     if temp_button.parent is self:
                         self.remove_widget(temp_button)
+
+    def _parse_json(self, zones=[], buttons=[]):
+        global page
+
+        json_data = {
+            "NAME": {
+                "description": "",
+                "date": "",
+                "author": "",
+                "threads": [{
+                    "name": "alice_thread",
+                    "robot_name": "alice",
+                    "commands": [
+
+                    ],
+                },
+                {
+                    "name": "bob_thread",
+                    "robot_name": "bob",
+                    "commands": [
+
+                    ],
+                },
+                {
+                    "name": "mir_thread",
+                    "robot_name": "mir",
+                    "commands": [
+
+                    ],
+                }
+                ]
+            }
+        }
+
+        # Make MDDialog with textfields to enter Name, description, date, author
+        naming = {
+            "name": "",
+            "description": "",
+            "date": "",
+            "author": "",
+        }
+        naming_dialog = MDDialog(
+            title="Save and Parse",
+            type="custom",
+            content_cls=MDBoxLayout(
+                orientation="vertical",
+                spacing=dp(10),
+                size_hint_y=None,
+                height=dp(200),
+            ),
+            buttons=[
+                MDFlatButton(text="CANCEL", on_release=lambda x: naming_dialog.dismiss()),
+                MDFlatButton(text="OK", on_release=lambda x: on_ok(x)),
+            ],
+        )
+        for param in naming:
+            tf = MDTextField(hint_text=f"{param}")
+            naming_dialog.content_cls.add_widget(tf)
+        naming_dialog.open()
+
+        def on_ok(instance):
+            for i, param in enumerate(naming):
+                naming[param] = naming_dialog.content_cls.children[len(naming) - 1 - i].text.strip()
+
+            #print(f"Saving with parameters: {naming}")
+
+            # 1. Extract the data currently under "NAME"
+            json_data[naming["name"]] = json_data.pop("NAME")
+
+            # 2. Fill in user-provided info
+            json_data[naming["name"]]["description"] = naming["description"]
+            json_data[naming["name"]]["date"] = naming["date"]
+            json_data[naming["name"]]["author"] = naming["author"]
+
+            print(f"json_data after naming: {json_data}")
+
+            # 3. For each zone, extract its order dict and fill in commands
+            for zone in zones:
+                zone_id = zone.zone_id.lower()
+                thread_entry = next((t for t in json_data[naming["name"]]["threads"] if t["robot_name"] == zone_id), None)
+                if thread_entry is None:
+                    continue
+
+                # Sort the entries by position index and page number
+                sorted_entries = []
+                for page_num in sorted(zone.order.keys()):
+                    for pos_str in sorted(zone.order[page_num].get(zone.zone_id, {}).keys(), key=lambda x: int(x)):
+                        entry = zone.order[page_num][zone.zone_id][pos_str]
+                        sorted_entries.append((page_num, int(pos_str), entry))
+                for page_num, pos_idx, entry in sorted_entries:
+                    func_id = entry.get("value")
+                    params = entry.get("params", {})
+                    command = {
+                        "command": buttons[int(func_id)-1]["text"],
+                        "args": params,
+                    }
+                    thread_entry["commands"].append(command)
+
+            #print(f"Final JSON data:\n{json_data}")
+
+            # Remove empty threads
+            for thread in json_data[naming["name"]]["threads"][:]:
+                #print(f"thread {thread['name']} has {len(thread['commands'])} commands.\n\n")
+                if len(thread["commands"]) == 0:
+                    #print(f"Removing empty thread: {thread['name']}")
+                    json_data[naming["name"]]["threads"].remove(thread)
+
+            print(f"\n\nFinal JSON data:\n\n{json_data}\n\n")
+            json_string = json.dumps(json_data, indent=4)
+            print(f"JSON String:\n\n{json_string}\n\n")
+
+            save_it = MDDialog(
+                title="Save file?",
+                text="Contents can be found in console output. Save to file?",
+                size_hint=(0.9, 0.9),
+                buttons=[
+                    MDFlatButton(text="NO", on_release=lambda x: save_it.dismiss()),
+                    MDFlatButton(text="YES", on_release=lambda x: save_it_on_ok(x)),
+                ],
+            )
+            save_it.open()
+
+            def save_it_on_ok(instance):
+                # Here you would implement actual file saving if desired
+                save_dir = "saved_configs"
+                os.makedirs(save_dir, exist_ok=True)
+                file_path = os.path.join(save_dir, f"{naming['name']}.json")
+
+                with open(file_path, "w") as f:
+                    f.write(json_string)
+                save_it.dismiss()
+
+            naming_dialog.dismiss()
+
+
 
 class DragonDropButton(MDFloatLayout):
     id_name = StringProperty("")
@@ -419,7 +573,7 @@ class DragonDropButton(MDFloatLayout):
 class DragonDropZone(DragonDropButton):
     zone_id = StringProperty("")
     split_amount = NumericProperty(None)
-    order = dict()
+    order = ObjectProperty(None)
     global page
 
     def __init__(self, **kwargs):
@@ -543,7 +697,7 @@ class InfoEncoder(MDDialog):
                 orientation="vertical",
                 spacing=dp(10),
                 size_hint_y=None,
-                height=dp(200),
+                height=len(self.information) * dp(70),
             ),
             buttons=[
                 MDFlatButton(text="CANCEL", on_release=self.dismiss),
@@ -585,10 +739,10 @@ class InfoEncoder(MDDialog):
             except Exception as e:
                 print("on_accept callback error:", e)
 
-        n = 1
+        #n = 1
         for param, widget in self._fields.items():
-            self.params["param" + str(n)] = widget.text.strip()
-            n += 1
+            self.params[param] = widget.text.strip()
+            #n += 1
 
         self.zone.addToList(int(self.id_name), self.idx, self.params)
         self._fields.clear()
