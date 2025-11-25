@@ -2,6 +2,7 @@ build/
 log/
 install/
 kivy_venv/
+saved_configs/
 
 # Python bytecode
 __pycache__/
