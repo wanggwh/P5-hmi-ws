@@ -20,12 +20,12 @@ class DragonDrop(MDFloatLayout):
         super().__init__(**kwargs)
         # build buttons programmatically
         buttons = [
-            {"id_name": "1", "text": "Func A", "center_x": 0.10, "bg_color": [0.23, 0.63, 0.92, 1]},
-            {"id_name": "2", "text": "Func B", "center_x": 0.26, "bg_color": [0.11, 0.74, 0.61, 1]},
-            {"id_name": "3", "text": "Func C", "center_x": 0.42, "bg_color": [0.54, 0.46, 0.98, 1]},
-            {"id_name": "4", "text": "Func D", "center_x": 0.58, "bg_color": [0.98, 0.78, 0.29, 1]},
-            {"id_name": "5", "text": "Func E", "center_x": 0.74, "bg_color": [0.94, 0.36, 0.36, 1]},
-            {"id_name": "6", "text": "Sync",   "center_x": 0.90, "bg_color": [0.62, 0.65, 0.78, 1]},
+            {"id_name": "1", "text": "c_move", "center_x": 0.10, "bg_color": [0.23, 0.63, 0.92, 1]},
+            {"id_name": "2", "text": "r_move", "center_x": 0.26, "bg_color": [0.11, 0.74, 0.61, 1]},
+            {"id_name": "3", "text": "fra_ava", "center_x": 0.42, "bg_color": [0.54, 0.46, 0.98, 1]},
+            {"id_name": "4", "text": "grip", "center_x": 0.58, "bg_color": [0.98, 0.78, 0.29, 1]},
+            {"id_name": "5", "text": "admittance", "center_x": 0.74, "bg_color": [0.94, 0.36, 0.36, 1]},
+            {"id_name": "6", "text": "sync",   "center_x": 0.90, "bg_color": [0.62, 0.65, 0.78, 1]},
         ]
 
         split_amount = 7
@@ -44,19 +44,13 @@ class DragonDrop(MDFloatLayout):
         mir_array = np.empty((split_amount,1), dtype=object)
         which_page_mir = dict()
 
-        # storage = np.array([
-        #     alice_array,
-        #     bob_array,
-        #     mir_array,
-        # ])
-
         information = {
-            "1":{"param1": "", "param2": ""},
-            "2":{"param1": "", "param2": "", "param3": ""},
-            "3":{"param1": "", "param2": ""},
-            "4":{"param1": "", "param2": ""},
-            "5":{"param1": "", "param2": ""},
-            "6":{"param1": "", "param2": ""},
+            "1":{"config_name": ""},
+            "2":{"frame": "", "linear": "", "use_tracking_velocity": "", "pose": ""},
+            "3":{"frame_name": ""},
+            "4":{"action": ""},
+            "5":{"action": ""},
+            "6":{"sync_id": "", "threads": ""},
         }
 
         alice = DragonDropZone(
@@ -114,25 +108,32 @@ class DragonDrop(MDFloatLayout):
 
         leftScroll = MDIconButton(
             icon="arrow-left",
-            pos_hint={"center_x": 0.05, "top": 0.1},
+            pos_hint={"center_x": 0.85, "top": 0.115},
             on_release=lambda x: self.scroll_left(zones=[alice, bob, mir], buttons=buttons, instance=x)
             )
 
         rightScroll = MDIconButton(
             icon="arrow-right",
-            pos_hint={"center_x": 0.95, "top": 0.1},
+            pos_hint={"center_x": 0.90, "top": 0.115},
             on_release=lambda x: self.scroll_right(zones=[alice, bob, mir], buttons=buttons, instance=x)
         )
 
         restartButton = MDIconButton(
             icon="restart",
-            pos_hint={"center_x": 0.5, "top": 0.1},
+            pos_hint={"center_x": 0.95, "top": 0.115},
             on_release=lambda x: self.reset_all(zones=[alice, bob, mir], visual_only=False)
+        )
+
+        jsonButton = MDIconButton(
+            icon="file-edit",
+            pos_hint={"center_x": 0.80, "top": 0.115},
+            on_release=lambda x: self.parse_json([alice, bob, mir])
         )
 
         self.add_widget(leftScroll)
         self.add_widget(rightScroll)
         self.add_widget(restartButton)
+        self.add_widget(jsonButton)
 
         pageCounter = MDLabel(
             text=f" {page}",
@@ -186,39 +187,6 @@ class DragonDrop(MDFloatLayout):
 
         self.update_page_counter(self)
 
-    def _make_visuals_from_dict(self, zones=[], buttons=[]):
-        # recreate VisualCues from zone order dicts
-        global page
-        for zone in zones:
-            for page_num in zone.order:
-                if page_num != page:
-                    continue
-            if page not in zone.order:
-                continue
-            for pos_str, entry in zone.order[page].get(zone.zone_id, {}).items():
-                idx = int(pos_str)
-                val = entry.get("value")
-                params = entry.get("params", {})
-                #print(f"Recreating visual for zone {zone.zone_id} at idx {idx} with value {val} and params {params}")
-                # create a DragonDropButton to use its method for adding visual
-                temp_button = DragonDropButton(
-                    id_name=str(val),
-                    text=f"Func {val}",
-                    color=[0.96, 0.96, 0.98, 1],
-                    bg_color=buttons[int(val)-1]["bg_color"] if int(val)-1 < len(buttons) else [0.5,0.5,0.5,1],
-                    drop_zones=[zone],
-                    information=params,
-                )
-                temp_button.opacity = 0
-                temp_button.disabled = True
-                self.add_widget(temp_button)
-                try:
-                    temp_button.add_visual_in_zone(zone, idx)
-                finally:
-                    # remove the helper button; visual remains because add_visual_in_zone added it to layout
-                    if temp_button.parent is self:
-                        self.remove_widget(temp_button)
-
     def _make_visuals_from_array(self, zones=[], buttons=[], page_mappings=[]):
         # Recreate VisualCues from zone arrays and page mappings
         global page
@@ -253,6 +221,125 @@ class DragonDrop(MDFloatLayout):
                                 if temp_button.parent is self:
                                     self.remove_widget(temp_button)
 
+    def parse_json(self, lists=[]):
+        threads = [{
+            "name": "alice_thread",
+            "robot_name": "alice",
+            "commands": []
+        },
+        {
+            "name": "bob_thread",
+            "robot_name": "bob",
+            "commands": []
+        },
+        {
+            "name": "mir_thread",
+            "robot_name": "mir",
+            "commands": []
+        }]
+
+        alice_lst, bob_lst, mir_lst = _put_lists_in_order(self, lists)
+
+        for entry in alice_lst:
+            threads[0]["commands"].append(deepcopy(entry))
+        for entry in bob_lst:
+            threads[1]["commands"].append(deepcopy(entry))
+        for entry in mir_lst:
+            threads[2]["commands"].append(deepcopy(entry))
+
+        naming_info = {"Name": "", "Description": "", "Date": "", "Author": ""}
+        # Create dialog to enter naming info through MDTextFields
+        naming = MDDialog(
+            title="Enter Naming Information",
+            type="custom",
+            content_cls=MDBoxLayout(
+                orientation="vertical",
+                spacing=dp(10),
+                size_hint_y=None,
+                height=dp(300),
+            ),
+            buttons=[
+                MDFlatButton(
+                    text="CANCEL",
+                    on_release=lambda x: naming.dismiss()
+                ),
+                MDFlatButton(
+                    text="OK",
+                    on_release=lambda x: (_collect_naming_info(self, naming), naming.dismiss())
+                ),
+            ],
+        )
+        # Add text fields
+        for key in naming_info.keys():
+            text_field = MDTextField(
+                hint_text=key,
+                text="",
+                size_hint_y=None,
+                height=dp(40),
+            )
+            naming.content_cls.add_widget(text_field)
+
+        naming.open()
+
+        def _collect_naming_info(self, dialog):
+            for child in dialog.content_cls.children:
+                if isinstance(child, MDTextField):
+                    key = child.hint_text
+                    naming_info[key] = child.text
+            print("Collected Naming Information:")
+            for k, v in naming_info.items():
+                print(f"  {k}: {v}")
+            
+            data = {
+                naming_info["Name"]: {
+                    "description": naming_info["Description"],
+                    "date": naming_info["Date"],
+                    "author": naming_info["Author"],
+                    "threads": threads
+                }
+            }
+
+            print(f"Final JSON-like structure: {data}")
+
+        def _put_lists_in_order(self, lists):
+            #This function puts the lists in order based on placement and page nr
+            global page
+            print("FUCK")
+            alice_lst = lists[0]
+            bob_lst = lists[1]
+            mir_lst = lists[2]
+            alice_ordered = []
+            bob_ordered = []
+            mir_ordered = []
+            for p in range(1, page + 1):
+                for i in range(alice_lst.shape[0]):
+                    for j in range(alice_lst.shape[1]):
+                        entry = alice_lst[i][j]
+                        if entry is not None:
+                            which_page = lists[0].which_page
+                            if which_page.get(p) and (i, j) in which_page[p]:
+                                alice_ordered.append(entry)
+                for i in range(bob_lst.shape[0]):
+                    for j in range(bob_lst.shape[1]):
+                        entry = bob_lst[i][j]
+                        if entry is not None:
+                            which_page = lists[1].which_page
+                            if which_page.get(p) and (i, j) in which_page[p]:
+                                bob_ordered.append(entry)
+                for i in range(mir_lst.shape[0]):
+                    for j in range(mir_lst.shape[1]):
+                        entry = mir_lst[i][j]
+                        if entry is not None:
+                            which_page = lists[2].which_page
+                            if which_page.get(p) and (i, j) in which_page[p]:
+                                mir_ordered.append(entry)
+
+            return [alice_ordered, bob_ordered, mir_ordered]
+
+        for list in lists:
+            print(list)
+
+        
 class DragonDropButton(MDFloatLayout):
     id_name = StringProperty("")
     text = StringProperty("")
@@ -467,8 +554,8 @@ class DragonDropZone(DragonDropButton):
     zone_id = StringProperty("")
     split_amount = NumericProperty(None)
     #order = dict()
-    array = ObjectProperty(None)
-    which_page = ObjectProperty(None)
+    array = ObjectProperty(None, force_dispatch=True)
+    which_page = ObjectProperty(None, force_dispatch=True)
     global page
 
     def __init__(self, **kwargs):
