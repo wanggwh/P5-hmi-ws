@@ -19,6 +19,7 @@ import threading
 
 from p5_interfaces.srv import MoveToPreDefPose 
 from p5_interfaces.srv import AdmittanceSetStatus
+from p5_interfaces.msg import CommandState
 
 # Import page classes
 from pages.start_page import StartPage
@@ -63,7 +64,7 @@ class HMINode(Node):
 
         # Subscribers
         self.error_subscriber = self.create_subscription(Error, '/error_messages', self.handle_error_message_callback, 10)
-        self.status_subscriber = self.create_subscription(Bool, '/joint_mover_status', self.handle_status_message_callback, 10)
+        self.status_subscriber = self.create_subscription(CommandState, '/p5_command_state', self.handle_status_message_callback, 10)
         self.joint_states_subscriber = self.create_subscription(JointState, '/joint_states', self.handle_joint_states_callback, 10)
 
         # Clients
@@ -154,7 +155,6 @@ class HMINode(Node):
         try:
             response = future.result()
             success = response.success
-            message = response.message
 
             robot_name = getattr(future, "robot_name", None)
             goal_name = getattr(future, "goal_name", None)
@@ -162,7 +162,7 @@ class HMINode(Node):
             # Gem reference til den orange dialog
             def create_and_store_dialog(dt):
                 self.current_status_dialog = StatusPopupDialog.create_new_dialog()
-                self.current_status_dialog.show_status(robot_name, goal_name, success, message, move_to_pre_def_pose_complete=False)
+                self.current_status_dialog.show_status(robot_name, goal_name, success, move_to_pre_def_pose_complete=False)
 
             # Schedule GUI update in main thread
             Clock.schedule_once(create_and_store_dialog, 0)
@@ -195,10 +195,10 @@ class HMINode(Node):
 
     def handle_status_message_callback(self, msg):
         try:
-            status = msg.data
+            status = msg.status
             print(f"Received joint mover status: {status}")
 
-            self.move_to_pre_def_pose_complete = msg.data
+            self.move_to_pre_def_pose_complete = msg.status
 
             # Hvis operation er complete (True), vis success dialog
             if status and self.app:
@@ -214,7 +214,7 @@ class HMINode(Node):
 
                     # Vis den grønne success dialog
                     self.app.show_status_popup(
-                        robot_name, goal_name, True, "Operation completed successfully",
+                        robot_name, goal_name, True,
                         move_to_pre_def_pose_complete=True)
 
                 Clock.schedule_once(show_success_and_close_previous, 0)
@@ -223,19 +223,20 @@ class HMINode(Node):
             self.get_logger().error(f"Failed to handle status message: {e}")
 
     def handle_joint_states_callback(self, msg):
-        try:
-            bob_joint_positions = msg.position[6:12]
-            alice_joint_positions = msg.position[0:6]
+        pass
+        # try:
+        #     bob_joint_positions = msg.position[6:12]
+        #     alice_joint_positions = msg.position[0:6]
 
-            if self.app:
-                Clock.schedule_once(lambda dt: self.app.bob_update_joint_positions(bob_joint_positions), 0)
-                Clock.schedule_once(lambda dt: self.app.alice_update_joint_positions(bob_joint_positions), 0)
+        #     if self.app:
+        #         Clock.schedule_once(lambda dt: self.app.bob_update_joint_positions(bob_joint_positions), 0)
+        #         Clock.schedule_once(lambda dt: self.app.alice_update_joint_positions(bob_joint_positions), 0)
 
-            print(f"Bob joint positions: {bob_joint_positions}")
-            print(f"Alice joint positions: {alice_joint_positions}")
+        #     print(f"Bob joint positions: {bob_joint_positions}")
+        #     print(f"Alice joint positions: {alice_joint_positions}")
 
-        except Exception as e:
-            self.get_logger().error(f"Failed to handle joint states message: {e}")
+        # except Exception as e:
+        #     self.get_logger().error(f"Failed to handle joint states message: {e}")
 
 
 class HMIApp(MDApp):
@@ -436,14 +437,29 @@ class HMIApp(MDApp):
         )
         container.add_widget(label)
 
-    def show_status_popup(self, robot_name, goal_name, success, message, move_to_pre_def_pose_complete):
+    def show_status_popup(self, robot_name, goal_name, success, move_to_pre_def_pose_complete):
         """Show a popup dialog with status message"""
         dialog = StatusPopupDialog.create_new_dialog()
-        dialog.show_status(robot_name, goal_name, success, message, move_to_pre_def_pose_complete)
+        dialog.show_status(robot_name, goal_name, success, move_to_pre_def_pose_complete)
 
     def show_md_snackbar(self, severity, message, node_name):
         self.hmi_node.error_snackbar.show_md_snackbar(severity, message, node_name)
 
+    def bob_update_joint_positions(self, joint_positions):
+        """Update BOB joint positions in current page widget"""
+        current_widget = self.get_current_page_widget()
+        if current_widget and hasattr(current_widget, 'bob_update_joint_positions'):
+            current_widget.bob_update_joint_positions(joint_positions)
+        else:
+            print(f"Current page widget doesn't have bob_update_joint_positions method")
+
+    def alice_update_joint_positions(self, joint_positions):
+        """Update ALICE joint positions in current page widget"""
+        current_widget = self.get_current_page_widget()
+        if current_widget and hasattr(current_widget, 'alice_update_joint_positions'):
+            current_widget.alice_update_joint_positions(joint_positions)
+        else:
+            print(f"Current page widget doesn't have alice_update_joint_positions method")
 
 def ros_spin(node):
     rclpy.spin(node)

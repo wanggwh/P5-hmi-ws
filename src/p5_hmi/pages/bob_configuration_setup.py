@@ -22,13 +22,13 @@ class BobConfigurationSetup(MDFloatLayout):
 
     def move_to_home(self):
         if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.send_move_to_pre_def_pose_request("BOB", "BOB_HOME")
+            self.app.hmi_node.send_move_to_pre_def_pose_request("bob", "BOB_HOME")
             print("Sent HOME_BOB configuration request for BOB")
 
     def move_to_upright(self):
         print("Moving BOB to UPRIGHT position")
         if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.send_move_to_pre_def_pose_request("BOB", "UPRIGHT")
+            self.app.hmi_node.send_move_to_pre_def_pose_request("bob", "UPRIGHT")
             print("Sent UPRIGHT configuration request for BOB")
 
     def save_configuration(self):
