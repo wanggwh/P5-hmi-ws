@@ -23,6 +23,7 @@ from kivy.core.window import Window
 import threading
 
 from p5_interfaces.srv import MoveToPreDefPose 
+from p5_interfaces.srv import AdmittanceSetStatus
 
 # Import page classes
 from pages.start_page import StartPage
@@ -45,7 +46,7 @@ Window.left = 2800
 
 COLORS = {
     'bg_primary': (0.11, 0.15, 0.25, 1),      # Deep navy
-    'bg_secondary': (0.18, 0.24, 0.35, 1),    # Slate blue  
+    'bg_secondary': (0.18, 0.24, 0.35, 1),+    # Slate blue  
     'accent_orange': (0.95, 0.61, 0.23, 1),   # Warm orange
     'accent_coral': (0.98, 0.45, 0.32, 1),    # Coral red
     'button_neutral': (0.55, 0.60, 0.68, 1),  # Neutral gray-blue
@@ -73,19 +74,47 @@ class HMINode(Node):
        
         # Clients
         self.move_to_pre_def_pose_client = self.create_client(MoveToPreDefPose, "/p5_move_to_pre_def_pose")
-        # self.bob_set_admittance_client = self.create_client(AdmittanceSetStatus, )
+        self.set_admittance_status_client = self.create_client(AdmittanceSetStatus, "/p5_admittance_set_state")
 
         self.get_logger().info('HMI Node has been started')
     
     def set_app(self, app):
         self.app = app
+
+    def send_set_admittance_status_request(self, robot_name, enable_admittance, update_rate):
+        request = AdmittanceSetStatus.Request()
+        request.active = enable_admittance
+        request.update_rate = update_rate
+
+        if not self.set_admittance_status_client.wait_for_service(timeout_sec=0.1):
+            self.get_logger().warning(f"AdmittanceSetStatus service not available, cannot send request for {robot_name}")
+            self.waiting_popup = StatusPopupDialog.create_new_dialog()
+            Clock.schedule_once(lambda dt: self.waiting_popup.waiting_on_service_popup(service_name="/p5_admittance_set_state"), 0)
+            self._pending_service_request = (request, enable_admittance, update_rate)
+            self._service_check_event = Clock.schedule_interval(self._check_admittance_service_available_and_send, 0.5)
+            return
+        self._send_set_admittance_request(request, enable_admittance, update_rate)
+
+
+    def _check_admittance_service_available_and_send(self, dt):
+        if self.set_admittance_status_client.wait_for_service(timeout_sec=0.1):
+            if self.waiting_popup:
+                self.waiting_popup.dismiss()
+                self.waiting_popup = None
+            if hasattr(self, '_service_check_event'):
+                self._service_check_event.cancel()
+                del self._service_check_event
+            if hasattr(self, '_pending_service_request'):
+                request, enable_admittance, update_rate = self._pending_service_request
+                self._send_set_admittance_request(request, enable_admittance, update_rate)
+                del self._pending_service_request
+
     
     def send_move_to_pre_def_pose_request(self, robot_name, goal_name):
         request = MoveToPreDefPose.Request()
         request.robot_name = robot_name
         request.goal_name = goal_name
         print(f"Preparing to send move_to_pre_def_pose request for {robot_name} to {goal_name}")
-
 
         if not self.move_to_pre_def_pose_client.wait_for_service(timeout_sec=0.1):
             # Always create new dialog instance
@@ -98,6 +127,7 @@ class HMINode(Node):
 
         # Service is available, send request immediately
         self._send_pre_def_pose_request(request, robot_name, goal_name)
+
 
     def _check_service_available_and_send(self, dt):
         if self.move_to_pre_def_pose_client.wait_for_service(timeout_sec=0.1):

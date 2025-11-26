@@ -52,39 +52,35 @@ class AdmittanceControl(MDFloatLayout):
 
     def enable_bob_admittance_control(self):
         """Enable admittance control for BOB"""
-        self.bob_admittance_enabled = True
-        print("BOB Admittance Control ENABLED")
+        print("BOB Admittance Control ENABLE requested")
         if self.app and hasattr(self.app, 'hmi_node'):
-            # Send ROS2 message to enable BOB admittance control
-            # self.app.hmi_node.send_bob_admittance_control_request(True)
-            pass
+            # Send ROS2 service request - fjern 'self' som første parameter
+            self.app.hmi_node.send_set_admittance_status_request("bob", True, 250)
+            print("Sent enable request for BOB admittance control")
 
     def disable_bob_admittance_control(self):
         """Disable admittance control for BOB"""
-        self.bob_admittance_enabled = False
-        print("BOB Admittance Control DISABLED")
+        print("BOB Admittance Control DISABLE requested")
         if self.app and hasattr(self.app, 'hmi_node'):
-            # Send ROS2 message to disable BOB admittance control
-            # self.app.hmi_node.send_bob_admittance_control_request(False)
-            pass
+            # Send ROS2 service request - fjern 'self' som første parameter
+            self.app.hmi_node.send_set_admittance_status_request("bob", False, 250)
+            print("Sent DISABLE request for BOB admittance control")
 
     def enable_alice_admittance_control(self):
         """Enable admittance control for ALICE"""
-        self.alice_admittance_enabled = True
-        print("ALICE Admittance Control ENABLED")
+        print("ALICE Admittance Control ENABLE requested")
         if self.app and hasattr(self.app, 'hmi_node'):
-            # Send ROS2 message to enable ALICE admittance control
-            # self.app.hmi_node.send_alice_admittance_control_request(True)
-            pass
+            # Send ROS2 service request - fjern 'self' som første parameter  
+            self.app.hmi_node.send_set_admittance_status_request("alice", True, 250)
+            print("Sent enable request for ALICE admittance control")
 
     def disable_alice_admittance_control(self):
         """Disable admittance control for ALICE"""
-        self.alice_admittance_enabled = False
-        print("ALICE Admittance Control DISABLED")
+        print("ALICE Admittance Control DISABLE requested")
         if self.app and hasattr(self.app, 'hmi_node'):
-            # Send ROS2 message to disable ALICE admittance control
-            # self.app.hmi_node.send_alice_admittance_control_request(False)
-            pass
+            # Send ROS2 service request - fjern 'self' som første parameter
+            self.app.hmi_node.send_set_admittance_status_request("alice", False, 250)
+            print("Sent DISABLE request for ALICE admittance control")
 
     def get_bob_status(self):
         """Get current BOB admittance control status"""

@@ -4,6 +4,7 @@ from kivy.clock import Clock
 from kivy.properties import ListProperty, StringProperty
 from kivymd.uix.button import MDRaisedButton
 from kivymd.app import MDApp
+from kivy.animation import Animation
 
 class BobConfigurationSetup(MDFloatLayout):
     robot_name = "bob"

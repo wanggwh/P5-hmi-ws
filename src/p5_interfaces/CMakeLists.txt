@@ -18,6 +18,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SetReferenceFrame.srv"
   "srv/MoveToPreDefPose.srv"
   "srv/PoseConfig.srv"
+  "srv/AdmittanceSetStatus.srv"
 
   DEPENDENCIES geometry_msgs
   DEPENDENCIES std_msgs
