@@ -43,6 +43,7 @@ class BobConfigurationSetup(MDFloatLayout):
             
             # Clear tekstfeltet
             self.ids.configuration_name_field.text = ""
+            self.app.hmi_node.save_pre_def_pose_request("bob", config_name)
         else:
             print("Please enter a valid, unique configuration name")
     

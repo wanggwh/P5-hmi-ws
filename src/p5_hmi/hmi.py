@@ -17,7 +17,8 @@ from kivymd.uix.label import MDLabel
 from kivy.core.window import Window
 import threading
 
-from p5_interfaces.srv import MoveToPreDefPose 
+from p5_interfaces.srv import MoveToPreDefPose
+from p5_interfaces.srv import PoseConfig
 from p5_interfaces.srv import AdmittanceSetStatus
 from p5_interfaces.msg import CommandState
 
@@ -60,8 +61,6 @@ class HMINode(Node):
         self.current_status_dialog = None  # Reference to current status dialog
         self.start_page_widget = None  # Reference to start page widget for error logging
 
-        self.move_to_pre_def_pose_client = False
-
         # Subscribers
         self.error_subscriber = self.create_subscription(Error, '/error_messages', self.handle_error_message_callback, 10)
         self.status_subscriber = self.create_subscription(CommandState, '/p5_command_state_dirty_fix', self.handle_status_message_callback, 10)
@@ -70,6 +69,7 @@ class HMINode(Node):
         # Clients
         self.move_to_pre_def_pose_client = self.create_client(MoveToPreDefPose, "/p5_move_to_pre_def_pose")
         self.set_admittance_status_client = self.create_client(AdmittanceSetStatus, "/p5_admittance_set_state")
+        self.save_pre_def_pose_client = self.create_client(PoseConfig, "/p5_pose_config")
 
         self.get_logger().info('HMI Node has been started')
 
@@ -104,7 +104,6 @@ class HMINode(Node):
                 self._send_set_admittance_request(request, enable_admittance, update_rate)
                 del self._pending_service_request
 
-    
     def send_move_to_pre_def_pose_request(self, robot_name, goal_name):
         request = MoveToPreDefPose.Request()
         request.robot_name = robot_name
@@ -123,6 +122,22 @@ class HMINode(Node):
         # Service is available, send request immediately
         self._send_pre_def_pose_request(request, robot_name, goal_name)
 
+    def save_pre_def_pose_request(self, robot_name, goal_name):
+        request = PoseConfig.Request()
+        request.robot_name = robot_name
+        request.pose = goal_name
+
+        if not self.save_pre_def_pose_client.wait_for_service(timeout_sec=0.1):
+            # Always create new dialog instance
+            self.waiting_popup = StatusPopupDialog.create_new_dialog()
+            Clock.schedule_once(lambda dt: self.waiting_popup.waiting_on_service_popup(service_name="/p5_pose_config"), 0)
+            # Start periodic check for service availability
+            self._pending_service_request = (request, robot_name, goal_name)
+            self._service_check_event = Clock.schedule_interval(self._check_service_available_and_send, 0.5)
+            return  # Exit, will continue when service is available
+
+        # Service is available, send request immediately
+        self._save_pre_def_pose_request(request, robot_name, goal_name)
 
     def _check_service_available_and_send(self, dt):
         if self.move_to_pre_def_pose_client.wait_for_service(timeout_sec=0.1):
@@ -150,6 +165,18 @@ class HMINode(Node):
         future.goal_name = goal_name
         future.add_done_callback(self.handle_move_to_pre_def_pose_response_callback)
 
+    def _save_pre_def_pose_request(self, request, robot_name, goal_name):
+        # Gem robot_name og goal_name til brug i status callback
+        self._current_robot_name = robot_name
+        self._current_goal_name = goal_name
+
+        future = self.save_pre_def_pose_client.call_async(request)
+        print("Service call sent, adding callback")
+        # Store both robot_name and goal_name in future for use in callback
+        future.robot_name = robot_name
+        future.goal_name = goal_name
+        future.add_done_callback(self.handle_save_pre_def_pose_response_callback)
+
     def handle_move_to_pre_def_pose_response_callback(self, future):
         print("Handling move_to_pre_def_pose_response")
         try:
@@ -163,6 +190,25 @@ class HMINode(Node):
             def create_and_store_dialog(dt):
                 self.current_status_dialog = StatusPopupDialog.create_new_dialog()
                 self.current_status_dialog.show_status(robot_name, goal_name, success, move_to_pre_def_pose_complete=False)
+
+            # Schedule GUI update in main thread
+            Clock.schedule_once(create_and_store_dialog, 0)
+        except Exception as e:
+            self.get_logger().error(f"Service call failed: {e}")
+
+    def handle_save_pre_def_pose_response_callback(self, future):
+        print("Handling save_pre_def_pose_response")
+        try:
+            response = future.result()
+            success = response.success
+
+            robot_name = getattr(future, "robot_name", None)
+            goal_name = getattr(future, "goal_name", None)
+
+            # Gem reference til den orange dialog
+            def create_and_store_dialog(dt):
+                self.current_status_dialog = StatusPopupDialog.create_new_dialog()
+                self.current_status_dialog.show_status(robot_name, goal_name, success, save_pre_def_pose_complete=False)
 
             # Schedule GUI update in main thread
             Clock.schedule_once(create_and_store_dialog, 0)

@@ -21,13 +21,13 @@ class AliceConfigurationSetup(MDFloatLayout):
 
     def move_to_home(self):
         if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.send_move_to_pre_def_pose_request("ALICE", "ALICE_HOME")
+            self.app.hmi_node.send_move_to_pre_def_pose_request("alice", "ALICE_HOME")
             print("Sent HOME_ALICE configuration request for ALICE")
 
     def move_to_upright(self):
         print("Moving ALICE to UPRIGHT position")
         if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.send_move_to_pre_def_pose_request("ALICE", "UPRIGHT")
+            self.app.hmi_node.send_move_to_pre_def_pose_request("alice", "UPRIGHT")
             print("Sent UPRIGHT configuration request for ALICE")
 
     def save_configuration(self):
