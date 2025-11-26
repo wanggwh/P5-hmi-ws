@@ -60,10 +60,11 @@ class HMINode(Node):
         self.waiting_popup = None  # Single instance for waiting popup
         self.current_status_dialog = None  # Reference to current status dialog
         self.start_page_widget = None  # Reference to start page widget for error logging
+        self._operation_completed = False  # Track if operation already completed
 
         # Subscribers
         self.error_subscriber = self.create_subscription(Error, '/error_messages', self.handle_error_message_callback, 10)
-        self.status_subscriber = self.create_subscription(CommandState, '/p5_command_state_dirty_fix', self.handle_status_message_callback, 10)
+        self.status_subscriber = self.create_subscription(CommandState, '/p5_command_state', self.handle_status_message_callback, 10)
         self.joint_states_subscriber = self.create_subscription(JointState, '/joint_states', self.handle_joint_states_callback, 10)
 
         # Clients
@@ -158,6 +159,7 @@ class HMINode(Node):
         # Gem robot_name og goal_name til brug i status callback
         self._current_robot_name = robot_name
         self._current_goal_name = goal_name
+        self._operation_completed = False  # Reset flag når ny operation starter
 
         future = self.move_to_pre_def_pose_client.call_async(request)
         print("Service call sent, adding callback")
@@ -190,7 +192,8 @@ class HMINode(Node):
             # Gem reference til den orange dialog
             def create_and_store_dialog(dt):
                 self.current_status_dialog = StatusPopupDialog.create_new_dialog()
-                self.current_status_dialog.show_status(robot_name, goal_name, success, move_to_pre_def_pose_complete=False)
+                # Changed: Set move_to_pre_def_pose_complete=True når operationen starter
+                self.current_status_dialog.show_status(robot_name, goal_name, success, move_to_pre_def_pose_complete=True)
 
             # Schedule GUI update in main thread
             Clock.schedule_once(create_and_store_dialog, 0)
@@ -346,12 +349,17 @@ class HMINode(Node):
     def handle_status_message_callback(self, msg):
         try:
             status = msg.status
-            print(f"Received joint mover status: {status}")
-
             self.move_to_pre_def_pose_complete = msg.status
 
-            # Hvis operation er complete (True), vis success dialog
+            # Hvis operationen starter (status=True), reset completion flag
             if status and self.app:
+                self._operation_completed = False
+                print("Operation started - reset completion flag")
+
+            # Hvis operation er complete (status=False) OG vi ikke allerede har vist success
+            if not status and self.app and not self._operation_completed:
+                self._operation_completed = True  # Marker som completed
+                
                 # Få robot_name og goal_name fra den pending request hvis den findes
                 robot_name = getattr(self, '_current_robot_name', 'Unknown')
                 goal_name = getattr(self, '_current_goal_name', 'Unknown')
@@ -365,7 +373,7 @@ class HMINode(Node):
                     # Vis den grønne success dialog
                     self.app.show_status_popup(
                         robot_name, goal_name, True,
-                        move_to_pre_def_pose_complete=True)
+                        move_to_pre_def_pose_complete=False)
 
                 Clock.schedule_once(show_success_and_close_previous, 0)
 

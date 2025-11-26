@@ -92,19 +92,17 @@ class StatusPopupDialog(MDDialog):
         elif robot_name == "alice":
             robot_name_corrected = "ALICE"
 
-        if success is False and move_to_pre_def_pose_complete is not False:
+        if success is False:
             status_text = "The request failed, possibly due to wrong robot name or configuration"
             status_case = 0
 
-        elif success is True and move_to_pre_def_pose_complete is not False:
+        elif success is True and move_to_pre_def_pose_complete is True:
             status_text = "Request send successfully, beginning operation"
             status_case = 1
         
-        if move_to_pre_def_pose_complete is False:
+        elif success is True and move_to_pre_def_pose_complete is False:
             status_text = "The operation completed successfully"
             status_case = 2
-        
- 
 
         self.ids.status_title.text = title
         self.ids.status_subtitle.text = subtitle
