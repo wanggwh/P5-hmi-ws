@@ -17,7 +17,7 @@ from kivymd.uix.label import MDLabel
 from kivy.core.window import Window
 import threading
 
-from p5_interfaces.srv import MoveToPreDefPose 
+from p5_interfaces.srv import MoveToPreDefPose , SaveProgram
 from p5_interfaces.srv import AdmittanceSetStatus
 from p5_interfaces.msg import CommandState
 
@@ -70,6 +70,7 @@ class HMINode(Node):
         # Clients
         self.move_to_pre_def_pose_client = self.create_client(MoveToPreDefPose, "/p5_move_to_pre_def_pose")
         self.set_admittance_status_client = self.create_client(AdmittanceSetStatus, "/p5_admittance_set_state")
+        self.save_program_client = self.create_client(SaveProgram, "/program_executor/save_program")
 
         self.get_logger().info('HMI Node has been started')
 
@@ -168,7 +169,110 @@ class HMINode(Node):
             Clock.schedule_once(create_and_store_dialog, 0)
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
+    
+    def call_save_program_request(self, program_name: str, program_json: str, wait_for_service=True, timeout=0.1) -> bool:
+        """
+        Use a dedicated, reusable SaveProgram client (self.save_program_client) to call
+        /program_executor/save_program. Assigns NAME -> first string field and payload -> second.
+        """
+        if not hasattr(self, 'save_program_client') or self.save_program_client is None:
+            self.save_program_client = self.create_client(SaveProgram, "/program_executor/save_program")
 
+        client = self.save_program_client
+        req = SaveProgram.Request()
+
+        # 1) Try to detect string fields from the generated Request
+        try:
+            fields = req.get_fields_and_field_types()  # {'field_name': 'string', ...}
+        except Exception:
+            fields = {}
+
+        string_fields = [n for n, t in fields.items() if 'string' in t]
+
+        # 2) Assign program_name -> first string field, program_json -> second string field (if present)
+        assigned = []
+        try:
+            if string_fields:
+                if len(string_fields) >= 1:
+                    setattr(req, string_fields[0], program_name)
+                    assigned.append(string_fields[0])
+                if len(string_fields) >= 2:
+                    setattr(req, string_fields[1], program_json)
+                    assigned.append(string_fields[1])
+            else:
+                # 3) Fallback: try a list of common candidate names and assign in order
+                candidates = ['name', 'program', 'program_json', 'program_name', 'data', 'json', 'content', 'file', 'text']
+                targets = [program_name, program_json]
+                for payload in targets:
+                    for cand in candidates:
+                        if hasattr(req, cand) and cand not in assigned:
+                            try:
+                                setattr(req, cand, payload)
+                                assigned.append(cand)
+                                break
+                            except Exception:
+                                continue
+        except Exception as e:
+            self.get_logger().error(f"Failed to populate SaveProgram request fields: {e}")
+
+        # If nothing was assigned, log and abort
+        if not assigned:
+            self.get_logger().error("SaveProgram request: no suitable string fields found on request object")
+            return False
+
+        def _send_request():
+            try:
+                future = client.call_async(req)
+                future.program_name = program_name
+                future.add_done_callback(self._handle_save_program_response_callback)
+                self.get_logger().info(f"SaveProgram request sent for '{program_name}' (fields used: {assigned})")
+            except Exception as e:
+                self.get_logger().error(f"SaveProgram client failed to call service: {e}")
+
+        # Wait / poll for service if requested (reuse same client)
+        if wait_for_service and not client.wait_for_service(timeout_sec=0.1):
+            waiting_popup = StatusPopupDialog.create_new_dialog()
+            Clock.schedule_once(lambda dt: waiting_popup.waiting_on_service_popup(service_name="/program_executor/save_program"), 0)
+
+            check_event = {"evt": None}
+
+            def _check_service(dt):
+                if client.wait_for_service(timeout_sec=0.1):
+                    try:
+                        if waiting_popup:
+                            waiting_popup.dismiss()
+                    except Exception:
+                        pass
+                    _send_request()
+                    if check_event["evt"]:
+                        check_event["evt"].cancel()
+                        check_event["evt"] = None
+
+            check_event["evt"] = Clock.schedule_interval(_check_service, 0.5)
+            return True
+
+        try:
+            _send_request()
+            return True
+        except Exception as e:
+            self.get_logger().error(f"SaveProgram immediate call failed: {e}")
+            return False
+
+    def _handle_save_program_response_callback(self, future):
+        """Handle SaveProgram response for the reusable client."""
+        try:
+            resp = future.result()
+            success = getattr(resp, "success", None)
+            message = getattr(resp, "message", str(resp))
+            pname = getattr(future, "program_name", "Unknown")
+            self.get_logger().info(f"SaveProgram response for '{pname}': success={success}, message={message}")
+
+            # Notify GUI if available
+            if self.app:
+                Clock.schedule_once(lambda dt: self.app.show_status_popup(pname, "save_program", bool(success), message, move_to_pre_def_pose_complete=False), 0)
+        except Exception as e:
+            self.get_logger().error(f"SaveProgram response handler error: {e}")
+    
     def show_md_snackbar(self, severity, message, node_name):
         self.hmi_node.error_snackbar.show_md_snackbar(severity, message, node_name)
 
