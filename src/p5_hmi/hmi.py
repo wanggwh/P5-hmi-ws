@@ -4,25 +4,20 @@ from datetime import datetime
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool
-from std_msgs.msg import String
 from sensor_msgs.msg import JointState
-from std_msgs.msg import Header
 from p5_interfaces.msg import Error
 import os
 
 from kivy.lang import Builder
 from kivy.metrics import dp
 from kivy.clock import Clock
-from kivymd.uix.dialog import MDDialog
 from kivymd.app import MDApp
 from kivymd.uix.menu import MDDropdownMenu
-from kivymd.uix.snackbar import Snackbar
 from kivymd.uix.label import MDLabel
-from kivymd.uix.boxlayout import MDBoxLayout
 from kivy.core.window import Window
 import threading
 
-from p5_interfaces.srv import MoveToPreDefPose 
+from p5_interfaces.srv import MoveToPreDefPose
 
 # Import page classes
 from pages.start_page import StartPage
@@ -37,15 +32,13 @@ from pages.system_logging import SystemLoggingPage
 from pages.settings import SettingsPage
 from pages.status_popup_dialog import StatusPopupDialog
 from pages.error_msg_popup import ErrorMsgSnackbar
-from pages.dragon_drop import DragonDrop
-from kivy.core.window import Window
-#Window.borderless = True
+# Window.borderless = True
 Window.left = 2800
 
 
 COLORS = {
     'bg_primary': (0.11, 0.15, 0.25, 1),      # Deep navy
-    'bg_secondary': (0.18, 0.24, 0.35, 1),    # Slate blue  
+    'bg_secondary': (0.18, 0.24, 0.35, 1),    # Slate blue
     'accent_orange': (0.95, 0.61, 0.23, 1),   # Warm orange
     'accent_coral': (0.98, 0.45, 0.32, 1),    # Coral red
     'button_neutral': (0.55, 0.60, 0.68, 1),  # Neutral gray-blue
@@ -53,6 +46,7 @@ COLORS = {
     'text_muted': (0.75, 0.78, 0.82, 1),      # Light gray
     'success': (0.32, 0.78, 0.55, 1),         # Sea green
 }
+
 
 class HMINode(Node):
     def __init__(self):
@@ -70,22 +64,21 @@ class HMINode(Node):
         self.error_subscriber = self.create_subscription(Error, '/error_messages', self.handle_error_message_callback, 10)
         self.status_subscriber = self.create_subscription(Bool, '/joint_mover_status', self.handle_status_message_callback, 10)
         self.joint_states_subscriber = self.create_subscription(JointState, '/joint_states', self.handle_joint_states_callback, 10)
-       
+
         # Clients
         self.move_to_pre_def_pose_client = self.create_client(MoveToPreDefPose, "/p5_move_to_pre_def_pose")
         # self.bob_set_admittance_client = self.create_client(AdmittanceSetStatus, )
 
         self.get_logger().info('HMI Node has been started')
-    
+
     def set_app(self, app):
         self.app = app
-    
+
     def send_move_to_pre_def_pose_request(self, robot_name, goal_name):
         request = MoveToPreDefPose.Request()
         request.robot_name = robot_name
         request.goal_name = goal_name
         print(f"Preparing to send move_to_pre_def_pose request for {robot_name} to {goal_name}")
-
 
         if not self.move_to_pre_def_pose_client.wait_for_service(timeout_sec=0.1):
             # Always create new dialog instance
@@ -117,7 +110,7 @@ class HMINode(Node):
         # Gem robot_name og goal_name til brug i status callback
         self._current_robot_name = robot_name
         self._current_goal_name = goal_name
-        
+
         future = self.move_to_pre_def_pose_client.call_async(request)
         print("Service call sent, adding callback")
         # Store both robot_name and goal_name in future for use in callback
@@ -134,17 +127,17 @@ class HMINode(Node):
 
             robot_name = getattr(future, "robot_name", None)
             goal_name = getattr(future, "goal_name", None)
-            
+
             # Gem reference til den orange dialog
             def create_and_store_dialog(dt):
                 self.current_status_dialog = StatusPopupDialog.create_new_dialog()
                 self.current_status_dialog.show_status(robot_name, goal_name, success, message, move_to_pre_def_pose_complete=False)
-            
+
             # Schedule GUI update in main thread
             Clock.schedule_once(create_and_store_dialog, 0)
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
-    
+
     def show_md_snackbar(self, severity, message, node_name):
         self.hmi_node.error_snackbar.show_md_snackbar(severity, message, node_name)
 
@@ -154,18 +147,18 @@ class HMINode(Node):
             message = msg.message
             node_name = msg.node_name
             print(f"HMI: Received error message: [{severity}] from {node_name}: {message}")
-            
+
             # Show error snackbar in main thread
             if self.app:
                 Clock.schedule_once(lambda dt: self.app.show_md_snackbar(severity, message, node_name), 0)
-            
+
             # Also add to start page error list if available
             if hasattr(self, 'start_page_widget') and self.start_page_widget:
                 print(f"HMI: Sending error to start page widget: {self.start_page_widget}")
                 Clock.schedule_once(lambda dt: self.start_page_widget.add_error_message(severity, message, node_name), 0)
             else:
                 print("HMI: No start page widget registered for error logging")
-                
+
         except Exception as e:
             self.get_logger().error(f"Failed to handle error message: {e}")
 
@@ -181,18 +174,18 @@ class HMINode(Node):
                 # Få robot_name og goal_name fra den pending request hvis den findes
                 robot_name = getattr(self, '_current_robot_name', 'Unknown')
                 goal_name = getattr(self, '_current_goal_name', 'Unknown')
-                
+
                 def show_success_and_close_previous(dt):
                     # Luk den orange dialog først hvis den eksisterer (i main thread)
                     if self.current_status_dialog:
                         self.current_status_dialog.dismiss()
                         self.current_status_dialog = None
-                    
+
                     # Vis den grønne success dialog
                     self.app.show_status_popup(
-                        robot_name, goal_name, True, "Operation completed successfully", 
+                        robot_name, goal_name, True, "Operation completed successfully",
                         move_to_pre_def_pose_complete=True)
-                
+
                 Clock.schedule_once(show_success_and_close_previous, 0)
 
         except Exception as e:
@@ -207,7 +200,6 @@ class HMINode(Node):
                 Clock.schedule_once(lambda dt: self.app.bob_update_joint_positions(bob_joint_positions), 0)
                 Clock.schedule_once(lambda dt: self.app.alice_update_joint_positions(bob_joint_positions), 0)
 
-
             print(f"Bob joint positions: {bob_joint_positions}")
             print(f"Alice joint positions: {alice_joint_positions}")
 
@@ -218,7 +210,7 @@ class HMINode(Node):
 class HMIApp(MDApp):
     def __init__(self, ros_node, **kwargs):
         super().__init__(**kwargs)
-        self.hmi_node = ros_node  
+        self.hmi_node = ros_node
         self.colors = COLORS  # Make colors available to KV file
         self.current_page = "Start Page"  # Default page
         self.original_content = None  # Store original KV content
@@ -226,11 +218,11 @@ class HMIApp(MDApp):
     def build(self):
         Window.size = (800, 480)
         Clock.schedule_interval(self.update_clock, 1)
-        
-        # Load main KV file 
+
+        # Load main KV file
         kv_file_path = os.path.join(os.path.dirname(__file__), 'kv/main.kv')
         root_widget = Builder.load_file(kv_file_path)
-        
+
         # Define menu items
         menu_texts = [
             "Start Page",
@@ -239,20 +231,20 @@ class HMIApp(MDApp):
             "MIR - System Control",
             "Admittance Control",
             "Dragon Drop - System Control",
-            "System Logging", 
+            "System Logging",
             "Settings"
         ]
-        
+
         menu_items = [
             {
                 "viewclass": "OneLineListItem",
                 "text": menu_texts[i],
                 "height": dp(56),
                 "theme_text_color": "Custom",
-                "text_color": (0, 0, 0, 1), 
+                "text_color": (0, 0, 0, 1),
                 "md_bg_color": COLORS['bg_secondary'],
                 "on_release": lambda x=menu_texts[i]: self.navigate_to_page(x),
-             } for i in range(len(menu_texts))
+            } for i in range(len(menu_texts))
         ]
         self.menu = MDDropdownMenu(
             items=menu_items,
@@ -260,7 +252,7 @@ class HMIApp(MDApp):
             caller=None,
             background_color=COLORS['bg_secondary'],
         )
-        
+
         return root_widget
 
     def update_clock(self, dt):
@@ -280,7 +272,7 @@ class HMIApp(MDApp):
             "System Logging": "kv/system_logging.kv",
             "Settings": "kv/settings.kv"
         }
-        
+
         if page_name in kv_files:
             kv_path = os.path.join(os.path.dirname(__file__), kv_files[page_name])
             # Force reload the KV file to pick up changes
@@ -295,15 +287,10 @@ class HMIApp(MDApp):
         pages = ["Start Page", "BOB - Configuration Setup", "ALICE - Configuration Setup", "MIR - System Control", "Admittance Control", "Dragon Drop - System Control", "System Logging", "Settings"]
         for page in pages:
             self.load_page_kv(page)
-        
+
         # Wait for the next frame to ensure widgets are built
         Clock.schedule_once(lambda dt: self.update_page_content(), 0.1)
-    
-    def update_clock(self, dt):
-        if hasattr(self.root.ids, "clock_label"):
-            now = datetime.now().strftime("%H:%M:%S")
-            self.root.ids.clock_label.text = now
-    
+
     def store_original_content(self, dt):
         """Store the original content widgets from the KV file"""
         if hasattr(self.root, 'ids') and 'content_area' in self.root.ids:
@@ -325,14 +312,14 @@ class HMIApp(MDApp):
         self.menu.dismiss()
         self.current_page = page_name
         print(f"Navigating to: {page_name}")
-        
+
         # Update the title in the top app bar
         if hasattr(self.root, 'ids') and 'top_app_bar' in self.root.ids:
             self.root.ids.top_app_bar.title = page_name
-        
+
         # Update the content based on selected page
         self.update_page_content()
-        
+
     def update_page_content(self):
         """Update the main content area based on current page"""
         print(f"Loading page: {self.current_page}")
@@ -340,7 +327,7 @@ class HMIApp(MDApp):
         if hasattr(self.root, 'ids') and 'content_area' in self.root.ids:
             content = self.root.ids.content_area
             content.clear_widgets()
-            
+
             # Load appropriate page widget
             if self.current_page == "Start Page":
                 print("Creating StartPage widget")
@@ -375,11 +362,11 @@ class HMIApp(MDApp):
                 print("Creating SettingsPage widget")
                 self.current_page_widget = SettingsPage(self.hmi_node)
                 content.add_widget(self.current_page_widget)
-    
+
     def get_current_page_widget(self):
         """Get the current page widget"""
         return getattr(self, 'current_page_widget', None)
-    
+
     def system_button_callback(self, action):
         """Delegate system button callbacks to current page"""
         current_widget = self.get_current_page_widget()
@@ -426,28 +413,28 @@ class HMIApp(MDApp):
     def show_md_snackbar(self, severity, message, node_name):
         self.hmi_node.error_snackbar.show_md_snackbar(severity, message, node_name)
 
+
 def ros_spin(node):
     rclpy.spin(node)
 
+
 def main(args=None):
     rclpy.init(args=args)
-    
     # Create ROS2 node
     hmi_node = HMINode()
-    
     # Start ROS2 spinning in a separate thread
     ros_thread = threading.Thread(target=ros_spin, args=(hmi_node,))
     ros_thread.daemon = True
     ros_thread.start()
-    
     # Create and run Kivy app
     hmi_app = HMIApp(hmi_node)
     hmi_node.set_app(hmi_app)
     hmi_app.run()
-    
     # Cleanup
     hmi_node.destroy_node()
     rclpy.shutdown()
 
+
 if __name__ == '__main__':
     main()
+
