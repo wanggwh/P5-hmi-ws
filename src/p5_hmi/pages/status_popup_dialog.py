@@ -72,7 +72,7 @@ class StatusPopupDialog(MDDialog):
             # Store reference to stop later if needed
             status_bar._pulse_animation = pulse_sequence
     
-    def show_status(self, robot_name, goal_name, success, move_to_pre_def_pose_complete):
+    def show_status(self, robot_name, goal_name, success, move_to_pre_def_pose_complete=False, save_pre_def_pose_complete=False):
         """Show status popup with message and color-coded status bar"""
         # Don't show if already dismissed
         if self._is_dismissed:
@@ -97,7 +97,7 @@ class StatusPopupDialog(MDDialog):
             status_case = 0
 
         elif success is True and move_to_pre_def_pose_complete is True:
-            status_text = "Request send successfully, beginning operation"
+            status_text = "Request sent successfully, beginning operation"
             status_case = 1
         
         elif success is True and move_to_pre_def_pose_complete is False:
