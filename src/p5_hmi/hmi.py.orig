@@ -17,8 +17,12 @@ from kivymd.uix.label import MDLabel
 from kivy.core.window import Window
 import threading
 
+<<<<<<< HEAD
+from p5_interfaces.srv import MoveToPreDefPose
 from p5_interfaces.srv import PoseConfig
+=======
 from p5_interfaces.srv import MoveToPreDefPose , SaveProgram
+>>>>>>> 5474bdd33a862022fd72d04c2814b2163da3e209
 from p5_interfaces.srv import AdmittanceSetStatus
 from p5_interfaces.msg import CommandState
 
@@ -69,8 +73,11 @@ class HMINode(Node):
         # Clients
         self.move_to_pre_def_pose_client = self.create_client(MoveToPreDefPose, "/p5_move_to_pre_def_pose")
         self.set_admittance_status_client = self.create_client(AdmittanceSetStatus, "/p5_admittance_set_state")
+<<<<<<< HEAD
         self.save_pre_def_pose_client = self.create_client(PoseConfig, "/p5_pose_config")
+=======
         self.save_program_client = self.create_client(SaveProgram, "/program_executor/save_program")
+>>>>>>> 5474bdd33a862022fd72d04c2814b2163da3e209
 
         self.get_logger().info('HMI Node has been started')
 
@@ -205,6 +212,7 @@ class HMINode(Node):
         if not hasattr(self, 'save_program_client') or self.save_program_client is None:
             self.save_program_client = self.create_client(SaveProgram, "/program_executor/save_program")
 
+<<<<<<< HEAD
     def handle_save_pre_def_pose_response_callback(self, future):
         print("Handling save_pre_def_pose_response")
         try:
@@ -224,6 +232,7 @@ class HMINode(Node):
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
 
+=======
         client = self.save_program_client
         req = SaveProgram.Request()
 
@@ -319,6 +328,7 @@ class HMINode(Node):
         except Exception as e:
             self.get_logger().error(f"SaveProgram response handler error: {e}")
     
+>>>>>>> 5474bdd33a862022fd72d04c2814b2163da3e209
     def show_md_snackbar(self, severity, message, node_name):
         self.hmi_node.error_snackbar.show_md_snackbar(severity, message, node_name)
 

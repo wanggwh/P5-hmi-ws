@@ -6,6 +6,7 @@ from kivy.properties import StringProperty, NumericProperty, ListProperty, DictP
 from kivymd.uix.label import MDLabel
 from kivy.graphics import Color, RoundedRectangle
 from kivy.metrics import dp
+from kivymd.app import MDApp
 
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton, MDIconButton
@@ -40,12 +41,13 @@ class DragonDrop(MDFloatLayout):
         super().__init__(**kwargs)
         # build buttons programmatically
         buttons = [
-            {"id_name": "1", "text": "c_move", "center_x": 0.10, "bg_color": [0.23, 0.63, 0.92, 1]},
-            {"id_name": "2", "text": "r_move", "center_x": 0.26, "bg_color": [0.11, 0.74, 0.61, 1]},
-            {"id_name": "3", "text": "fra_ava", "center_x": 0.42, "bg_color": [0.54, 0.46, 0.98, 1]},
-            {"id_name": "4", "text": "grip", "center_x": 0.58, "bg_color": [0.98, 0.78, 0.29, 1]},
-            {"id_name": "5", "text": "admit", "center_x": 0.74, "bg_color": [0.94, 0.36, 0.36, 1]},
-            {"id_name": "6", "text": "sync",   "center_x": 0.90, "bg_color": [0.62, 0.65, 0.78, 1]},
+            {"id_name": "1", "text": "C move", "bg_color": [0.23, 0.63, 0.92, 1], "command": "c_move"},
+            {"id_name": "2", "text": "R move", "bg_color": [0.11, 0.74, 0.61, 1], "command": "r_move"},
+            {"id_name": "3", "text": "Fra. ava.", "bg_color": [0.54, 0.46, 0.98, 1], "command": "frame_available"},
+            {"id_name": "4", "text": "Grip", "bg_color": [0.98, 0.78, 0.29, 1], "command": "grip"},
+            {"id_name": "5", "text": "Admit", "bg_color": [0.94, 0.36, 0.36, 1], "command": "admittance"},
+            {"id_name": "6", "text": "Sync", "bg_color": [0.62, 0.65, 0.78, 1], "command": "sync"},
+            {"id_name": "7", "text": "MiR", "bg_color": [0.5,0.5,0.5,1], "command": "mir_move"},
         ]
 
         zones = [
@@ -61,6 +63,7 @@ class DragonDrop(MDFloatLayout):
             "4":{"action": ""},
             "5":{"action": ""},
             "6":{"sync_id": "", "threads": ""},
+            "7":{"mission": ""},
         }
 
         alice = DragonDropZone(
@@ -99,7 +102,7 @@ class DragonDrop(MDFloatLayout):
                 id_name=spec["id_name"],
                 text=spec["text"],
                 size_hint=(0.1, 0.1),
-                pos_hint={"center_x": spec["center_x"], "top": 0.97},
+                pos_hint={"center_x": 0.10 + 0.8/(len(buttons)-1)*(int(spec["id_name"])-1), "top": 0.97},
                 font_size=20,
                 color=[0.96, 0.96, 0.98, 1],
                 bg_color=spec["bg_color"] or [0.5,0.5,0.5,1],
@@ -107,6 +110,7 @@ class DragonDrop(MDFloatLayout):
                 information=information[spec["id_name"]],
             )
             self.add_widget(w)
+            #print(f"\n\nButton {int(spec["id_name"])}\nplacement:\n", 0.10 + 0.8/(len(buttons)-1)*(int(spec["id_name"])-1))
 
         leftScroll = MDIconButton(
             icon="arrow-left",
@@ -302,7 +306,7 @@ class DragonDrop(MDFloatLayout):
             json_data[naming["name"]]["date"] = naming["date"]
             json_data[naming["name"]]["author"] = naming["author"]
 
-            print(f"json_data after naming: {json_data}")
+            #print(f"json_data after naming: {json_data}")
 
             # 3. For each zone, extract its order dict and fill in commands
             for zone in zones:
@@ -321,7 +325,7 @@ class DragonDrop(MDFloatLayout):
                     func_id = entry.get("value")
                     params = entry.get("params", {})
                     command = {
-                        "command": buttons[int(func_id)-1]["text"],
+                        "command": buttons[int(func_id)-1]["command"],
                         "args": params,
                     }
                     thread_entry["commands"].append(command)
@@ -335,9 +339,35 @@ class DragonDrop(MDFloatLayout):
                     #print(f"Removing empty thread: {thread['name']}")
                     json_data[naming["name"]]["threads"].remove(thread)
 
-            print(f"\n\nFinal JSON data:\n\n{json_data}\n\n")
+            #print(f"\n\nFinal JSON data:\n\n{json_data}\n\n")
             json_string = json.dumps(json_data, indent=4)
             print(f"JSON String:\n\n{json_string}\n\n")
+            
+            def _on_payload_ready(self, json_str):
+                try:
+                    payload = json.loads(json_str)
+                    if not payload:
+                        print("DragonDrop: empty payload")
+                        return
+
+                    # Top-level NAME key is the program name; everything under it is the program content
+                    program_name = next(iter(payload.keys()))
+                    print(f"DragonDrop: program name '{program_name}'")
+                    program_content = payload[program_name]
+                    program_json = json.dumps(program_content)
+                    print(f"DragonDrop: program JSON content:\n{program_json}")
+
+                    app = MDApp.get_running_app()
+                    if app and hasattr(app, "hmi_node") and app.hmi_node:
+                        # Call the fresh, non-reused client to save the program
+                        app.hmi_node.call_save_program_request(program_name, program_json, wait_for_service=True)
+                        print(f"DragonDrop: called save_program for '{program_name}'")
+                    else:
+                        print("DragonDrop: HMI node not available (make sure app.hmi_node is set)")
+                except Exception as e:
+                    print("DragonDrop: failed to parse/call save_program service:", e)
+
+            _on_payload_ready(self, json_string)
 
             save_it = MDDialog(
                 title="Save file?",
