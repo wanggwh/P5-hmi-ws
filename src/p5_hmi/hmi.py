@@ -64,7 +64,7 @@ class HMINode(Node):
 
         # Subscribers
         self.error_subscriber = self.create_subscription(Error, '/error_messages', self.handle_error_message_callback, 10)
-        self.status_subscriber = self.create_subscription(CommandState, '/p5_command_state', self.handle_status_message_callback, 10)
+        self.status_subscriber = self.create_subscription(CommandState, '/p5_command_state_dirty_fix', self.handle_status_message_callback, 10)
         self.joint_states_subscriber = self.create_subscription(JointState, '/joint_states', self.handle_joint_states_callback, 10)
 
         # Clients
@@ -223,20 +223,29 @@ class HMINode(Node):
             self.get_logger().error(f"Failed to handle status message: {e}")
 
     def handle_joint_states_callback(self, msg):
-        pass
-        # try:
-        #     bob_joint_positions = msg.position[6:12]
-        #     alice_joint_positions = msg.position[0:6]
+        try:
+            self.alice[0] = msg.position[2]
+            self.alice[1] = msg.position[1]
+            self.alice[2] = msg.position[0]
+            self.alice[3] = msg.position[3]
+            self.alice[4] = msg.position[4]
+            self.alice[5] = msg.position[5]
 
-        #     if self.app:
-        #         Clock.schedule_once(lambda dt: self.app.bob_update_joint_positions(bob_joint_positions), 0)
-        #         Clock.schedule_once(lambda dt: self.app.alice_update_joint_positions(bob_joint_positions), 0)
+            self.bob[0] = msg.position[8]
+            self.bob[1] = msg.position[7]
+            self.bob[2] = msg.position[6]
+            self.bob[3] = msg.position[9]
+            self.bob[4] = msg.position[10]
+            self.bob[5] = msg.position[11]
 
-        #     print(f"Bob joint positions: {bob_joint_positions}")
-        #     print(f"Alice joint positions: {alice_joint_positions}")
 
-        # except Exception as e:
-        #     self.get_logger().error(f"Failed to handle joint states message: {e}")
+            if self.app:
+                Clock.schedule_once(lambda dt: self.app.bob_update_joint_positions(self.bob), 0)
+                Clock.schedule_once(lambda dt: self.app.alice_update_joint_positions(self.alice), 0)
+
+
+        except Exception as e:
+            self.get_logger().error(f"Failed to handle joint states message: {e}")
 
 
 class HMIApp(MDApp):
