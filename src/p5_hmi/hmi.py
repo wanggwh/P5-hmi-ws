@@ -82,8 +82,6 @@ class HMINode(Node):
         # Service clients
         self.move_to_pre_def_pose_client = self.create_client(
             MoveToPreDefPose, "/p5_move_to_pre_def_pose")
-        self.set_admittance_status_client = self.create_client(
-            AdmittanceSetStatus, "/p5_admittance_set_state")
         self.save_pre_def_pose_client = self.create_client(
             PoseConfig, "/p5_pose_config")
         self.save_program_client = self.create_client(
@@ -99,24 +97,26 @@ class HMINode(Node):
     
     def send_set_admittance_status_request(self, robot_name, enable_admittance, update_rate):
         """Send admittance control status request"""
+        client = self.create_client(
+            AdmittanceSetStatus, "/" + robot_name + "/p5_admittance_set_state")
         request = AdmittanceSetStatus.Request()
         request.active = enable_admittance
-        request.update_rate = update_rate
+        request.update_rate = int(update_rate)
 
-        if not self.set_admittance_status_client.wait_for_service(timeout_sec=0.1):
+        if not client.wait_for_service(timeout_sec=0.1):
             self.get_logger().warning(
                 f"AdmittanceSetStatus service not available, cannot send request for {robot_name}")
             self.get_logger()
             self.waiting_popup = StatusPopupDialog.create_new_dialog()
             Clock.schedule_once(
                 lambda dt: self.waiting_popup.waiting_on_service_popup(
-                    service_name="/"+ robot_name +"/p5_admittance_set_state"), 0)
-            self._pending_service_request = (request, enable_admittance, update_rate)
+                    service_name="/" + robot_name + "/p5_admittance_set_state"), 0)
+            self._pending_service_request = (client, request, enable_admittance, update_rate)
             self._service_check_event = Clock.schedule_interval(
                 self._check_admittance_service_available_and_send, 0.5)
             return
         
-        self._send_set_admittance_request(request, enable_admittance, update_rate)
+        self._send_set_admittance_request(client, request, enable_admittance, update_rate)
 
     def _check_admittance_service_available_and_send(self, dt):
         """Periodically check if admittance service is available and send pending request"""
@@ -130,17 +130,19 @@ class HMINode(Node):
                 del self._service_check_event
             
             if hasattr(self, '_pending_service_request'):
-                request, enable_admittance, update_rate = self._pending_service_request
-                self._send_set_admittance_request(request, enable_admittance, update_rate)
+                client, request, enable_admittance, update_rate = self._pending_service_request
+                self._send_set_admittance_request(client, request, enable_admittance, update_rate)
                 del self._pending_service_request
 
-    def _send_set_admittance_request(self, request, enable_admittance, update_rate):
+    def _send_set_admittance_request(self, client, request, enable_admittance, update_rate):
         """Send admittance request to service"""
         self._operation_completed = False
-        future = self.set_admittance_status_client.call_async(request)
-        print(f"Admittance service call sent with enable={enable_admittance}, rate={update_rate}")
+        future = client.call_async(request)
+        future.active = enable_admittance
+        future.update_rate = update_rate
         future.add_done_callback(
             lambda f: self.get_logger().info(f"Admittance status set to {enable_admittance}"))
+        print(f"Admittance service call sent with enable={enable_admittance}, rate={update_rate}")
 
     # ==================== Move to Predefined Pose ====================
     

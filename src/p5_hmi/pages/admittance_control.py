@@ -52,35 +52,53 @@ class AdmittanceControl(MDFloatLayout):
                 self.disable_alice_admittance_control()
 
     def enable_bob_admittance_control(self):
-        """Enable admittance control for BOB"""
-        print("BOB Admittance Control ENABLE requested")
+        """Enable BOB admittance control"""
         if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.send_set_admittance_status_request("bob", True, 250)
-            print("Sent enable request for BOB admittance control")
+            # Kald eksisterende metode med korrekte parametre
+            self.app.hmi_node.send_set_admittance_status_request(
+                robot_name="bob",
+                enable_admittance=True,
+                update_rate=100.0  # Juster efter behov
+            )
+            # Opdater knap farver
+            self.ids.bob_enable_btn.md_bg_color = self.app.colors['success']
+            self.ids.bob_disable_btn.md_bg_color = self.app.colors['button_neutral']
 
     def disable_bob_admittance_control(self):
-        """Disable admittance control for BOB"""
-        print("BOB Admittance Control DISABLE requested")
+        """Disable BOB admittance control"""
         if self.app and hasattr(self.app, 'hmi_node'):
-            # Send ROS2 service request - fjern 'self' som første parameter
-            self.app.hmi_node.send_set_admittance_status_request("bob", False, 250)
-            print("Sent DISABLE request for BOB admittance control")
+            self.app.hmi_node.send_set_admittance_status_request(
+                robot_name="bob",
+                enable_admittance=False,
+                update_rate=100.0
+            )
+            # Opdater knap farver
+            self.ids.bob_enable_btn.md_bg_color = self.app.colors['button_neutral']
+            self.ids.bob_disable_btn.md_bg_color = self.app.colors['accent_coral']
 
     def enable_alice_admittance_control(self):
-        """Enable admittance control for ALICE"""
-        print("ALICE Admittance Control ENABLE requested")
+        """Enable ALICE admittance control"""
         if self.app and hasattr(self.app, 'hmi_node'):
-            # Send ROS2 service request - fjern 'self' som første parameter  
-            self.app.hmi_node.send_set_admittance_status_request("alice", True, 250)
-            print("Sent enable request for ALICE admittance control")
+            self.app.hmi_node.send_set_admittance_status_request(
+                robot_name="alice",
+                enable_admittance=True,
+                update_rate=100.0
+            )
+            # Opdater knap farver
+            self.ids.alice_enable_btn.md_bg_color = self.app.colors['success']
+            self.ids.alice_disable_btn.md_bg_color = self.app.colors['button_neutral']
 
     def disable_alice_admittance_control(self):
-        """Disable admittance control for ALICE"""
-        print("ALICE Admittance Control DISABLE requested")
+        """Disable ALICE admittance control"""
         if self.app and hasattr(self.app, 'hmi_node'):
-            # Send ROS2 service request - fjern 'self' som første parameter
-            self.app.hmi_node.send_set_admittance_status_request("alice", False, 250)
-            print("Sent DISABLE request for ALICE admittance control")
+            self.app.hmi_node.send_set_admittance_status_request(
+                robot_name="alice",
+                enable_admittance=False,
+                update_rate=100.0
+            )
+            # Opdater knap farver
+            self.ids.alice_enable_btn.md_bg_color = self.app.colors['button_neutral']
+            self.ids.alice_disable_btn.md_bg_color = self.app.colors['accent_coral']
 
     def get_bob_status(self):
         """Get current BOB admittance control status"""
@@ -119,6 +137,7 @@ class AdmittanceControl(MDFloatLayout):
             k_value = self.ids.k_slider.value
             
             # Send to ROS2
+            print(M_value)
             # self.app.hmi_node.publish_admittance_parameters(M_value, D_value, k_value)
         except Exception as e:
             print(f"Failed to publish admittance parameters: {e}")

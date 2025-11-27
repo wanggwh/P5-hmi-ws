@@ -25,31 +25,30 @@
                     MDLabel:
                         adaptive_height: True
                         text: "BOB - Admittance Control"
-                        theme_text_color: "Custom"
                         text_color: app.colors['text_light']
                         halign: "center"
 
-                    MDSegmentedButton:
+                    MDBoxLayout:
+                        orientation: "horizontal"
                         spacing: "4dp"
-                        size_hint_x: 1
+                        size_hint_y: None
+                        height: dp(40)
 
-                        MDSegmentedButtonItem:
+                        MDRaisedButton:
+                            id: bob_enable_btn
                             text: "Enable"
-                            active: False
-                            theme_bg_color: "Custom" 
-                            md_bg_color: app.colors['bg_secondary']
-                            theme_text_color: "Custom"
+                            size_hint_x: 0.5
+                            md_bg_color: app.colors['button_neutral']
                             text_color: app.colors['text_light']
-                            on_active: root.on_admittance_bob_toggle(self, self.active)
+                            on_release: root.enable_bob_admittance_control()
 
-                        MDSegmentedButtonItem:
+                        MDRaisedButton:
+                            id: bob_disable_btn
                             text: "Disable"
-                            active: True
-                            theme_bg_color: "Custom"
-                            md_bg_color: app.colors['bg_secondary']
-                            theme_text_color: "Custom" 
+                            size_hint_x: 0.5
+                            md_bg_color: app.colors['button_neutral']
                             text_color: app.colors['text_light']
-                            on_active: root.on_admittance_bob_toggle(self, self.active)
+                            on_release: root.disable_bob_admittance_control()
 
                 # ALICE Section
                 MDBoxLayout:
@@ -60,31 +59,30 @@
                     MDLabel:
                         adaptive_height: True
                         text: "ALICE - Admittance Control"
-                        theme_text_color: "Custom"
                         text_color: app.colors['text_light']
                         halign: "center"
 
-                    MDSegmentedButton:
+                    MDBoxLayout:
+                        orientation: "horizontal"
                         spacing: "4dp"
-                        size_hint_x: 1
+                        size_hint_y: None
+                        height: dp(40)
 
-                        MDSegmentedButtonItem:
+                        MDRaisedButton:
+                            id: alice_enable_btn
                             text: "Enable"
-                            active: False
-                            theme_bg_color: "Custom"
-                            md_bg_color: app.colors['bg_secondary']
-                            theme_text_color: "Custom"
+                            size_hint_x: 0.5
+                            md_bg_color: app.colors['button_neutral']
                             text_color: app.colors['text_light']
-                            on_active: root.on_admittance_alice_toggle(self, self.active)
+                            on_release: root.enable_alice_admittance_control()
 
-                        MDSegmentedButtonItem:
+                        MDRaisedButton:
+                            id: alice_disable_btn
                             text: "Disable"
-                            active: True
-                            theme_bg_color: "Custom"
-                            md_bg_color: app.colors['bg_secondary']
-                            theme_text_color: "Custom"
+                            size_hint_x: 0.5
+                            md_bg_color: app.colors['button_neutral']
                             text_color: app.colors['text_light']
-                            on_active: root.on_admittance_alice_toggle(self, self.active)
+                            on_release: root.disable_alice_admittance_control()
 
         # Separate slider section - placeret længere nede med mere luft
         MDBoxLayout:

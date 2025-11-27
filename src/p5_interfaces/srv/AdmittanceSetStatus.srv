@@ -1,4 +1,4 @@
 bool active
 int32 update_rate
 ---
-string message
+bool message
