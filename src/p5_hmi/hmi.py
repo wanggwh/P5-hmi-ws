@@ -195,7 +195,7 @@ class HMINode(Node):
             success = response.success
             robot_name = getattr(future, "robot_name", None)
             goal_name = getattr(future, "goal_name", None)
-
+            print("robot_name: " + robot_name)
             def create_and_store_dialog(dt):
                 self.current_status_dialog = StatusPopupDialog.create_new_dialog()
                 self.current_status_dialog.show_status(

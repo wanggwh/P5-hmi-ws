@@ -198,9 +198,6 @@ class StatusPopupDialog(MDDialog):
         # Start pulsing animation after dialog opens
         Clock.schedule_once(lambda dt: self.animate_pulsing_status_bar(target_color), 0.1)
     
-    def get_status_of_request(self, status):
-        status_of_request = status
-    
     def stop_pulsing_animation(self):
         """Stop the pulsing animation"""
         if hasattr(self, 'ids') and 'status_title_bar' in self.ids:

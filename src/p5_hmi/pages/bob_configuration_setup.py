@@ -61,7 +61,7 @@ class BobConfigurationSetup(MDFloatLayout):
     
     def send_custom_configuration(self, config_name):
         if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.send_move_to_pre_def_pose_request("BOB", str(config_name))
+            self.app.hmi_node.send_move_to_pre_def_pose_request("bob", str(config_name))
             print(f"Sent {config_name} configuration request for BOB")
 
     def restore_saved_configurations(self, dt):
