@@ -16,7 +16,7 @@ from kivy.core.window import Window
 
 from p5_interfaces.srv import PoseConfig
 from p5_interfaces.srv import MoveToPreDefPose, SaveProgram
-from p5_interfaces.srv import AdmittanceSetStatus
+from p5_interfaces.srv import AdmittanceSetStatus, AdmittanceConfig
 from p5_interfaces.msg import CommandState
 from p5_interfaces.msg import Error
 from sensor_msgs.msg import JointState
@@ -95,6 +95,28 @@ class HMINode(Node):
 
     # ==================== Admittance Control ====================
     
+    def publish_admittance_parameters(self, robot_name, M_parameter, D_parameter, K_parameter):
+        client = self.create_client(
+            AdmittanceConfig, "/" + robot_name + "/p5_admittance_config")
+        request = AdmittanceConfig.Request()
+        request.m = M_parameter
+        request.d = D_parameter
+        request.k = K_parameter
+        request.alpha = 0.01
+        
+        if not client.wait_for_service(timeout_sec=0.1):
+            self.get_logger().warning(
+                f"AdmittanceConfig service not available, cannot send request for {robot_name}")
+            self.waiting_popup = StatusPopupDialog.create_new_dialog()
+            Clock.schedule_once(
+                lambda dt: self.waiting_popup.waiting_on_service_popup(
+                    service_name="/" + robot_name + "/p5_admittance_config"), 0)
+            self._pending_service_request = (client, request, M_parameter, D_parameter, K_parameter)
+            self._service_check_event = Clock.schedule_interval(
+                self._check_admittance_config_service_available_and_send, 0.5)
+            return
+        self._send_admittance_config_request(client, request, M_parameter, D_parameter, K_parameter)
+        
     def send_set_admittance_status_request(self, robot_name, enable_admittance, update_rate):
         """Send admittance control status request"""
         client = self.create_client(
@@ -120,29 +142,49 @@ class HMINode(Node):
 
     def _check_admittance_service_available_and_send(self, dt):
         """Periodically check if admittance service is available and send pending request"""
-        if self.set_admittance_status_client.wait_for_service(timeout_sec=0.1):
-            if self.waiting_popup:
-                self.waiting_popup.dismiss()
-                self.waiting_popup = None
+        #if self.set_admittance_status_client.wait_for_service(timeout_sec=0.1):
+        if self.waiting_popup:
+            self.waiting_popup.dismiss()
+            self.waiting_popup = None
             
-            if hasattr(self, '_service_check_event'):
-                self._service_check_event.cancel()
-                del self._service_check_event
+        if hasattr(self, '_service_check_event'):
+            self._service_check_event.cancel()
+            del self._service_check_event
             
-            if hasattr(self, '_pending_service_request'):
-                client, request, enable_admittance, update_rate = self._pending_service_request
-                self._send_set_admittance_request(client, request, enable_admittance, update_rate)
-                del self._pending_service_request
+        if hasattr(self, '_pending_service_request'):
+            client, request, enable_admittance, update_rate = self._pending_service_request
+            self._send_set_admittance_request(client, request, enable_admittance, update_rate)
+            del self._pending_service_request
+                
+    def _check_admittance_config_service_available_and_send(self, dt):
+        """Periodically check if admittance service is available and send pending request"""
+        #if self.set_admittance_status_client.wait_for_service(timeout_sec=0.1):
+        if self.waiting_popup:
+            self.waiting_popup.dismiss()
+            self.waiting_popup = None
+            
+        if hasattr(self, '_service_check_event'):
+            self._service_check_event.cancel()
+            del self._service_check_event
+            
+        if hasattr(self, '_pending_service_request'):
+            client, request, M_parameter, D_parameter, K_parameter = self._pending_service_request
+            self._send_admittance_config_request(client, request, M_parameter, D_parameter, K_parameter)
+            del self._pending_service_request
 
     def _send_set_admittance_request(self, client, request, enable_admittance, update_rate):
         """Send admittance request to service"""
         self._operation_completed = False
         future = client.call_async(request)
-        future.active = enable_admittance
-        future.update_rate = update_rate
         future.add_done_callback(
             lambda f: self.get_logger().info(f"Admittance status set to {enable_admittance}"))
-        print(f"Admittance service call sent with enable={enable_admittance}, rate={update_rate}")
+    
+    def _send_admittance_config_request(self, client, request, M_parameter, D_parameter, K_parameter):
+        """Send admittance request to service"""
+        self._operation_completed = False
+        future = client.call_async(request)
+        future.add_done_callback(
+            lambda f: self.get_logger().info(f"Admittance parameter set to {M_parameter}"))
 
     # ==================== Move to Predefined Pose ====================
     

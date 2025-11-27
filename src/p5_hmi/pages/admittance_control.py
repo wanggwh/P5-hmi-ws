@@ -132,13 +132,24 @@ class AdmittanceControl(MDFloatLayout):
             return
         try:
             # Get current slider values - direct access is faster
-            M_value = self.ids.M_slider.value
-            D_value = self.ids.D_slider.value
-            k_value = self.ids.k_slider.value
+            M = self.ids.M_slider.value
+            D = self.ids.D_slider.value
+            K = self.ids.k_slider.value
+            if M == 0:
+                M = 0.1
+            if D == 0:
+                D = 0.1
+            if K == 0:
+                K = 0.1
             
+            M_value = [M*100, M*100, M*100, M, M, M]
+            D_value = [D*100, D*100, D*100, D, D, D]
+            K_value = [K*100, K*100, K*100, K, K, K]
             # Send to ROS2
             print(M_value)
-            # self.app.hmi_node.publish_admittance_parameters(M_value, D_value, k_value)
+            print(D_value)
+            print(K_value)
+            self.app.hmi_node.publish_admittance_parameters("alice", M_value, D_value, K_value)
         except Exception as e:
             print(f"Failed to publish admittance parameters: {e}")
 
