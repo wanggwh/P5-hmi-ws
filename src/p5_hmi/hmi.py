@@ -7,6 +7,7 @@ from std_msgs.msg import Bool
 from sensor_msgs.msg import JointState
 from p5_interfaces.msg import Error
 import os
+import math
 
 from kivy.lang import Builder
 from kivy.metrics import dp
@@ -419,7 +420,6 @@ class HMINode(Node):
             # When operation starts (status=True), reset completion flag
             if status and self.app:
                 self._operation_completed = False
-                print("Operation started - reset completion flag")
 
             # When operation completes (status=False) and we haven't shown success yet
             if not status and self.app and not self._operation_completed:
@@ -446,22 +446,22 @@ class HMINode(Node):
     def handle_joint_states_callback(self, msg):
         """Handle joint state updates and update GUI"""
         try:
-            # Update Alice joint positions
-            self.alice[0] = msg.position[2]
-            self.alice[1] = msg.position[1]
-            self.alice[2] = msg.position[0]
-            self.alice[3] = msg.position[3]
-            self.alice[4] = msg.position[4]
-            self.alice[5] = msg.position[5]
+            # Update Alice joint positions (convert from radians to degrees)
+            self.alice[0] = math.degrees(msg.position[2])
+            self.alice[1] = math.degrees(msg.position[1])
+            self.alice[2] = math.degrees(msg.position[0])
+            self.alice[3] = math.degrees(msg.position[3])
+            self.alice[4] = math.degrees(msg.position[4])
+            self.alice[5] = math.degrees(msg.position[5])
 
-            # Update Bob joint positions
-            self.bob[0] = msg.position[8]
-            self.bob[1] = msg.position[7]
-            self.bob[2] = msg.position[6]
-            self.bob[3] = msg.position[9]
-            self.bob[4] = msg.position[10]
-            self.bob[5] = msg.position[11]
-            # Update GUI in main thread
+            # Update Bob joint positions (convert from radians to degrees)
+            self.bob[0] = math.degrees(msg.position[8])
+            self.bob[1] = math.degrees(msg.position[7])
+            self.bob[2] = math.degrees(msg.position[6])
+            self.bob[3] = math.degrees(msg.position[9])
+            self.bob[4] = math.degrees(msg.position[10])
+            self.bob[5] = math.degrees(msg.position[11])
+            
             if self.app:
                 Clock.schedule_once(
                     lambda dt: self.app.bob_update_joint_positions(self.bob), 0)
@@ -647,8 +647,8 @@ class HMIApp(MDApp):
         """Update BOB joint positions in current page widget"""
         current_widget = self.get_current_page_widget()
         if current_widget and hasattr(current_widget, 'bob_update_joint_positions'):
-            current_widget.bob_update_joint_positions_virk(joint_positions)
-       
+            current_widget.bob_update_joint_positions(joint_positions)
+    
     def alice_update_joint_positions(self, joint_positions):
         """Update ALICE joint positions in current page widget"""
         current_widget = self.get_current_page_widget()
