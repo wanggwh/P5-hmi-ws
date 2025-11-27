@@ -126,6 +126,53 @@ class StatusPopupDialog(MDDialog):
                 target_color = [0.2, 0.8, 0.2, 1.0] # Green
                 Clock.schedule_once(lambda dt: self.animate_status_bar(target_color), 0.1)
 
+    def show_status_save_custom_config(self, robot_name, goal_name, success):
+        # Don't show if already dismissed
+        if self._is_dismissed:
+            return
+            
+        # Reset dialog state first
+        self.stop_pulsing_animation()
+        
+        title = f"STATUS UPDATE DIALOG"
+        subtitle = "Robot operation updates"  # Default subtitle
+        status_text = ""
+        status_case = -1
+        robot_name_corrected = robot_name
+
+        if robot_name == "bob":
+            robot_name_corrected = "BOB"
+        elif robot_name == "alice":
+            robot_name_corrected = "ALICE"
+
+        if success is False:
+            status_text = "The request failed, possibly due to wrong robot name or configuration"
+            status_case = 0
+
+        elif success is True:
+            status_text = "The configuration was stored and send correctly"
+            status_case = 1
+        
+
+
+        self.ids.status_title.text = title
+        self.ids.status_subtitle.text = subtitle
+        self.ids.robot_name.text = f"Robot requested: {robot_name_corrected}"
+        self.ids.goal_name.text = f"Goal requested: {goal_name}"
+        self.ids.status_message.text = status_text
+        
+        # Open dialog first, then animate
+        self.open()
+        
+        match status_case:
+            case 0: # Error case
+                target_color = [0.8, 0.2, 0.2, 1.0] # Red
+                Clock.schedule_once(lambda dt: self.animate_status_bar(target_color), 0.1)
+
+            case 1: # Success case
+                target_color = [0.2, 0.8, 0.2, 1.0] # Green
+                Clock.schedule_once(lambda dt: self.animate_status_bar(target_color), 0.1)
+        
     
     def show_in_progress(self, configuration, message="Operation in progress..."):
         """Show in-progress status with orange status bar"""
