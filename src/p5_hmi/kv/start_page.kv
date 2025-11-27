@@ -17,8 +17,23 @@
         adaptive_width: True
         pos_hint: {'center_x': 0.5}
         
+        # Browse saved_configs button (placed next to START)
+        #MDRaisedButton:
+        #    text: "Browse saved_configs"
+        #    md_bg_color: app.colors['button_neutral']
+        #    theme_text_color: "Custom"
+        #    text_color: app.colors['text_light']
+        #    font_size: "16sp"
+        #    size_hint_x: None
+        #    width: dp(180)
+        #    height: dp(48)
+        #    elevation: 2
+        #    pos_hint: {"center_y": 0.5}
+        #    on_release: root._open_saved_configs_browser()
+
         # Start System Button
         MDRaisedButton:
+            id: start_btn
             text: "START"
             md_bg_color: app.colors['success']
             theme_text_color: "Custom"
@@ -29,7 +44,7 @@
             height: root.button_height
             elevation: 3
             on_release: app.system_button_callback("start")
-            
+        
         # Pause System Button (center)
         MDRaisedButton:
             text: "PAUSE"
@@ -56,6 +71,20 @@
             elevation: 3
             on_release: app.system_button_callback("stop")
     
+        # Browse button
+        MDRaisedButton:
+            id: browse_btn
+            text: "BROWSE"
+            md_bg_color: [0.54, 0.46, 0.98, 1]
+            theme_text_color: "Custom"
+            text_color: app.colors['text_light']
+            font_size: root.button_font_size
+            size_hint_x: None
+            width: root.button_width
+            height: root.button_height
+            elevation: 3
+            on_release: root._open_saved_configs_browser()
+
     # System Status Card        
     MDCard:
         orientation: "vertical"

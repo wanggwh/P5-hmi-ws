@@ -12,6 +12,7 @@ from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton, MDIconButton
 from kivymd.uix.textfield import MDTextField
 from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.selectioncontrol import MDCheckbox
 
 """""
 Structure of dictionary is as follows:
@@ -46,8 +47,8 @@ class DragonDrop(MDFloatLayout):
             {"id_name": "3", "text": "Fra. ava.", "bg_color": [0.54, 0.46, 0.98, 1], "command": "frame_available"},
             {"id_name": "4", "text": "Grip", "bg_color": [0.98, 0.78, 0.29, 1], "command": "grip"},
             {"id_name": "5", "text": "Admit", "bg_color": [0.94, 0.36, 0.36, 1], "command": "admittance"},
-            {"id_name": "6", "text": "Sync", "bg_color": [0.62, 0.65, 0.78, 1], "command": "sync"},
-            {"id_name": "7", "text": "MiR", "bg_color": [0.5,0.5,0.5,1], "command": "mir_move"},
+            {"id_name": "6", "text": "Sync", "bg_color": [0.86, 0.52, 0.60, 1], "command": "sync"},
+            {"id_name": "7", "text": "MiR", "bg_color": [0.62, 0.65, 0.78, 1], "command": "mir_move"},
         ]
 
         zones = [
@@ -56,15 +57,35 @@ class DragonDrop(MDFloatLayout):
             {"zone_id": "MiR", "pos_hint": {"x": 0.1, "y": 0.2}, "size_hint": {0.85,0.01}, "bg_color": [1, 0.8, 0.8, 0.3], "split_amount": 7},
         ]
 
+        # information = {
+        #     "1":{"config_name": ""},
+        #     "2":{"frame": "", "linear": "", "use_tracking_velocity": "", "pose": ""},
+        #     "3":{"frame_name": ""},
+        #     "4":{"action": ""},
+        #     "5":{"action": ""},
+        #     "6":{"sync_id": "", "threads": ""},
+        #     "7":{"mission": ""},
+        # }
+
+        # information = {
+        #     "1":{"TF": {"config_name": ""}},
+        #     "2":{"TF": {"frame": "", "pose": ""}, "bool": {"linear": "", "use_tracking_velocity": ""}},
+        #     "3":{"TF": {"frame_name": ""}},
+        #     "4":{"bool": {"action": ""}},
+        #     "5":{"bool": {"action": ""}},
+        #     "6":{"TF": {"sync_id": "", "threads": ""}},
+        #     "7":{"TF": {"mission": ""}},
+        # }
+
         information = {
-            "1":{"config_name": ""},
-            "2":{"frame": "", "linear": "", "use_tracking_velocity": "", "pose": ""},
-            "3":{"frame_name": ""},
-            "4":{"action": ""},
-            "5":{"action": ""},
-            "6":{"sync_id": "", "threads": ""},
-            "7":{"mission": ""},
-        }
+            "1":{"config_name": {"type": "TF", "pretty_name": "Config Name", "entry": ""}},
+            "2":{"frame": {"type": "TF", "pretty_name": "Frame", "entry": ""}, "linear": {"type": "bool", "pretty_name": "Linear", "entry": ""}, "use_tracking_velocity": {"type": "bool", "pretty_name": "Use Tracking Velocity", "entry": ""}, "pose": {"type": "TF", "pretty_name": "Pose", "entry": ""}},
+            "3":{"frame_name": {"type": "TF", "pretty_name": "Frame Name", "entry": ""}},
+            "4":{"action": {"type": "bool", "pretty_name": "Action", "entry": ""}},
+            "5":{"action": {"type": "bool", "pretty_name": "Action", "entry": ""}},
+            "6":{"sync_id": {"type": "TF", "pretty_name": "Sync ID", "entry": ""}, "threads": {"type": "TF", "pretty_name": "Threads", "entry": ""}},
+            "7":{"mission": {"type": "TF", "pretty_name": "Mission", "entry": ""}},
+        } 
 
         alice = DragonDropZone(
             zone_id=zones[0]["zone_id"],
@@ -114,31 +135,31 @@ class DragonDrop(MDFloatLayout):
 
         leftScroll = MDIconButton(
             icon="arrow-left",
-            pos_hint={"center_x": 0.9, "top": 0.115},
+            pos_hint={"center_x": 0.85, "center_y": 0.05},
             on_release=lambda x: self.scroll_left(zones=[alice, bob, mir], buttons=buttons, instance=x)
             )
 
         rightScroll = MDIconButton(
             icon="arrow-right",
-            pos_hint={"center_x": 0.95, "top": 0.115},
+            pos_hint={"center_x": 0.90, "center_y": 0.05},
             on_release=lambda x: self.scroll_right(zones=[alice, bob, mir], buttons=buttons, instance=x)
         )
 
         restartButton = MDIconButton(
             icon="restart",
-            pos_hint={"center_x": 0.05, "top": 0.115},
+            pos_hint={"center_x": 0.05, "center_y": 0.05},
             on_release=lambda x: self.reset_all(zones=[alice, bob, mir], visual_only=False)
         )
 
         showdictButton = MDIconButton(
             icon="printer-outline",
-            pos_hint={"center_x": 0.1, "top": 0.115},
+            pos_hint={"center_x": 0.1, "center_y": 0.05},
             on_release=lambda x: print(f"Current zone orders:\n\nAlice: {alice.order}\n\nBob: {bob.order}\n\nMiR: {mir.order}\n")
         )
 
         saveAndParse = MDIconButton(
             icon="content-save",
-            pos_hint={"center_x": 0.15, "top": 0.115},
+            pos_hint={"center_x": 0.15, "center_y": 0.05},
             on_release=lambda x: self._parse_json(zones=[alice, bob, mir], buttons=buttons)
         )
 
@@ -154,8 +175,8 @@ class DragonDrop(MDFloatLayout):
             theme_text_color="Custom",
             text_color=[0.96, 0.96, 0.98, 1],
             font_style="Subtitle1",
-            size_hint=(0.2, 0.1),
-            pos_hint={"center_x": 0.02, "top": 0.97},
+            size_hint=(0.05, 0.1),
+            pos_hint={"center_x": 0.95, "center_y": 0.05},
         )
 
         self.add_widget(pageCounter)
@@ -280,7 +301,7 @@ class DragonDrop(MDFloatLayout):
                 orientation="vertical",
                 spacing=dp(10),
                 size_hint_y=None,
-                height=dp(200),
+                height=len(naming) * dp(70),
             ),
             buttons=[
                 MDFlatButton(text="CANCEL", on_release=lambda x: naming_dialog.dismiss()),
@@ -367,7 +388,7 @@ class DragonDrop(MDFloatLayout):
                 except Exception as e:
                     print("DragonDrop: failed to parse/call save_program service:", e)
 
-            _on_payload_ready(self, json_string)
+            #_on_payload_ready(self, json_string)
 
             save_it = MDDialog(
                 title="Save file?",
@@ -736,14 +757,66 @@ class InfoEncoder(MDDialog):
         # ensure building only once
         if self._built:
             return
-        # normalize information keys and create widgets
-        for param in list(self.information.keys()):
-            # keep placeholder as empty string
-            self.information[param] = ""
-            tf = MDTextField(hint_text=f"{param}")
-            self._fields[param] = tf
-            self.content_cls.add_widget(tf)
+
+        # Normalize incoming `self.information` so every entry is a dict
+        # with keys: "type", "pretty_name", "entry"
+        normalized = {}
+        for param, val in list(self.information.items()):
+            if isinstance(val, dict) and "type" in val:
+                info = val.copy()
+                info.setdefault("pretty_name", param)
+                info.setdefault("entry", "" if info.get("type") == "TF" else bool(info.get("entry", False)))
+            else:
+                # val is a plain value (happens when editing existing params)
+                if isinstance(val, bool):
+                    info = {"type": "bool", "pretty_name": param, "entry": bool(val)}
+                else:
+                    info = {"type": "TF", "pretty_name": param, "entry": "" if val is None else str(val)}
+            normalized[param] = info
+
+        # replace self.information with normalized structure so future calls are consistent
+        self.information = normalized
+
+        # create widgets from normalized info
+        for param, info in self.information.items():
+            ptype = info.get("type", "TF")
+            pretty = info.get("pretty_name", param)
+            if ptype == "TF":
+                info["entry"] = info.get("entry", "")
+                tf = MDTextField(hint_text=pretty, text=info.get("entry", ""))
+                self._fields[param] = tf
+                self.content_cls.add_widget(tf)
+            elif ptype == "bool":
+                info["entry"] = bool(info.get("entry", False))
+                row = MDBoxLayout(orientation="horizontal", spacing=dp(8), size_hint_y=None, height=dp(48))
+                lbl = MDLabel(
+                    text=pretty,
+                    halign="left",
+                    valign="center",
+                    theme_text_color="Custom",
+                    text_color=[0.65, 0.65, 0.65, 1],
+                )
+                cb = MDCheckbox(active=info["entry"])
+                row.add_widget(lbl)
+                row.add_widget(cb)
+                self._fields[param] = cb
+                self.content_cls.add_widget(row)
+
         self._built = True
+
+    # def build_fields(self):
+    #     """Create input widgets once when needed."""
+    #     # ensure building only once
+    #     if self._built:
+    #         return
+    #     # normalize information keys and create widgets
+    #     for param in list(self.information.keys()):
+    #         # keep placeholder as empty string
+    #         self.information[param] = ""
+    #         tf = MDTextField(hint_text=f"{param}")
+    #         self._fields[param] = tf
+    #         self.content_cls.add_widget(tf)
+    #     self._built = True
 
     def open(self, *args, **kwargs):
         # build the content lazily before showing
@@ -762,7 +835,10 @@ class InfoEncoder(MDDialog):
 
         #n = 1
         for param, widget in self._fields.items():
-            self.params[param] = widget.text.strip()
+            if isinstance(widget, MDCheckbox):
+                self.params[param] = widget.active
+            else:
+                self.params[param] = widget.text.strip()
             #n += 1
 
         self.zone.addToList(int(self.id_name), self.idx, self.params)
