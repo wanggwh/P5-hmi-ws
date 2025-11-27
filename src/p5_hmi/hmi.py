@@ -504,7 +504,7 @@ class HMIApp(MDApp):
             "ALICE - Configuration Setup",
             "MIR - System Control",
             "Admittance Control",
-            "Dragon Drop - System Control",
+            "Drag and Drop - System Control",
             "System Logging",
             "Settings"
         ]
@@ -544,7 +544,7 @@ class HMIApp(MDApp):
             "ALICE - Configuration Setup": "kv/alice_configuration_setup.kv",
             "MIR - System Control": "kv/mir_system_control.kv",
             "Admittance Control": "kv/admittance_control.kv",
-            "Dragon Drop - System Control": "kv/dragon_drop.kv",
+            "Drag and Drop - System Control": "kv/dragon_drop.kv",
             "System Logging": "kv/system_logging.kv",
             "Settings": "kv/settings.kv"
         }
@@ -560,7 +560,7 @@ class HMIApp(MDApp):
         """Called when the app starts - load all KV files"""
         pages = [
             "Start Page", "BOB - Configuration Setup", "ALICE - Configuration Setup",
-            "MIR - System Control", "Admittance Control", "Dragon Drop - System Control",
+            "MIR - System Control", "Admittance Control", "Drag and Drop - System Control",
             "System Logging", "Settings"
         ]
         
@@ -612,7 +612,7 @@ class HMIApp(MDApp):
                 "ALICE - Configuration Setup": AliceConfigurationSetup,
                 "MIR - System Control": MirSystemControlPage,
                 "Admittance Control": AdmittanceControl,
-                "Dragon Drop - System Control": DragonDrop,
+                "Drag and Drop - System Control": DragonDrop,
                 "System Logging": SystemLoggingPage,
                 "Settings": lambda: SettingsPage(self.hmi_node)
             }
