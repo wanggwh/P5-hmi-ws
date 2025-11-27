@@ -461,7 +461,6 @@ class HMINode(Node):
             self.bob[3] = msg.position[9]
             self.bob[4] = msg.position[10]
             self.bob[5] = msg.position[11]
-
             # Update GUI in main thread
             if self.app:
                 Clock.schedule_once(
@@ -648,7 +647,7 @@ class HMIApp(MDApp):
         """Update BOB joint positions in current page widget"""
         current_widget = self.get_current_page_widget()
         if current_widget and hasattr(current_widget, 'bob_update_joint_positions'):
-            current_widget.bob_update_joint_positions(joint_positions)
+            current_widget.bob_update_joint_positions_virk(joint_positions)
        
     def alice_update_joint_positions(self, joint_positions):
         """Update ALICE joint positions in current page widget"""
