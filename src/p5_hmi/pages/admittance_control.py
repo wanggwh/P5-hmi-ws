@@ -27,6 +27,7 @@ class AdmittanceControl(MDFloatLayout):
         self.repeat_direction = None
         self.repeat_interval = 0.3
         self.repeat_count = 0
+        self.publish_debounce_event = None  # For debouncing parameter publishing
 
     def on_parent(self, widget, parent):
         """Called when the widget is added to a parent"""
@@ -54,7 +55,6 @@ class AdmittanceControl(MDFloatLayout):
         """Enable admittance control for BOB"""
         print("BOB Admittance Control ENABLE requested")
         if self.app and hasattr(self.app, 'hmi_node'):
-            # Send ROS2 service request - fjern 'self' som første parameter
             self.app.hmi_node.send_set_admittance_status_request("bob", True, 250)
             print("Sent enable request for BOB admittance control")
 
@@ -97,25 +97,26 @@ class AdmittanceControl(MDFloatLayout):
         slider_names = ["M", "D", "k"]
         slider_name = slider_names[slider_index]
         
-        print(f"{slider_name} parameter changed to {value_float}")
-        
-        # Update the corresponding label
+        # Update the corresponding label immediately for instant feedback
         if hasattr(self.ids, f'{slider_name}_value'):
             getattr(self.ids, f'{slider_name}_value').text = f"{value_float}"
         
-        self.publish_admittance_parameters()
+        # Debounce publishing - only publish after 0.3s of no changes
+        if self.publish_debounce_event:
+            self.publish_debounce_event.cancel()
+        
+        self.publish_debounce_event = Clock.schedule_once(
+            lambda dt: self.publish_admittance_parameters(), 0.3)
 
     def publish_admittance_parameters(self):
         """Publish admittance control parameters to ROS2"""
         if not self.app or not hasattr(self.app, 'hmi_node'):
             return
         try:
-            # Get current slider values
-            M_value = getattr(self.ids, 'M_slider').value if hasattr(self.ids, 'M_slider') else 0.0
-            D_value = getattr(self.ids, 'D_slider').value if hasattr(self.ids, 'D_slider') else 0.0
-            k_value = getattr(self.ids, 'k_slider').value if hasattr(self.ids, 'k_slider') else 0.0
-            
-            print(f"Publishing admittance parameters: M={M_value}, D={D_value}, K={k_value}")
+            # Get current slider values - direct access is faster
+            M_value = self.ids.M_slider.value
+            D_value = self.ids.D_slider.value
+            k_value = self.ids.k_slider.value
             
             # Send to ROS2
             # self.app.hmi_node.publish_admittance_parameters(M_value, D_value, k_value)
@@ -130,7 +131,6 @@ class AdmittanceControl(MDFloatLayout):
             slider = getattr(self.ids, slider_name)
             new_value = min(slider.value + slider.step, slider.max)
             slider.value = new_value
-            print(f"Incremented {slider_name} to {new_value}")
 
     def decrement_parameter(self, slider_index):
         """Decrement parameter by step size"""
@@ -140,7 +140,6 @@ class AdmittanceControl(MDFloatLayout):
             slider = getattr(self.ids, slider_name)
             new_value = max(slider.value - slider.step, slider.min)
             slider.value = new_value
-            print(f"Decremented {slider_name} to {new_value}")
 
     def start_increment(self, slider_index):
         """Start incrementing parameter with acceleration"""

@@ -67,6 +67,10 @@ class HMINode(Node):
         self.alice = [0.0] * 6
         self.bob = [0.0] * 6
 
+        # Throttle variables for joint states
+        self._last_joint_update = 0
+        self._joint_update_interval = 0.1  # Max 10 Hz opdatering til GUI
+
         # Subscribers
         self.error_subscriber = self.create_subscription(
             Error, '/error_messages', self.handle_error_message_callback, 10)
@@ -102,10 +106,11 @@ class HMINode(Node):
         if not self.set_admittance_status_client.wait_for_service(timeout_sec=0.1):
             self.get_logger().warning(
                 f"AdmittanceSetStatus service not available, cannot send request for {robot_name}")
+            self.get_logger()
             self.waiting_popup = StatusPopupDialog.create_new_dialog()
             Clock.schedule_once(
                 lambda dt: self.waiting_popup.waiting_on_service_popup(
-                    service_name="/p5_admittance_set_state"), 0)
+                    service_name="/"+ robot_name +"/p5_admittance_set_state"), 0)
             self._pending_service_request = (request, enable_admittance, update_rate)
             self._service_check_event = Clock.schedule_interval(
                 self._check_admittance_service_available_and_send, 0.5)
@@ -451,6 +456,14 @@ class HMINode(Node):
     def handle_joint_states_callback(self, msg):
         """Handle joint state updates and update GUI"""
         try:
+            # Throttle updates - kun opdater GUI hvert 0.1 sekund
+            import time
+            current_time = time.time()
+            if current_time - self._last_joint_update < self._joint_update_interval:
+                return
+            
+            self._last_joint_update = current_time
+            
             # Update Alice joint positions (convert from radians to degrees)
             self.alice[0] = math.degrees(msg.position[2])
             self.alice[1] = math.degrees(msg.position[1])
@@ -468,10 +481,12 @@ class HMINode(Node):
             self.bob[5] = math.degrees(msg.position[11])
             
             if self.app:
-                Clock.schedule_once(
-                    lambda dt: self.app.bob_update_joint_positions(self.bob), 0)
-                Clock.schedule_once(
-                    lambda dt: self.app.alice_update_joint_positions(self.alice), 0)
+                # Batch begge opdateringer i ét Clock.schedule_once
+                def update_both(dt):
+                    self.app.bob_update_joint_positions(self.bob)
+                    self.app.alice_update_joint_positions(self.alice)
+                
+                Clock.schedule_once(update_both, 0)
 
         except Exception as e:
             self.get_logger().error(f"Failed to handle joint states message: {e}")
@@ -638,11 +653,6 @@ class HMIApp(MDApp):
             current_widget.system_button_callback(action)
         else:
             print(f"No handler for system action: {action}")
-
-    def show_status_popup(self, robot_name, goal_name, success, message="", move_to_pre_def_pose_complete=False, save_pre_def_pose_complete=False):
-        """Show a popup dialog with status message"""
-        dialog = StatusPopupDialog.create_new_dialog()
-        dialog.show_status_dialog(robot_name, goal_name, success, move_to_pre_def_pose_complete, save_pre_def_pose_complete)
 
     def show_md_snackbar(self, severity, message, node_name):
         """Show error snackbar"""
