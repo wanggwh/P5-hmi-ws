@@ -3,25 +3,24 @@
 from datetime import datetime
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Bool
-from sensor_msgs.msg import JointState
-from p5_interfaces.msg import Error
 import os
 import math
+import threading
 
 from kivy.lang import Builder
 from kivy.metrics import dp
 from kivy.clock import Clock
 from kivymd.app import MDApp
 from kivymd.uix.menu import MDDropdownMenu
-from kivymd.uix.label import MDLabel
 from kivy.core.window import Window
-import threading
 
 from p5_interfaces.srv import PoseConfig
 from p5_interfaces.srv import MoveToPreDefPose, SaveProgram
 from p5_interfaces.srv import AdmittanceSetStatus
 from p5_interfaces.msg import CommandState
+from p5_interfaces.msg import Error
+from sensor_msgs.msg import JointState
+
 
 # Import page classes
 from pages.start_page import StartPage
@@ -36,7 +35,7 @@ from pages.status_popup_dialog import StatusPopupDialog
 from pages.error_msg_popup import ErrorMsgSnackbar
 
 # Window.borderless = True
-Window.left = 2800
+Window.left = 300
 
 COLORS = {
     'bg_primary': (0.11, 0.15, 0.25, 1),      # Deep navy

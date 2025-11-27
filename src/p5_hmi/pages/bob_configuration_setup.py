@@ -77,6 +77,8 @@ class BobConfigurationSetup(MDFloatLayout):
         
         for i, label_id in enumerate(joint_label_ids):
             if i < len(joint_positions) and hasattr(self.ids, label_id):
-                # Format til 2 decimaler
-                self.ids[label_id].text = f"{joint_positions[i]:.2f}"
+                value = joint_positions[i]
+                if abs(value) < 0.05:  
+                    value = 0.0
+                self.ids[label_id].text = f"{value:.1f} deg"
 
