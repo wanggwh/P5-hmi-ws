@@ -61,7 +61,7 @@ class BobConfigurationSetup(MDFloatLayout):
     
     def send_custom_configuration(self, config_name):
         if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.send_move_to_pre_def_pose_request("BOB", str(config_name))
+            self.app.hmi_node.send_move_to_pre_def_pose_request("bob", str(config_name))
             print(f"Sent {config_name} configuration request for BOB")
 
     def restore_saved_configurations(self, dt):
@@ -70,7 +70,8 @@ class BobConfigurationSetup(MDFloatLayout):
             for config_name in self.app.bob_saved_configurations:
                 self.create_custom_config_button(config_name)
 
-    def bob_update_joint_positions(self, joint_positions):
+    def bob_update_joint_positions_virk(self, joint_positions):
+        print(joint_positions)
         joint_label_ids = ['joint1_label', 'joint2_label', 'joint3_label', 
                         'joint4_label', 'joint5_label', 'joint6_label']
         

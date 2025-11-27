@@ -195,7 +195,7 @@ class HMINode(Node):
             success = response.success
             robot_name = getattr(future, "robot_name", None)
             goal_name = getattr(future, "goal_name", None)
-
+            print("robot_name: " + robot_name)
             def create_and_store_dialog(dt):
                 self.current_status_dialog = StatusPopupDialog.create_new_dialog()
                 self.current_status_dialog.show_status(
@@ -257,14 +257,13 @@ class HMINode(Node):
         print("Handling save_pre_def_pose_response")
         try:
             response = future.result()
-            success = response.success
+            success = response.message
             robot_name = getattr(future, "robot_name", None)
             goal_name = getattr(future, "goal_name", None)
 
             def create_and_store_dialog(dt):
                 self.current_status_dialog = StatusPopupDialog.create_new_dialog()
-                self.current_status_dialog.show_status(
-                    robot_name, goal_name, success, move_to_pre_def_pose_complete=False, save_pre_def_pose_complete=True)
+                self.current_status_dialog.show_status_save_custom_config(robot_name, goal_name, success)
 
             Clock.schedule_once(create_and_store_dialog, 0)
         except Exception as e:
@@ -462,7 +461,6 @@ class HMINode(Node):
             self.bob[3] = msg.position[9]
             self.bob[4] = msg.position[10]
             self.bob[5] = msg.position[11]
-
             # Update GUI in main thread
             if self.app:
                 Clock.schedule_once(
@@ -649,18 +647,14 @@ class HMIApp(MDApp):
         """Update BOB joint positions in current page widget"""
         current_widget = self.get_current_page_widget()
         if current_widget and hasattr(current_widget, 'bob_update_joint_positions'):
-            current_widget.bob_update_joint_positions(joint_positions)
-        else:
-            print("Current page widget doesn't have bob_update_joint_positions method")
-
+            current_widget.bob_update_joint_positions_virk(joint_positions)
+       
     def alice_update_joint_positions(self, joint_positions):
         """Update ALICE joint positions in current page widget"""
         current_widget = self.get_current_page_widget()
         if current_widget and hasattr(current_widget, 'alice_update_joint_positions'):
             current_widget.alice_update_joint_positions(joint_positions)
-        else:
-            print("Current page widget doesn't have alice_update_joint_positions method")
-
+        
 
 def ros_spin(node):
     """Spin ROS2 node in separate thread"""
