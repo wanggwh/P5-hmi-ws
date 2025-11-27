@@ -198,10 +198,11 @@ class HMINode(Node):
             print("robot_name: " + robot_name)
             def create_and_store_dialog(dt):
                 self.current_status_dialog = StatusPopupDialog.create_new_dialog()
-                self.current_status_dialog.show_status(
+                self.current_status_dialog.show_status_dialog(
                     robot_name, goal_name, success, move_to_pre_def_pose_complete=True)
 
             Clock.schedule_once(create_and_store_dialog, 0)
+            
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
 
@@ -375,11 +376,15 @@ class HMINode(Node):
             self.get_logger().info(
                 f"SaveProgram response for '{pname}': success={success}, message={message}")
 
+            def create_and_store_dialog(dt):
+                self.current_status_dialog = StatusPopupDialog.create_new_dialog()
+                self.current_status_dialog.show_status_dialog(
+                    pname, "save_program", bool(success), 
+                    move_to_pre_def_pose_complete=False)
+            
             if self.app:
-                Clock.schedule_once(
-                    lambda dt: self.app.show_status_popup(
-                        pname, "save_program", bool(success), message, 
-                        move_to_pre_def_pose_complete=False), 0)
+                Clock.schedule_once(create_and_store_dialog, 0)
+                
         except Exception as e:
             self.get_logger().error(f"SaveProgram response handler error: {e}")
 
@@ -433,8 +438,9 @@ class HMINode(Node):
                         self.current_status_dialog.dismiss()
                         self.current_status_dialog = None
 
-                    # Show green success dialog
-                    self.app.show_status_popup(
+                    # Create and store new green success dialog
+                    self.current_status_dialog = StatusPopupDialog.create_new_dialog()
+                    self.current_status_dialog.show_status_dialog(
                         robot_name, goal_name, True, move_to_pre_def_pose_complete=False)
 
                 Clock.schedule_once(show_success_and_close_previous, 0)
@@ -636,7 +642,7 @@ class HMIApp(MDApp):
     def show_status_popup(self, robot_name, goal_name, success, message="", move_to_pre_def_pose_complete=False, save_pre_def_pose_complete=False):
         """Show a popup dialog with status message"""
         dialog = StatusPopupDialog.create_new_dialog()
-        dialog.show_status(robot_name, goal_name, success, move_to_pre_def_pose_complete, save_pre_def_pose_complete)
+        dialog.show_status_dialog(robot_name, goal_name, success, move_to_pre_def_pose_complete, save_pre_def_pose_complete)
 
     def show_md_snackbar(self, severity, message, node_name):
         """Show error snackbar"""
