@@ -20,12 +20,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/MoveToPreDefPose.srv"
   "srv/PoseConfig.srv"
   "srv/AdmittanceSetStatus.srv"
-<<<<<<< HEAD
-  #"srv/SaveProgram.srv"
-=======
   "srv/AdmittanceConfig.srv"
-  "srv/SaveProgram.srv"
->>>>>>> 7ef58367ad391516b5e6ff3be5869ae416bda6f7
+  #"srv/SaveProgram.srv"
 
   DEPENDENCIES geometry_msgs
   DEPENDENCIES std_msgs

@@ -15,13 +15,8 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivy.core.window import Window
 
 from p5_interfaces.srv import PoseConfig
-<<<<<<< HEAD
 from p5_interfaces.srv import MoveToPreDefPose#, SaveProgram
-from p5_interfaces.srv import AdmittanceSetStatus
-=======
-from p5_interfaces.srv import MoveToPreDefPose, SaveProgram
 from p5_interfaces.srv import AdmittanceSetStatus, AdmittanceConfig
->>>>>>> 7ef58367ad391516b5e6ff3be5869ae416bda6f7
 from p5_interfaces.msg import CommandState
 from p5_interfaces.msg import Error
 from sensor_msgs.msg import JointState
@@ -430,27 +425,17 @@ class HMINode(Node):
     #         self.get_logger().info(
     #             f"SaveProgram response for '{pname}': success={success}, message={message}")
 
-<<<<<<< HEAD
-    #         if self.app:
-    #             Clock.schedule_once(
-    #                 lambda dt: self.app.show_status_popup(
-    #                     pname, "save_program", bool(success), message, 
-    #                     move_to_pre_def_pose_complete=False), 0)
-    #     except Exception as e:
-    #         self.get_logger().error(f"SaveProgram response handler error: {e}")
-=======
-            def create_and_store_dialog(dt):
-                self.current_status_dialog = StatusPopupDialog.create_new_dialog()
-                self.current_status_dialog.show_status_dialog(
-                    pname, "save_program", bool(success), 
-                    move_to_pre_def_pose_complete=False)
+        #     def create_and_store_dialog(dt):
+        #         self.current_status_dialog = StatusPopupDialog.create_new_dialog()
+        #         self.current_status_dialog.show_status_dialog(
+        #             pname, "save_program", bool(success), 
+        #             move_to_pre_def_pose_complete=False)
             
-            if self.app:
-                Clock.schedule_once(create_and_store_dialog, 0)
+        #     if self.app:
+        #         Clock.schedule_once(create_and_store_dialog, 0)
                 
-        except Exception as e:
-            self.get_logger().error(f"SaveProgram response handler error: {e}")
->>>>>>> 7ef58367ad391516b5e6ff3be5869ae416bda6f7
+        # except Exception as e:
+        #     self.get_logger().error(f"SaveProgram response handler error: {e}")
 
     # ==================== Topic Callbacks ====================
     
