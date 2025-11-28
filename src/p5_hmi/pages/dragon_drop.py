@@ -40,17 +40,6 @@ page = 1
 class DragonDrop(MDFloatLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # build buttons programmatically
-        buttons = [
-            {"id_name": "1", "text": "C move", "bg_color": [0.23, 0.63, 0.92, 1], "command": "c_move"},
-            {"id_name": "2", "text": "R move", "bg_color": [0.11, 0.74, 0.61, 1], "command": "r_move"},
-            {"id_name": "3", "text": "Fra. ava.", "bg_color": [0.54, 0.46, 0.98, 1], "command": "frame_available"},
-            {"id_name": "4", "text": "Grip", "bg_color": [0.98, 0.78, 0.29, 1], "command": "grip"},
-            {"id_name": "5", "text": "Admit", "bg_color": [0.94, 0.36, 0.36, 1], "command": "admittance"},
-            {"id_name": "6", "text": "Sync", "bg_color": [0.86, 0.52, 0.60, 1], "command": "sync"},
-            {"id_name": "7", "text": "MiR", "bg_color": [0.62, 0.65, 0.78, 1], "command": "mir_move"},
-        ]
-
         zones = [
             {"zone_id": "Alice", "pos_hint": {"x": 0.1, "y": 0.7}, "size_hint": {0.85,0.01}, "bg_color": [0.8, 0.9, 1, 0.3], "split_amount": 7},
             {"zone_id": "Bob",   "pos_hint": {"x": 0.1, "y": 0.45}, "size_hint": {0.85,0.01}, "bg_color": [0.8, 1, 0.8, 0.3], "split_amount": 7},
@@ -65,16 +54,6 @@ class DragonDrop(MDFloatLayout):
         #     "5":{"action": ""},
         #     "6":{"sync_id": "", "threads": ""},
         #     "7":{"mission": ""},
-        # }
-
-        # information = {
-        #     "1":{"TF": {"config_name": ""}},
-        #     "2":{"TF": {"frame": "", "pose": ""}, "bool": {"linear": "", "use_tracking_velocity": ""}},
-        #     "3":{"TF": {"frame_name": ""}},
-        #     "4":{"bool": {"action": ""}},
-        #     "5":{"bool": {"action": ""}},
-        #     "6":{"TF": {"sync_id": "", "threads": ""}},
-        #     "7":{"TF": {"mission": ""}},
         # }
 
         information = {
@@ -114,6 +93,17 @@ class DragonDrop(MDFloatLayout):
             order=dict(),
         )
 
+        # build buttons programmatically
+        buttons = [
+            {"id_name": "1", "text": "C move", "bg_color": [0.23, 0.63, 0.92, 1], "command": "c_move", "zones": [alice, bob]},
+            {"id_name": "2", "text": "R move", "bg_color": [0.11, 0.74, 0.61, 1], "command": "r_move", "zones": [alice, bob]},
+            {"id_name": "3", "text": "Fra. ava.", "bg_color": [0.54, 0.46, 0.98, 1], "command": "frame_available", "zones": [alice, bob, mir]},
+            {"id_name": "4", "text": "Grip", "bg_color": [0.98, 0.78, 0.29, 1], "command": "grip", "zones": [alice, bob]},
+            {"id_name": "5", "text": "Admit", "bg_color": [0.94, 0.36, 0.36, 1], "command": "admittance", "zones": [alice, bob]},
+            {"id_name": "6", "text": "Sync", "bg_color": [0.86, 0.52, 0.60, 1], "command": "sync", "zones": [alice, bob, mir]},
+            {"id_name": "7", "text": "MiR", "bg_color": [0.62, 0.65, 0.78, 1], "command": "mir_move", "zones": [mir]},
+        ]
+
         self.add_widget(alice)
         self.add_widget(bob)
         self.add_widget(mir)
@@ -127,7 +117,7 @@ class DragonDrop(MDFloatLayout):
                 font_size=20,
                 color=[0.96, 0.96, 0.98, 1],
                 bg_color=spec["bg_color"] or [0.5,0.5,0.5,1],
-                drop_zones=[alice, bob, mir],
+                drop_zones=spec["zones"],
                 information=information[spec["id_name"]],
             )
             self.add_widget(w)
@@ -331,6 +321,7 @@ class DragonDrop(MDFloatLayout):
 
             # 3. For each zone, extract its order dict and fill in commands
             for zone in zones:
+                print(f"zone {zone.zone_id} order: {zone.order}")
                 zone_id = zone.zone_id.lower()
                 thread_entry = next((t for t in json_data[naming["name"]]["threads"] if t["robot_name"] == zone_id), None)
                 if thread_entry is None:
@@ -364,29 +355,29 @@ class DragonDrop(MDFloatLayout):
             json_string = json.dumps(json_data, indent=4)
             print(f"JSON String:\n\n{json_string}\n\n")
             
-            def _on_payload_ready(self, json_str):
-                try:
-                    payload = json.loads(json_str)
-                    if not payload:
-                        print("DragonDrop: empty payload")
-                        return
+            # def _on_payload_ready(self, json_str):
+            #     try:
+            #         payload = json.loads(json_str)
+            #         if not payload:
+            #             print("DragonDrop: empty payload")
+            #             return
 
-                    # Top-level NAME key is the program name; everything under it is the program content
-                    program_name = next(iter(payload.keys()))
-                    print(f"DragonDrop: program name '{program_name}'")
-                    program_content = payload[program_name]
-                    program_json = json.dumps(program_content)
-                    print(f"DragonDrop: program JSON content:\n{program_json}")
+            #         # Top-level NAME key is the program name; everything under it is the program content
+            #         program_name = next(iter(payload.keys()))
+            #         print(f"DragonDrop: program name '{program_name}'")
+            #         program_content = payload[program_name]
+            #         program_json = json.dumps(program_content)
+            #         print(f"DragonDrop: program JSON content:\n{program_json}")
 
-                    app = MDApp.get_running_app()
-                    if app and hasattr(app, "hmi_node") and app.hmi_node:
-                        # Call the fresh, non-reused client to save the program
-                        app.hmi_node.call_save_program_request(program_name, program_json, wait_for_service=True)
-                        print(f"DragonDrop: called save_program for '{program_name}'")
-                    else:
-                        print("DragonDrop: HMI node not available (make sure app.hmi_node is set)")
-                except Exception as e:
-                    print("DragonDrop: failed to parse/call save_program service:", e)
+            #         app = MDApp.get_running_app()
+            #         if app and hasattr(app, "hmi_node") and app.hmi_node:
+            #             # Call the fresh, non-reused client to save the program
+            #             app.hmi_node.call_save_program_request(program_name, program_json, wait_for_service=True)
+            #             print(f"DragonDrop: called save_program for '{program_name}'")
+            #         else:
+            #             print("DragonDrop: HMI node not available (make sure app.hmi_node is set)")
+            #     except Exception as e:
+            #         print("DragonDrop: failed to parse/call save_program service:", e)
 
             #_on_payload_ready(self, json_string)
 
@@ -691,7 +682,7 @@ class VisualCue(MDLabel):
 
         # build text with join (faster than repeated concatenation)
         header = f"Function {value} at position {self.idx}.\n\nParameters:"
-        param_lines = [f" - {p}: {v}" for p, v in params.items()]
+        param_lines = [f" - {v["pretty_name"]}: {v["entry"]}" for p, v in params.items()]
         text_ = "\n".join([header] + param_lines)
 
         info_screen = MDDialog(
@@ -833,15 +824,29 @@ class InfoEncoder(MDDialog):
             except Exception as e:
                 print("on_accept callback error:", e)
 
-        #n = 1
+        # Build a structured params dict (preserve type/pretty_name) before storing.
+        stored_params = {}
         for param, widget in self._fields.items():
+            # determine value from widget
             if isinstance(widget, MDCheckbox):
-                self.params[param] = widget.active
+                val = bool(widget.active)
             else:
-                self.params[param] = widget.text.strip()
-            #n += 1
+                val = widget.text.strip()
 
-        self.zone.addToList(int(self.id_name), self.idx, self.params)
+            # preserve the original info dict where available, otherwise create a fallback
+            orig = self.information.get(param)
+            if isinstance(orig, dict):
+                info = orig.copy()
+            else:
+                # fallback: assume text field if unknown
+                info = {"type": "TF", "pretty_name": param, "entry": ""}
+
+            # store the user-entered value in the entry field
+            info["entry"] = val
+            stored_params[param] = info
+
+        # store structured params so pretty_name and type are preserved for future edits
+        self.zone.addToList(int(self.id_name), self.idx, stored_params)
         self._fields.clear()
         self.params.clear()
         self.dismiss()
