@@ -15,8 +15,13 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivy.core.window import Window
 
 from p5_interfaces.srv import PoseConfig
-from p5_interfaces.srv import MoveToPreDefPose
+<<<<<<< HEAD
+from p5_interfaces.srv import MoveToPreDefPose#, SaveProgram
+from p5_interfaces.srv import AdmittanceSetStatus
+=======
+from p5_interfaces.srv import MoveToPreDefPose, SaveProgram
 from p5_interfaces.srv import AdmittanceSetStatus, AdmittanceConfig
+>>>>>>> 7ef58367ad391516b5e6ff3be5869ae416bda6f7
 from p5_interfaces.msg import CommandState
 from p5_interfaces.msg import Error
 from sensor_msgs.msg import JointState
@@ -84,8 +89,8 @@ class HMINode(Node):
             MoveToPreDefPose, "/p5_move_to_pre_def_pose")
         self.save_pre_def_pose_client = self.create_client(
             PoseConfig, "/p5_pose_config")
-        #self.save_program_client = self.create_client(
-            #SaveProgram, "/program_executor/save_program")
+        # self.save_program_client = self.create_client(
+        #     SaveProgram, "/program_executor/save_program")
 
         self.get_logger().info('HMI Node has been started')
 
@@ -320,111 +325,120 @@ class HMINode(Node):
             self.get_logger().error(f"Service call failed: {e}")
 
     # ==================== Save Program ====================
-    """    
-    def call_save_program_request(self, program_name: str, program_json: str, 
-                                   wait_for_service=True, timeout=0.1) -> bool:
-        
-        #Send request to save program using reusable SaveProgram client.
-        #Assigns program_name to first string field and program_json to second.
-        
-        if not hasattr(self, 'save_program_client') or self.save_program_client is None:
-            self.save_program_client = self.create_client(
-                SaveProgram, "/program_executor/save_program")
+    
+    # def call_save_program_request(self, program_name: str, program_json: str, 
+    #                                wait_for_service=True, timeout=0.1) -> bool:
+    #     """
+    #     Send request to save program using reusable SaveProgram client.
+    #     Assigns program_name to first string field and program_json to second.
+    #     """
+    #     if not hasattr(self, 'save_program_client') or self.save_program_client is None:
+    #         self.save_program_client = self.create_client(
+    #             SaveProgram, "/program_executor/save_program")
 
-        client = self.save_program_client
-        req = SaveProgram.Request()
+    #     client = self.save_program_client
+    #     req = SaveProgram.Request()
 
-        # Detect string fields from the generated Request
-        try:
-            fields = req.get_fields_and_field_types()
-        except Exception:
-            fields = {}
+    #     # Detect string fields from the generated Request
+    #     try:
+    #         fields = req.get_fields_and_field_types()
+    #     except Exception:
+    #         fields = {}
 
-        string_fields = [n for n, t in fields.items() if 'string' in t]
+    #     string_fields = [n for n, t in fields.items() if 'string' in t]
 
-        # Assign program_name and program_json to string fields
-        assigned = []
-        try:
-            if string_fields:
-                if len(string_fields) >= 1:
-                    setattr(req, string_fields[0], program_name)
-                    assigned.append(string_fields[0])
-                if len(string_fields) >= 2:
-                    setattr(req, string_fields[1], program_json)
-                    assigned.append(string_fields[1])
-            else:
-                # Fallback: try common candidate names
-                candidates = ['name', 'program', 'program_json', 'program_name', 
-                             'data', 'json', 'content', 'file', 'text']
-                targets = [program_name, program_json]
-                for payload in targets:
-                    for cand in candidates:
-                        if hasattr(req, cand) and cand not in assigned:
-                            try:
-                                setattr(req, cand, payload)
-                                assigned.append(cand)
-                                break
-                            except Exception:
-                                continue
-        except Exception as e:
-            self.get_logger().error(f"Failed to populate SaveProgram request fields: {e}")
+    #     # Assign program_name and program_json to string fields
+    #     assigned = []
+    #     try:
+    #         if string_fields:
+    #             if len(string_fields) >= 1:
+    #                 setattr(req, string_fields[0], program_name)
+    #                 assigned.append(string_fields[0])
+    #             if len(string_fields) >= 2:
+    #                 setattr(req, string_fields[1], program_json)
+    #                 assigned.append(string_fields[1])
+    #         else:
+    #             # Fallback: try common candidate names
+    #             candidates = ['name', 'program', 'program_json', 'program_name', 
+    #                          'data', 'json', 'content', 'file', 'text']
+    #             targets = [program_name, program_json]
+    #             for payload in targets:
+    #                 for cand in candidates:
+    #                     if hasattr(req, cand) and cand not in assigned:
+    #                         try:
+    #                             setattr(req, cand, payload)
+    #                             assigned.append(cand)
+    #                             break
+    #                         except Exception:
+    #                             continue
+    #     except Exception as e:
+    #         self.get_logger().error(f"Failed to populate SaveProgram request fields: {e}")
 
-        if not assigned:
-            self.get_logger().error(
-                "SaveProgram request: no suitable string fields found on request object")
-            return False
+    #     if not assigned:
+    #         self.get_logger().error(
+    #             "SaveProgram request: no suitable string fields found on request object")
+    #         return False
 
-        def _send_request():
-            try:
-                future = client.call_async(req)
-                future.program_name = program_name
-                future.add_done_callback(self._handle_save_program_response_callback)
-                self.get_logger().info(
-                    f"SaveProgram request sent for '{program_name}' (fields used: {assigned})")
-            except Exception as e:
-                self.get_logger().error(f"SaveProgram client failed to call service: {e}")
+    #     def _send_request():
+    #         try:
+    #             future = client.call_async(req)
+    #             future.program_name = program_name
+    #             future.add_done_callback(self._handle_save_program_response_callback)
+    #             self.get_logger().info(
+    #                 f"SaveProgram request sent for '{program_name}' (fields used: {assigned})")
+    #         except Exception as e:
+    #             self.get_logger().error(f"SaveProgram client failed to call service: {e}")
 
-        # Wait for service if requested
-        if wait_for_service and not client.wait_for_service(timeout_sec=0.1):
-            waiting_popup = StatusPopupDialog.create_new_dialog()
-            Clock.schedule_once(
-                lambda dt: waiting_popup.waiting_on_service_popup(
-                    service_name="/program_executor/save_program"), 0)
+    #     # Wait for service if requested
+    #     if wait_for_service and not client.wait_for_service(timeout_sec=0.1):
+    #         waiting_popup = StatusPopupDialog.create_new_dialog()
+    #         Clock.schedule_once(
+    #             lambda dt: waiting_popup.waiting_on_service_popup(
+    #                 service_name="/program_executor/save_program"), 0)
 
-            check_event = {"evt": None}
+    #         check_event = {"evt": None}
 
-            def _check_service(dt):
-                if client.wait_for_service(timeout_sec=0.1):
-                    try:
-                        if waiting_popup:
-                            waiting_popup.dismiss()
-                    except Exception:
-                        pass
-                    _send_request()
-                    if check_event["evt"]:
-                        check_event["evt"].cancel()
-                        check_event["evt"] = None
+    #         def _check_service(dt):
+    #             if client.wait_for_service(timeout_sec=0.1):
+    #                 try:
+    #                     if waiting_popup:
+    #                         waiting_popup.dismiss()
+    #                 except Exception:
+    #                     pass
+    #                 _send_request()
+    #                 if check_event["evt"]:
+    #                     check_event["evt"].cancel()
+    #                     check_event["evt"] = None
 
-            check_event["evt"] = Clock.schedule_interval(_check_service, 0.5)
-            return True
+    #         check_event["evt"] = Clock.schedule_interval(_check_service, 0.5)
+    #         return True
 
-        try:
-            _send_request()
-            return True
-        except Exception as e:
-            self.get_logger().error(f"SaveProgram immediate call failed: {e}")
-            return False
+    #     try:
+    #         _send_request()
+    #         return True
+    #     except Exception as e:
+    #         self.get_logger().error(f"SaveProgram immediate call failed: {e}")
+    #         return False
 
-    def _handle_save_program_response_callback(self, future):
-        #Handle SaveProgram response
-        try:
-            resp = future.result()
-            success = getattr(resp, "success", None)
-            message = getattr(resp, "message", str(resp))
-            pname = getattr(future, "program_name", "Unknown")
-            self.get_logger().info(
-                f"SaveProgram response for '{pname}': success={success}, message={message}")
+    # def _handle_save_program_response_callback(self, future):
+    #     """Handle SaveProgram response"""
+    #     try:
+    #         resp = future.result()
+    #         success = getattr(resp, "success", None)
+    #         message = getattr(resp, "message", str(resp))
+    #         pname = getattr(future, "program_name", "Unknown")
+    #         self.get_logger().info(
+    #             f"SaveProgram response for '{pname}': success={success}, message={message}")
 
+<<<<<<< HEAD
+    #         if self.app:
+    #             Clock.schedule_once(
+    #                 lambda dt: self.app.show_status_popup(
+    #                     pname, "save_program", bool(success), message, 
+    #                     move_to_pre_def_pose_complete=False), 0)
+    #     except Exception as e:
+    #         self.get_logger().error(f"SaveProgram response handler error: {e}")
+=======
             def create_and_store_dialog(dt):
                 self.current_status_dialog = StatusPopupDialog.create_new_dialog()
                 self.current_status_dialog.show_status_dialog(
@@ -436,7 +450,8 @@ class HMINode(Node):
                 
         except Exception as e:
             self.get_logger().error(f"SaveProgram response handler error: {e}")
-    """
+>>>>>>> 7ef58367ad391516b5e6ff3be5869ae416bda6f7
+
     # ==================== Topic Callbacks ====================
     
     def handle_error_message_callback(self, msg):
