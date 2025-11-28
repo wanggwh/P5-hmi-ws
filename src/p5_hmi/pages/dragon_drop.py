@@ -57,13 +57,13 @@ class DragonDrop(MDFloatLayout):
         # }
 
         information = {
-            "1":{"config_name": {"type": "TF", "pretty_name": "Config Name", "entry": ""}},
-            "2":{"frame": {"type": "TF", "pretty_name": "Frame", "entry": ""}, "linear": {"type": "bool", "pretty_name": "Linear", "entry": ""}, "use_tracking_velocity": {"type": "bool", "pretty_name": "Use Tracking Velocity", "entry": ""}, "pose": {"type": "TF", "pretty_name": "Pose", "entry": ""}},
-            "3":{"frame_name": {"type": "TF", "pretty_name": "Frame Name", "entry": ""}},
-            "4":{"action": {"type": "bool", "pretty_name": "Action", "entry": ""}},
-            "5":{"action": {"type": "bool", "pretty_name": "Action", "entry": ""}},
-            "6":{"sync_id": {"type": "TF", "pretty_name": "Sync ID", "entry": ""}, "threads": {"type": "TF", "pretty_name": "Threads", "entry": ""}},
-            "7":{"mission": {"type": "TF", "pretty_name": "Mission", "entry": ""}},
+            "1":{"func_name": "skibidi1", "func_args": {"config_name": {"type": "TF", "pretty_name": "Config Name", "ugly_name": "config_name", "extra_text": "", "entry": ""}}},
+            "2":{"func_name": "skibidi2", "func_args": {"frame": {"type": "TF", "pretty_name": "Frame", "ugly_name": "frame", "extra_text": "(for apriltag: tag36h11:X)", "entry": ""}, "linear": {"type": "bool", "pretty_name": "Linear", "ugly_name": "linear", "extra_text": "", "entry": ""}, "use_tracking_velocity": {"type": "bool", "pretty_name": "Use Tracking Velocity", "ugly_name": "use_tracking_velocity", "extra_text": "", "entry": ""}, "pose": {"type": "TF", "pretty_name": "Pose", "ugly_name": "pose", "extra_text": "[x, y, z, qx, qy, qz, qw]", "entry": ""}}},
+            "3":{"func_name": "skibidi3", "func_args": {"frame_name": {"type": "TF", "pretty_name": "Frame Name", "ugly_name": "frame_name", "extra_text": "", "entry": ""}}},
+            "4":{"func_name": "skibidi4", "func_args": {"action": {"type": "bool", "pretty_name": "Action", "ugly_name": "action", "extra_text": "(close/open)", "entry": ""}}},
+            "5":{"func_name": "skibidi5", "func_args": {"action": {"type": "bool", "pretty_name": "Action", "ugly_name": "action", "extra_text": "(on/off)", "entry": ""}}},
+            "6":{"func_name": "skibidi6", "func_args": {"sync_id": {"type": "TF", "pretty_name": "Sync ID", "ugly_name": "sync_id", "extra_text": "", "entry": ""}, "threads": {"type": "TF", "pretty_name": "Threads", "ugly_name": "threads", "extra_text": "", "entry": ""}}},
+            "7":{"func_name": "skibidi7", "func_args": {"mission": {"type": "TF", "pretty_name": "Mission", "ugly_name": "mission", "extra_text": "", "entry": ""}}},
         } 
 
         alice = DragonDropZone(
@@ -334,11 +334,13 @@ class DragonDrop(MDFloatLayout):
                         entry = zone.order[page_num][zone.zone_id][pos_str]
                         sorted_entries.append((page_num, int(pos_str), entry))
                 for page_num, pos_idx, entry in sorted_entries:
+                    print("\n\nAdding entry:", entry, "\n\n")
                     func_id = entry.get("value")
                     params = entry.get("params", {})
+                    args = {entry.get("ugly_name"): entry.get("entry") for entry in params.values()}
                     command = {
                         "command": buttons[int(func_id)-1]["command"],
-                        "args": params,
+                        "args": args,
                     }
                     thread_entry["commands"].append(command)
 
@@ -680,9 +682,20 @@ class VisualCue(MDLabel):
         value = entry.get('value', '?')
         params = entry.get('params', {})
 
+        # Try to find the original button to get its func_name (so edit dialog shows it)
+        func_name = None
+        if self.parent:
+            for child in self.parent.children:
+                # DragonDropButton instances carry the original spec in `.information`
+                if isinstance(child, DragonDropButton) and str(child.id_name) == str(value):
+                    info = getattr(child, "information", {})
+                    if isinstance(info, dict):
+                        func_name = info.get("func_name")
+                    break
+
         # build text with join (faster than repeated concatenation)
-        header = f"Function {value} at position {self.idx}.\n\nParameters:"
-        param_lines = [f" - {v["pretty_name"]}: {v["entry"]}" for p, v in params.items()]
+        header = f"Function {func_name} at position {self.idx}.\n\nParameters:"
+        param_lines = [f" - {v.get('pretty_name', p)}: {v.get('entry', '')}" for p, v in params.items()]
         text_ = "\n".join([header] + param_lines)
 
         info_screen = MDDialog(
@@ -693,13 +706,17 @@ class VisualCue(MDLabel):
                 MDFlatButton(
                     text="EDIT",
                     # create and open InfoEncoder only when EDIT pressed
-                    on_release=lambda x: (info_screen.dismiss(), InfoEncoder(
-                        information=params,
-                        idx=self.idx,
-                        zone=self.zone,
-                        id_name=str(value),
-                        add_visual=False
-                    ).open())
+                    on_release=lambda x: (
+                        info_screen.dismiss(),
+                        InfoEncoder(
+                            # wrap params so InfoEncoder gets func_name + func_args shape
+                            information={"func_name": func_name or f"Function {value}", "func_args": params},
+                            idx=self.idx,
+                            zone=self.zone,
+                            id_name=str(value),
+                            add_visual=False,
+                        ).open()
+                    )
                 ),
             ],
         )
@@ -716,21 +733,35 @@ class InfoEncoder(MDDialog):
         # keep accept callback if provided
         self._on_accept = kwargs.pop("on_accept", None)
         # store incoming info but avoid creating input widgets immediately
-        self.information = kwargs.get("information", {})
+        raw = kwargs.get("information", {}) or {}
+        self.information = raw
         self.idx = kwargs.get("idx")
         self.zone = kwargs.get("zone")
         self.id_name = kwargs.get("id_name", "")
         self.add_visual = kwargs.get("add_visual", True)
 
+        # Support two shapes for `information`:
+        # - button spec: {"func_name": "...", "func_args": {...}}
+        # - params dict (editing existing): {"param": {...}, ...}
+        if isinstance(raw, dict) and "func_args" in raw and isinstance(raw["func_args"], dict):
+            self._func_args_source = raw["func_args"]
+        elif isinstance(raw, dict) and all(isinstance(v, dict) for v in raw.values()):
+            # already a params dict
+            self._func_args_source = raw
+        else:
+            self._func_args_source = {}
+
+        num_fields = max(1, len(self._func_args_source))
+
         # create the dialog shell; content_cls exists but is left empty for now
         super().__init__(
-            title="Encode Information",
+            title=raw.get("func_name") or f"Edit {self.id_name}" or "Parameters",
             type="custom",
             content_cls=MDBoxLayout(
                 orientation="vertical",
                 spacing=dp(10),
                 size_hint_y=None,
-                height=len(self.information) * dp(70),
+                height=num_fields * dp(70),
             ),
             buttons=[
                 MDFlatButton(text="CANCEL", on_release=self.dismiss),
@@ -749,39 +780,39 @@ class InfoEncoder(MDDialog):
         if self._built:
             return
 
-        # Normalize incoming `self.information` so every entry is a dict
-        # with keys: "type", "pretty_name", "entry"
+        # Normalize the function-args source so every entry is a dict
         normalized = {}
-        for param, val in list(self.information.items()):
+        for param, val in list(self._func_args_source.items()):
             if isinstance(val, dict) and "type" in val:
                 info = val.copy()
                 info.setdefault("pretty_name", param)
                 info.setdefault("entry", "" if info.get("type") == "TF" else bool(info.get("entry", False)))
             else:
-                # val is a plain value (happens when editing existing params)
+                # val is a plain value (older saved shape)
                 if isinstance(val, bool):
                     info = {"type": "bool", "pretty_name": param, "entry": bool(val)}
                 else:
                     info = {"type": "TF", "pretty_name": param, "entry": "" if val is None else str(val)}
             normalized[param] = info
 
-        # replace self.information with normalized structure so future calls are consistent
-        self.information = normalized
+        # keep normalized param dict available for on_ok
+        self._params = normalized
 
         # create widgets from normalized info
-        for param, info in self.information.items():
+        for param, info in self._params.items():
             ptype = info.get("type", "TF")
             pretty = info.get("pretty_name", param)
+            extra = info.get("extra_text", "")
             if ptype == "TF":
                 info["entry"] = info.get("entry", "")
-                tf = MDTextField(hint_text=pretty, text=info.get("entry", ""))
+                tf = MDTextField(hint_text=f"{pretty} {extra}".strip(), text=info.get("entry", ""))
                 self._fields[param] = tf
                 self.content_cls.add_widget(tf)
             elif ptype == "bool":
                 info["entry"] = bool(info.get("entry", False))
                 row = MDBoxLayout(orientation="horizontal", spacing=dp(8), size_hint_y=None, height=dp(48))
                 lbl = MDLabel(
-                    text=pretty,
+                    text=f"{pretty} {extra}".strip(),
                     halign="left",
                     valign="center",
                     theme_text_color="Custom",
@@ -794,20 +825,6 @@ class InfoEncoder(MDDialog):
                 self.content_cls.add_widget(row)
 
         self._built = True
-
-    # def build_fields(self):
-    #     """Create input widgets once when needed."""
-    #     # ensure building only once
-    #     if self._built:
-    #         return
-    #     # normalize information keys and create widgets
-    #     for param in list(self.information.keys()):
-    #         # keep placeholder as empty string
-    #         self.information[param] = ""
-    #         tf = MDTextField(hint_text=f"{param}")
-    #         self._fields[param] = tf
-    #         self.content_cls.add_widget(tf)
-    #     self._built = True
 
     def open(self, *args, **kwargs):
         # build the content lazily before showing
@@ -826,6 +843,7 @@ class InfoEncoder(MDDialog):
 
         # Build a structured params dict (preserve type/pretty_name) before storing.
         stored_params = {}
+        params_source = getattr(self, "_params", {}) or {}
         for param, widget in self._fields.items():
             # determine value from widget
             if isinstance(widget, MDCheckbox):
@@ -833,12 +851,11 @@ class InfoEncoder(MDDialog):
             else:
                 val = widget.text.strip()
 
-            # preserve the original info dict where available, otherwise create a fallback
-            orig = self.information.get(param)
+            # preserve the normalized info dict where available, otherwise create a fallback
+            orig = params_source.get(param)
             if isinstance(orig, dict):
                 info = orig.copy()
             else:
-                # fallback: assume text field if unknown
                 info = {"type": "TF", "pretty_name": param, "entry": ""}
 
             # store the user-entered value in the entry field
