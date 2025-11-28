@@ -141,10 +141,13 @@ class AdmittanceControl(MDFloatLayout):
                 D = 0.1
             if K == 0:
                 K = 0.1
+
+            f_scalar = 500.0   #force scalar
+            t_scalar = 10.0    #torque scalar
             
-            M_value = [M*100, M*100, M*100, M, M, M]
-            D_value = [D*100, D*100, D*100, D, D, D]
-            K_value = [K*100, K*100, K*100, K, K, K]
+            M_value = [M*f_scalar, M*f_scalar, M*f_scalar, M*t_scalar, M*t_scalar, M*t_scalar]
+            D_value = [D*f_scalar, D*f_scalar, D*f_scalar, D*t_scalar, D*t_scalar, D*t_scalar]
+            K_value = [K*f_scalar, K*f_scalar, K*f_scalar, K*t_scalar, K*t_scalar, K*t_scalar]
             # Send to ROS2
             print(M_value)
             print(D_value)

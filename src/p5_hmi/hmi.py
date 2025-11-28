@@ -16,7 +16,7 @@ from kivy.core.window import Window
 
 from p5_interfaces.srv import PoseConfig
 from p5_interfaces.srv import MoveToPreDefPose#, SaveProgram
-from p5_interfaces.srv import AdmittanceSetStatus
+from p5_interfaces.srv import AdmittanceSetStatus, AdmittanceConfig
 from p5_interfaces.msg import CommandState
 from p5_interfaces.msg import Error
 from sensor_msgs.msg import JointState
