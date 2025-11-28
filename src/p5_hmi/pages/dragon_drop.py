@@ -14,26 +14,12 @@ from kivymd.uix.textfield import MDTextField
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.selectioncontrol import MDCheckbox
 
-"""""
-Structure of dictionary is as follows:
-{
-  page_number: {
-    zone_id: {
-      position_index: {
-        "value": function_id,
-        "params": {
-          "param1": value1,
-          "param2": value2,
-          ...
-        }
-      },
-      ...
-    },
-    ...
-  },
-  ...
-}
-"""""
+"""
+Til future jensen:
+Lav en relative mover force enabled version knap
+Lav admittance knappen til at have en on off for hvert led
+"""
+
 
 page = 1
 
@@ -57,13 +43,31 @@ class DragonDrop(MDFloatLayout):
         # }
 
         information = {
-            "1":{"func_name": "skibidi1", "func_args": {"config_name": {"type": "TF", "pretty_name": "Config Name", "ugly_name": "config_name", "extra_text": "", "entry": ""}}},
-            "2":{"func_name": "skibidi2", "func_args": {"frame": {"type": "TF", "pretty_name": "Frame", "ugly_name": "frame", "extra_text": "(for apriltag: tag36h11:X)", "entry": ""}, "linear": {"type": "bool", "pretty_name": "Linear", "ugly_name": "linear", "extra_text": "", "entry": ""}, "use_tracking_velocity": {"type": "bool", "pretty_name": "Use Tracking Velocity", "ugly_name": "use_tracking_velocity", "extra_text": "", "entry": ""}, "pose": {"type": "TF", "pretty_name": "Pose", "ugly_name": "pose", "extra_text": "[x, y, z, qx, qy, qz, qw]", "entry": ""}}},
-            "3":{"func_name": "skibidi3", "func_args": {"frame_name": {"type": "TF", "pretty_name": "Frame Name", "ugly_name": "frame_name", "extra_text": "", "entry": ""}}},
-            "4":{"func_name": "skibidi4", "func_args": {"action": {"type": "bool", "pretty_name": "Action", "ugly_name": "action", "extra_text": "(close/open)", "entry": ""}}},
-            "5":{"func_name": "skibidi5", "func_args": {"action": {"type": "bool", "pretty_name": "Action", "ugly_name": "action", "extra_text": "(on/off)", "entry": ""}}},
-            "6":{"func_name": "skibidi6", "func_args": {"sync_id": {"type": "TF", "pretty_name": "Sync ID", "ugly_name": "sync_id", "extra_text": "", "entry": ""}, "threads": {"type": "TF", "pretty_name": "Threads", "ugly_name": "threads", "extra_text": "", "entry": ""}}},
-            "7":{"func_name": "skibidi7", "func_args": {"mission": {"type": "TF", "pretty_name": "Mission", "ugly_name": "mission", "extra_text": "", "entry": ""}}},
+            "1":{"func_name": "Config move", "func_args": {"config_name": {"type": "TF", "pretty_name": "Config Name", "ugly_name": "config_name", "extra_text": "", "entry": ""}}},
+            "2":{"func_name": "Relative move", "func_args": {
+                "frame": {"type": "TF", "pretty_name": "Frame", "ugly_name": "frame", "extra_text": "(for apriltag: tag36h11:X)", "entry": ""}, 
+                "linear": {"type": "bool", "pretty_name": "Linear", "ugly_name": "linear", "extra_text": "", "entry": ""}, 
+                "use_tracking_velocity": {"type": "bool", "pretty_name": "Use Tracking Velocity", "ugly_name": "use_tracking_velocity", "extra_text": "", "entry": ""}, 
+                "pose": {"type": "TF", "pretty_name": "Pose", "ugly_name": "pose", "extra_text": "[x, y, z, qx, qy, qz, qw]", "entry": ""}
+                }},
+            "3":{"func_name": "Relative move, Force Enabled", "func_args": {
+                "frame": {"type": "TF", "pretty_name": "Frame", "ugly_name": "frame", "extra_text": "(for apriltag: tag36h11:X)", "entry": ""}, 
+                "linear": {"type": "bool", "pretty_name": "Linear", "ugly_name": "linear", "extra_text": "", "entry": ""}, 
+                "use_tracking_velocity": {"type": "bool", "pretty_name": "Use Tracking Velocity", "ugly_name": "use_tracking_velocity", "extra_text": "", "entry": ""}, 
+                "pose": {"type": "TF", "pretty_name": "Pose", "ugly_name": "pose", "extra_text": "[x, y, z, qx, qy, qz, qw]", "entry": ""}, 
+                "force": {"type": "TF", "pretty_name": "Force Vector", "ugly_name": "force", "extra_text": "I think this is a vector", "entry": ""}}},
+            "4":{"func_name": "Frame available", "func_args": {"frame_name": {"type": "TF", "pretty_name": "Frame Name", "ugly_name": "frame_name", "extra_text": "", "entry": ""}}},
+            "5":{"func_name": "Grip", "func_args": {"action": {"type": "bool", "pretty_name": "Action", "ugly_name": "action", "extra_text": "(close/open)", "entry": ""}}},
+            "6":{"func_name": "Admittance", "func_args": {
+                "link_1": {"type": "bool", "pretty_name": "Link 1", "ugly_name": "link_1", "extra_text": "(on/off)", "entry": ""},
+                "link_2": {"type": "bool", "pretty_name": "Link 2", "ugly_name": "link_2", "extra_text": "(on/off)", "entry": ""},
+                "link_3": {"type": "bool", "pretty_name": "Link 3", "ugly_name": "link_3", "extra_text": "(on/off)", "entry": ""},
+                "link_4": {"type": "bool", "pretty_name": "Link 4", "ugly_name": "link_4", "extra_text": "(on/off)", "entry": ""},
+                "link_5": {"type": "bool", "pretty_name": "Link 5", "ugly_name": "link_5", "extra_text": "(on/off)", "entry": ""},
+                "link_6": {"type": "bool", "pretty_name": "Link 6", "ugly_name": "link_6", "extra_text": "(on/off)", "entry": ""}
+                }},
+            "7":{"func_name": "Sync", "func_args": {"sync_id": {"type": "TF", "pretty_name": "Sync ID", "ugly_name": "sync_id", "extra_text": "", "entry": ""}, "threads": {"type": "TF", "pretty_name": "Threads", "ugly_name": "threads", "extra_text": "", "entry": ""}}},
+            "8":{"func_name": "MiR mission", "func_args": {"mission": {"type": "TF", "pretty_name": "Mission", "ugly_name": "mission", "extra_text": "", "entry": ""}}},
         } 
 
         alice = DragonDropZone(
@@ -97,11 +101,12 @@ class DragonDrop(MDFloatLayout):
         buttons = [
             {"id_name": "1", "text": "C move", "bg_color": [0.23, 0.63, 0.92, 1], "command": "c_move", "zones": [alice, bob]},
             {"id_name": "2", "text": "R move", "bg_color": [0.11, 0.74, 0.61, 1], "command": "r_move", "zones": [alice, bob]},
-            {"id_name": "3", "text": "Fra. ava.", "bg_color": [0.54, 0.46, 0.98, 1], "command": "frame_available", "zones": [alice, bob, mir]},
-            {"id_name": "4", "text": "Grip", "bg_color": [0.98, 0.78, 0.29, 1], "command": "grip", "zones": [alice, bob]},
-            {"id_name": "5", "text": "Admit", "bg_color": [0.94, 0.36, 0.36, 1], "command": "admittance", "zones": [alice, bob]},
-            {"id_name": "6", "text": "Sync", "bg_color": [0.86, 0.52, 0.60, 1], "command": "sync", "zones": [alice, bob, mir]},
-            {"id_name": "7", "text": "MiR", "bg_color": [0.62, 0.65, 0.78, 1], "command": "mir_move", "zones": [mir]},
+            {"id_name": "3", "text": "R move F.E.", "bg_color": [0.11, 0.74, 0.61, 1], "command": "r_move_f_e", "zones": [alice, bob]},
+            {"id_name": "4", "text": "Fra. ava.", "bg_color": [0.54, 0.46, 0.98, 1], "command": "frame_available", "zones": [alice, bob, mir]},
+            {"id_name": "5", "text": "Grip", "bg_color": [0.98, 0.78, 0.29, 1], "command": "grip", "zones": [alice, bob]},
+            {"id_name": "6", "text": "Admit", "bg_color": [0.94, 0.36, 0.36, 1], "command": "admittance", "zones": [alice, bob]},
+            {"id_name": "7", "text": "Sync", "bg_color": [0.86, 0.52, 0.60, 1], "command": "sync", "zones": [alice, bob, mir]},
+            {"id_name": "8", "text": "MiR", "bg_color": [0.62, 0.65, 0.78, 1], "command": "mir_move", "zones": [mir]},
         ]
 
         self.add_widget(alice)
@@ -113,7 +118,7 @@ class DragonDrop(MDFloatLayout):
                 id_name=spec["id_name"],
                 text=spec["text"],
                 size_hint=(0.1, 0.1),
-                pos_hint={"center_x": 0.10 + 0.8/(len(buttons)-1)*(int(spec["id_name"])-1), "top": 0.97},
+                pos_hint={"center_x": 0.08 + 0.84/(len(buttons)-1)*(int(spec["id_name"])-1), "top": 0.97},
                 font_size=20,
                 color=[0.96, 0.96, 0.98, 1],
                 bg_color=spec["bg_color"] or [0.5,0.5,0.5,1],
@@ -126,31 +131,41 @@ class DragonDrop(MDFloatLayout):
         leftScroll = MDIconButton(
             icon="arrow-left",
             pos_hint={"center_x": 0.85, "center_y": 0.05},
-            on_release=lambda x: self.scroll_left(zones=[alice, bob, mir], buttons=buttons, instance=x)
+            on_release=lambda x: self.scroll_left(zones=[alice, bob, mir], buttons=buttons, instance=x),
+            theme_icon_color="Custom",
+            icon_color =[0.86, 0.86, 0.88, 1],
             )
 
         rightScroll = MDIconButton(
             icon="arrow-right",
             pos_hint={"center_x": 0.90, "center_y": 0.05},
-            on_release=lambda x: self.scroll_right(zones=[alice, bob, mir], buttons=buttons, instance=x)
+            on_release=lambda x: self.scroll_right(zones=[alice, bob, mir], buttons=buttons, instance=x),
+            theme_icon_color="Custom",
+            icon_color =[0.86, 0.86, 0.88, 1],
         )
 
         restartButton = MDIconButton(
             icon="restart",
             pos_hint={"center_x": 0.05, "center_y": 0.05},
-            on_release=lambda x: self.reset_all(zones=[alice, bob, mir], visual_only=False)
+            on_release=lambda x: self.reset_all(zones=[alice, bob, mir], visual_only=False),
+            theme_icon_color="Custom",
+            icon_color =[0.86, 0.86, 0.88, 1],
         )
 
         showdictButton = MDIconButton(
             icon="printer-outline",
             pos_hint={"center_x": 0.1, "center_y": 0.05},
-            on_release=lambda x: print(f"Current zone orders:\n\nAlice: {alice.order}\n\nBob: {bob.order}\n\nMiR: {mir.order}\n")
+            on_release=lambda x: print(f"Current zone orders:\n\nAlice: {alice.order}\n\nBob: {bob.order}\n\nMiR: {mir.order}\n"),
+            theme_icon_color="Custom",
+            icon_color =[0.86, 0.86, 0.88, 1],
         )
 
         saveAndParse = MDIconButton(
             icon="content-save",
             pos_hint={"center_x": 0.15, "center_y": 0.05},
-            on_release=lambda x: self._parse_json(zones=[alice, bob, mir], buttons=buttons)
+            on_release=lambda x: self._parse_json(zones=[alice, bob, mir], buttons=buttons),
+            theme_icon_color="Custom",
+            icon_color =[0.86, 0.86, 0.88, 1],
         )
 
         self.add_widget(leftScroll)
@@ -163,7 +178,7 @@ class DragonDrop(MDFloatLayout):
             text=f" {page}",
             halign="center",
             theme_text_color="Custom",
-            text_color=[0.96, 0.96, 0.98, 1],
+            text_color=[0.86, 0.86, 0.88, 1],
             font_style="Subtitle1",
             size_hint=(0.05, 0.1),
             pos_hint={"center_x": 0.95, "center_y": 0.05},
@@ -761,7 +776,7 @@ class InfoEncoder(MDDialog):
                 orientation="vertical",
                 spacing=dp(10),
                 size_hint_y=None,
-                height=num_fields * dp(70),
+                height=num_fields * dp(60),
             ),
             buttons=[
                 MDFlatButton(text="CANCEL", on_release=self.dismiss),

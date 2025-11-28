@@ -15,7 +15,7 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivy.core.window import Window
 
 from p5_interfaces.srv import PoseConfig
-from p5_interfaces.srv import MoveToPreDefPose#, SaveProgram
+from p5_interfaces.srv import MoveToPreDefPose, LoadRawJSON#, SaveProgram
 from p5_interfaces.srv import AdmittanceSetStatus, AdmittanceConfig
 from p5_interfaces.msg import CommandState
 from p5_interfaces.msg import Error
@@ -84,6 +84,8 @@ class HMINode(Node):
             MoveToPreDefPose, "/p5_move_to_pre_def_pose")
         self.save_pre_def_pose_client = self.create_client(
             PoseConfig, "/p5_pose_config")
+        self.load_raw_JSON_client = self.create_client(
+            LoadRawJSON, "/program_executor/save_program")
         # self.save_program_client = self.create_client(
         #     SaveProgram, "/program_executor/save_program")
 
@@ -436,6 +438,103 @@ class HMINode(Node):
                 
         # except Exception as e:
         #     self.get_logger().error(f"SaveProgram response handler error: {e}")
+
+    # ================== Load Raw JSON Client =================
+    def call_load_raw_JSON_request(self, program_json: str, wait_for_service=True, timeout=0.1) -> bool:
+        """
+        Send request to load raw JSON program using reusable LoadRawJSON client.
+        Assigns program_json to first string field.
+        """
+        if not hasattr(self, 'load_raw_JSON_client') or self.load_raw_JSON_client is None:
+            self.load_raw_JSON_client = self.create_client(
+                LoadRawJSON, "/program_executor/load_raw_JSON")
+
+        client = self.load_raw_JSON_client
+        req = LoadRawJSON.Request()
+
+        # Detect string fields from the generated Request
+        try:
+            fields = req.get_fields_and_field_types()
+        except Exception:
+            fields = {}
+
+        string_fields = [n for n, t in fields.items() if 'string' in t]
+
+        # Assign program_json to first string field
+        assigned = []
+        try:
+            if string_fields:
+                setattr(req, string_fields[0], program_json)
+                assigned.append(string_fields[0])
+            else:
+                # Fallback: try common candidate names
+                candidates = ['program', 'program_json', 'data', 'json', 
+                             'content', 'file', 'text']
+                for cand in candidates:
+                    if hasattr(req, cand):
+                        try:
+                            setattr(req, cand, program_json)
+                            assigned.append(cand)
+                            break
+                        except Exception:
+                            continue
+        except Exception as e:
+            self.get_logger().error(f"Failed to populate LoadRawJSON request fields: {e}")
+
+        if not assigned:
+            self.get_logger().error(
+                "LoadRawJSON request: no suitable string fields found on request object")
+            return False
+
+        def _send_request():
+            try:
+                future = client.call_async(req)
+                future.add_done_callback(self._handle_load_raw_JSON_response_callback)
+                self.get_logger().info(
+                    f"LoadRawJSON request sent (fields used: {assigned})")
+            except Exception as e:
+                self.get_logger().error(f"LoadRawJSON client failed to call service: {e}")
+
+        # Wait for service if requested
+        if wait_for_service and not client.wait_for_service(timeout_sec=0.1):
+            waiting_popup = StatusPopupDialog.create_new_dialog()
+            Clock.schedule_once(
+                lambda dt: waiting_popup.waiting_on_service_popup(
+                    service_name="/program_executor/load_raw_JSON"), 0)
+
+            check_event = {"evt": None}
+
+            def _check_service(dt):
+                if client.wait_for_service(timeout_sec=0.1):
+                    try:
+                        if waiting_popup:
+                            waiting_popup.dismiss()
+                    except Exception:
+                        pass
+                    _send_request()
+                    if check_event["evt"]:
+                        check_event["evt"].cancel()
+                        check_event["evt"] = None
+            check_event["evt"] = Clock.schedule_interval(_check_service, 0.5)
+            return True
+        try:
+            _send_request()
+            return True
+        except Exception as e:
+            self.get_logger().error(f"LoadRawJSON immediate call failed: {e}")
+            return False
+    def _handle_load_raw_JSON_response_callback(self, future):
+        """Handle LoadRawJSON response"""
+        try:
+            resp = future.result()
+            success = getattr(resp, "success", None)
+            message = getattr(resp, "message", str(resp))
+            self.get_logger().info(
+                f"LoadRawJSON response: success={success}, message={message}")
+        except Exception as e:
+            self.get_logger().error(f"LoadRawJSON response handler error: {e}")
+
+
 
     # ==================== Topic Callbacks ====================
     
