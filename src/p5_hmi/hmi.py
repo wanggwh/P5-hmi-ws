@@ -292,7 +292,7 @@ class HMINode(Node):
                 del self._pending_service_request
 
     def _save_pre_def_pose_request(self, request, robot_name, goal_name):
-        """Send save pose request to service"""
+        #Send save pose request to service
         self._current_robot_name = robot_name
         self._current_goal_name = goal_name
 
@@ -303,7 +303,7 @@ class HMINode(Node):
         future.add_done_callback(self.handle_save_pre_def_pose_response_callback)
 
     def handle_save_pre_def_pose_response_callback(self, future):
-        """Handle response from save predefined pose service"""
+        #Handle response from save predefined pose service
         print("Handling save_pre_def_pose_response")
         try:
             response = future.result()
