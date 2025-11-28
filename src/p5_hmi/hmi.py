@@ -15,7 +15,7 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivy.core.window import Window
 
 from p5_interfaces.srv import PoseConfig
-from p5_interfaces.srv import MoveToPreDefPose, SaveProgram
+from p5_interfaces.srv import MoveToPreDefPose
 from p5_interfaces.srv import AdmittanceSetStatus, AdmittanceConfig
 from p5_interfaces.msg import CommandState
 from p5_interfaces.msg import Error
@@ -84,8 +84,8 @@ class HMINode(Node):
             MoveToPreDefPose, "/p5_move_to_pre_def_pose")
         self.save_pre_def_pose_client = self.create_client(
             PoseConfig, "/p5_pose_config")
-        self.save_program_client = self.create_client(
-            SaveProgram, "/program_executor/save_program")
+        #self.save_program_client = self.create_client(
+            #SaveProgram, "/program_executor/save_program")
 
         self.get_logger().info('HMI Node has been started')
 
@@ -292,7 +292,7 @@ class HMINode(Node):
                 del self._pending_service_request
 
     def _save_pre_def_pose_request(self, request, robot_name, goal_name):
-        """Send save pose request to service"""
+        #Send save pose request to service
         self._current_robot_name = robot_name
         self._current_goal_name = goal_name
 
@@ -303,7 +303,7 @@ class HMINode(Node):
         future.add_done_callback(self.handle_save_pre_def_pose_response_callback)
 
     def handle_save_pre_def_pose_response_callback(self, future):
-        """Handle response from save predefined pose service"""
+        #Handle response from save predefined pose service
         print("Handling save_pre_def_pose_response")
         try:
             response = future.result()
@@ -320,13 +320,13 @@ class HMINode(Node):
             self.get_logger().error(f"Service call failed: {e}")
 
     # ==================== Save Program ====================
-    
+    """    
     def call_save_program_request(self, program_name: str, program_json: str, 
                                    wait_for_service=True, timeout=0.1) -> bool:
-        """
-        Send request to save program using reusable SaveProgram client.
-        Assigns program_name to first string field and program_json to second.
-        """
+        
+        #Send request to save program using reusable SaveProgram client.
+        #Assigns program_name to first string field and program_json to second.
+        
         if not hasattr(self, 'save_program_client') or self.save_program_client is None:
             self.save_program_client = self.create_client(
                 SaveProgram, "/program_executor/save_program")
@@ -416,7 +416,7 @@ class HMINode(Node):
             return False
 
     def _handle_save_program_response_callback(self, future):
-        """Handle SaveProgram response"""
+        #Handle SaveProgram response
         try:
             resp = future.result()
             success = getattr(resp, "success", None)
@@ -436,7 +436,7 @@ class HMINode(Node):
                 
         except Exception as e:
             self.get_logger().error(f"SaveProgram response handler error: {e}")
-
+    """
     # ==================== Topic Callbacks ====================
     
     def handle_error_message_callback(self, msg):
