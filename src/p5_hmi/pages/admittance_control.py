@@ -27,6 +27,7 @@ class AdmittanceControl(MDFloatLayout):
         self.repeat_direction = None
         self.repeat_interval = 0.3
         self.repeat_count = 0
+        self.publish_debounce_event = None  # For debouncing parameter publishing
 
     def on_parent(self, widget, parent):
         """Called when the widget is added to a parent"""
@@ -51,36 +52,53 @@ class AdmittanceControl(MDFloatLayout):
                 self.disable_alice_admittance_control()
 
     def enable_bob_admittance_control(self):
-        """Enable admittance control for BOB"""
-        print("BOB Admittance Control ENABLE requested")
+        """Enable BOB admittance control"""
         if self.app and hasattr(self.app, 'hmi_node'):
-            # Send ROS2 service request - fjern 'self' som første parameter
-            self.app.hmi_node.send_set_admittance_status_request("bob", True, 250)
-            print("Sent enable request for BOB admittance control")
+            # Kald eksisterende metode med korrekte parametre
+            self.app.hmi_node.send_set_admittance_status_request(
+                robot_name="bob",
+                enable_admittance=True,
+                update_rate=100.0  # Juster efter behov
+            )
+            # Opdater knap farver
+            self.ids.bob_enable_btn.md_bg_color = self.app.colors['success']
+            self.ids.bob_disable_btn.md_bg_color = self.app.colors['button_neutral']
 
     def disable_bob_admittance_control(self):
-        """Disable admittance control for BOB"""
-        print("BOB Admittance Control DISABLE requested")
+        """Disable BOB admittance control"""
         if self.app and hasattr(self.app, 'hmi_node'):
-            # Send ROS2 service request - fjern 'self' som første parameter
-            self.app.hmi_node.send_set_admittance_status_request("bob", False, 250)
-            print("Sent DISABLE request for BOB admittance control")
+            self.app.hmi_node.send_set_admittance_status_request(
+                robot_name="bob",
+                enable_admittance=False,
+                update_rate=100.0
+            )
+            # Opdater knap farver
+            self.ids.bob_enable_btn.md_bg_color = self.app.colors['button_neutral']
+            self.ids.bob_disable_btn.md_bg_color = self.app.colors['accent_coral']
 
     def enable_alice_admittance_control(self):
-        """Enable admittance control for ALICE"""
-        print("ALICE Admittance Control ENABLE requested")
+        """Enable ALICE admittance control"""
         if self.app and hasattr(self.app, 'hmi_node'):
-            # Send ROS2 service request - fjern 'self' som første parameter  
-            self.app.hmi_node.send_set_admittance_status_request("alice", True, 250)
-            print("Sent enable request for ALICE admittance control")
+            self.app.hmi_node.send_set_admittance_status_request(
+                robot_name="alice",
+                enable_admittance=True,
+                update_rate=100.0
+            )
+            # Opdater knap farver
+            self.ids.alice_enable_btn.md_bg_color = self.app.colors['success']
+            self.ids.alice_disable_btn.md_bg_color = self.app.colors['button_neutral']
 
     def disable_alice_admittance_control(self):
-        """Disable admittance control for ALICE"""
-        print("ALICE Admittance Control DISABLE requested")
+        """Disable ALICE admittance control"""
         if self.app and hasattr(self.app, 'hmi_node'):
-            # Send ROS2 service request - fjern 'self' som første parameter
-            self.app.hmi_node.send_set_admittance_status_request("alice", False, 250)
-            print("Sent DISABLE request for ALICE admittance control")
+            self.app.hmi_node.send_set_admittance_status_request(
+                robot_name="alice",
+                enable_admittance=False,
+                update_rate=100.0
+            )
+            # Opdater knap farver
+            self.ids.alice_enable_btn.md_bg_color = self.app.colors['button_neutral']
+            self.ids.alice_disable_btn.md_bg_color = self.app.colors['accent_coral']
 
     def get_bob_status(self):
         """Get current BOB admittance control status"""
@@ -97,28 +115,41 @@ class AdmittanceControl(MDFloatLayout):
         slider_names = ["M", "D", "k"]
         slider_name = slider_names[slider_index]
         
-        print(f"{slider_name} parameter changed to {value_float}")
-        
-        # Update the corresponding label
+        # Update the corresponding label immediately for instant feedback
         if hasattr(self.ids, f'{slider_name}_value'):
             getattr(self.ids, f'{slider_name}_value').text = f"{value_float}"
         
-        self.publish_admittance_parameters()
+        # Debounce publishing - only publish after 0.3s of no changes
+        if self.publish_debounce_event:
+            self.publish_debounce_event.cancel()
+        
+        self.publish_debounce_event = Clock.schedule_once(
+            lambda dt: self.publish_admittance_parameters(), 0.3)
 
     def publish_admittance_parameters(self):
         """Publish admittance control parameters to ROS2"""
         if not self.app or not hasattr(self.app, 'hmi_node'):
             return
         try:
-            # Get current slider values
-            M_value = getattr(self.ids, 'M_slider').value if hasattr(self.ids, 'M_slider') else 0.0
-            D_value = getattr(self.ids, 'D_slider').value if hasattr(self.ids, 'D_slider') else 0.0
-            k_value = getattr(self.ids, 'k_slider').value if hasattr(self.ids, 'k_slider') else 0.0
+            # Get current slider values - direct access is faster
+            M = self.ids.M_slider.value
+            D = self.ids.D_slider.value
+            K = self.ids.k_slider.value
+            if M == 0:
+                M = 0.1
+            if D == 0:
+                D = 0.1
+            if K == 0:
+                K = 0.1
             
-            print(f"Publishing admittance parameters: M={M_value}, D={D_value}, K={k_value}")
-            
+            M_value = [M*100, M*100, M*100, M, M, M]
+            D_value = [D*100, D*100, D*100, D, D, D]
+            K_value = [K*100, K*100, K*100, K, K, K]
             # Send to ROS2
-            # self.app.hmi_node.publish_admittance_parameters(M_value, D_value, k_value)
+            print(M_value)
+            print(D_value)
+            print(K_value)
+            self.app.hmi_node.publish_admittance_parameters("alice", M_value, D_value, K_value)
         except Exception as e:
             print(f"Failed to publish admittance parameters: {e}")
 
@@ -130,7 +161,6 @@ class AdmittanceControl(MDFloatLayout):
             slider = getattr(self.ids, slider_name)
             new_value = min(slider.value + slider.step, slider.max)
             slider.value = new_value
-            print(f"Incremented {slider_name} to {new_value}")
 
     def decrement_parameter(self, slider_index):
         """Decrement parameter by step size"""
@@ -140,7 +170,6 @@ class AdmittanceControl(MDFloatLayout):
             slider = getattr(self.ids, slider_name)
             new_value = max(slider.value - slider.step, slider.min)
             slider.value = new_value
-            print(f"Decremented {slider_name} to {new_value}")
 
     def start_increment(self, slider_index):
         """Start incrementing parameter with acceleration"""

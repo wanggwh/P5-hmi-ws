@@ -70,12 +70,15 @@ class BobConfigurationSetup(MDFloatLayout):
             for config_name in self.app.bob_saved_configurations:
                 self.create_custom_config_button(config_name)
 
-    def bob_update_joint_positions_virk(self, joint_positions):
-        print(joint_positions)
+    def bob_update_joint_positions(self, joint_positions):
+        """Update joint position labels with current robot positions"""
         joint_label_ids = ['joint1_label', 'joint2_label', 'joint3_label', 
                         'joint4_label', 'joint5_label', 'joint6_label']
         
-        for i, slider_id in enumerate(joint_label_ids):
-            if i < len(joint_positions) and hasattr(self.ids, slider_id):
-                self.ids[slider_id].value = joint_positions[i]        
+        for i, label_id in enumerate(joint_label_ids):
+            if i < len(joint_positions) and hasattr(self.ids, label_id):
+                value = joint_positions[i]
+                if abs(value) < 0.05:  
+                    value = 0.0
+                self.ids[label_id].text = f"{value:.1f} deg"
 

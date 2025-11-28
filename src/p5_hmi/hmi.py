@@ -3,24 +3,29 @@
 from datetime import datetime
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Bool
-from sensor_msgs.msg import JointState
-from p5_interfaces.msg import Error
 import os
+import math
+import threading
 
 from kivy.lang import Builder
 from kivy.metrics import dp
 from kivy.clock import Clock
 from kivymd.app import MDApp
 from kivymd.uix.menu import MDDropdownMenu
-from kivymd.uix.label import MDLabel
 from kivy.core.window import Window
-import threading
 
 from p5_interfaces.srv import PoseConfig
+<<<<<<< HEAD
 from p5_interfaces.srv import MoveToPreDefPose#, SaveProgram
 from p5_interfaces.srv import AdmittanceSetStatus
+=======
+from p5_interfaces.srv import MoveToPreDefPose, SaveProgram
+from p5_interfaces.srv import AdmittanceSetStatus, AdmittanceConfig
+>>>>>>> 7ef58367ad391516b5e6ff3be5869ae416bda6f7
 from p5_interfaces.msg import CommandState
+from p5_interfaces.msg import Error
+from sensor_msgs.msg import JointState
+
 
 # Import page classes
 from pages.start_page import StartPage
@@ -35,7 +40,7 @@ from pages.status_popup_dialog import StatusPopupDialog
 from pages.error_msg_popup import ErrorMsgSnackbar
 
 # Window.borderless = True
-Window.left = 2800
+Window.left = 300
 
 COLORS = {
     'bg_primary': (0.11, 0.15, 0.25, 1),      # Deep navy
@@ -67,6 +72,10 @@ class HMINode(Node):
         self.alice = [0.0] * 6
         self.bob = [0.0] * 6
 
+        # Throttle variables for joint states
+        self._last_joint_update = 0
+        self._joint_update_interval = 0.1  # Max 10 Hz opdatering til GUI
+
         # Subscribers
         self.error_subscriber = self.create_subscription(
             Error, '/error_messages', self.handle_error_message_callback, 10)
@@ -78,8 +87,6 @@ class HMINode(Node):
         # Service clients
         self.move_to_pre_def_pose_client = self.create_client(
             MoveToPreDefPose, "/p5_move_to_pre_def_pose")
-        self.set_admittance_status_client = self.create_client(
-            AdmittanceSetStatus, "/p5_admittance_set_state")
         self.save_pre_def_pose_client = self.create_client(
             PoseConfig, "/p5_pose_config")
         # self.save_program_client = self.create_client(
@@ -93,49 +100,96 @@ class HMINode(Node):
 
     # ==================== Admittance Control ====================
     
-    def send_set_admittance_status_request(self, robot_name, enable_admittance, update_rate):
-        """Send admittance control status request"""
-        request = AdmittanceSetStatus.Request()
-        request.active = enable_admittance
-        request.update_rate = update_rate
-
-        if not self.set_admittance_status_client.wait_for_service(timeout_sec=0.1):
+    def publish_admittance_parameters(self, robot_name, M_parameter, D_parameter, K_parameter):
+        client = self.create_client(
+            AdmittanceConfig, "/" + robot_name + "/p5_admittance_config")
+        request = AdmittanceConfig.Request()
+        request.m = M_parameter
+        request.d = D_parameter
+        request.k = K_parameter
+        request.alpha = 0.01
+        
+        if not client.wait_for_service(timeout_sec=0.1):
             self.get_logger().warning(
-                f"AdmittanceSetStatus service not available, cannot send request for {robot_name}")
+                f"AdmittanceConfig service not available, cannot send request for {robot_name}")
             self.waiting_popup = StatusPopupDialog.create_new_dialog()
             Clock.schedule_once(
                 lambda dt: self.waiting_popup.waiting_on_service_popup(
-                    service_name="/p5_admittance_set_state"), 0)
-            self._pending_service_request = (request, enable_admittance, update_rate)
+                    service_name="/" + robot_name + "/p5_admittance_config"), 0)
+            self._pending_service_request = (client, request, M_parameter, D_parameter, K_parameter)
+            self._service_check_event = Clock.schedule_interval(
+                self._check_admittance_config_service_available_and_send, 0.5)
+            return
+        self._send_admittance_config_request(client, request, M_parameter, D_parameter, K_parameter)
+        
+    def send_set_admittance_status_request(self, robot_name, enable_admittance, update_rate):
+        """Send admittance control status request"""
+        client = self.create_client(
+            AdmittanceSetStatus, "/" + robot_name + "/p5_admittance_set_state")
+        request = AdmittanceSetStatus.Request()
+        request.active = enable_admittance
+        request.update_rate = int(update_rate)
+
+        if not client.wait_for_service(timeout_sec=0.1):
+            self.get_logger().warning(
+                f"AdmittanceSetStatus service not available, cannot send request for {robot_name}")
+            self.get_logger()
+            self.waiting_popup = StatusPopupDialog.create_new_dialog()
+            Clock.schedule_once(
+                lambda dt: self.waiting_popup.waiting_on_service_popup(
+                    service_name="/" + robot_name + "/p5_admittance_set_state"), 0)
+            self._pending_service_request = (client, request, enable_admittance, update_rate)
             self._service_check_event = Clock.schedule_interval(
                 self._check_admittance_service_available_and_send, 0.5)
             return
         
-        self._send_set_admittance_request(request, enable_admittance, update_rate)
+        self._send_set_admittance_request(client, request, enable_admittance, update_rate)
 
     def _check_admittance_service_available_and_send(self, dt):
         """Periodically check if admittance service is available and send pending request"""
-        if self.set_admittance_status_client.wait_for_service(timeout_sec=0.1):
-            if self.waiting_popup:
-                self.waiting_popup.dismiss()
-                self.waiting_popup = None
+        #if self.set_admittance_status_client.wait_for_service(timeout_sec=0.1):
+        if self.waiting_popup:
+            self.waiting_popup.dismiss()
+            self.waiting_popup = None
             
-            if hasattr(self, '_service_check_event'):
-                self._service_check_event.cancel()
-                del self._service_check_event
+        if hasattr(self, '_service_check_event'):
+            self._service_check_event.cancel()
+            del self._service_check_event
             
-            if hasattr(self, '_pending_service_request'):
-                request, enable_admittance, update_rate = self._pending_service_request
-                self._send_set_admittance_request(request, enable_admittance, update_rate)
-                del self._pending_service_request
+        if hasattr(self, '_pending_service_request'):
+            client, request, enable_admittance, update_rate = self._pending_service_request
+            self._send_set_admittance_request(client, request, enable_admittance, update_rate)
+            del self._pending_service_request
+                
+    def _check_admittance_config_service_available_and_send(self, dt):
+        """Periodically check if admittance service is available and send pending request"""
+        #if self.set_admittance_status_client.wait_for_service(timeout_sec=0.1):
+        if self.waiting_popup:
+            self.waiting_popup.dismiss()
+            self.waiting_popup = None
+            
+        if hasattr(self, '_service_check_event'):
+            self._service_check_event.cancel()
+            del self._service_check_event
+            
+        if hasattr(self, '_pending_service_request'):
+            client, request, M_parameter, D_parameter, K_parameter = self._pending_service_request
+            self._send_admittance_config_request(client, request, M_parameter, D_parameter, K_parameter)
+            del self._pending_service_request
 
-    def _send_set_admittance_request(self, request, enable_admittance, update_rate):
+    def _send_set_admittance_request(self, client, request, enable_admittance, update_rate):
         """Send admittance request to service"""
         self._operation_completed = False
-        future = self.set_admittance_status_client.call_async(request)
-        print(f"Admittance service call sent with enable={enable_admittance}, rate={update_rate}")
+        future = client.call_async(request)
         future.add_done_callback(
             lambda f: self.get_logger().info(f"Admittance status set to {enable_admittance}"))
+    
+    def _send_admittance_config_request(self, client, request, M_parameter, D_parameter, K_parameter):
+        """Send admittance request to service"""
+        self._operation_completed = False
+        future = client.call_async(request)
+        future.add_done_callback(
+            lambda f: self.get_logger().info(f"Admittance parameter set to {M_parameter}"))
 
     # ==================== Move to Predefined Pose ====================
     
@@ -198,10 +252,11 @@ class HMINode(Node):
             print("robot_name: " + robot_name)
             def create_and_store_dialog(dt):
                 self.current_status_dialog = StatusPopupDialog.create_new_dialog()
-                self.current_status_dialog.show_status(
+                self.current_status_dialog.show_status_dialog(
                     robot_name, goal_name, success, move_to_pre_def_pose_complete=True)
 
             Clock.schedule_once(create_and_store_dialog, 0)
+            
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
 
@@ -375,6 +430,7 @@ class HMINode(Node):
     #         self.get_logger().info(
     #             f"SaveProgram response for '{pname}': success={success}, message={message}")
 
+<<<<<<< HEAD
     #         if self.app:
     #             Clock.schedule_once(
     #                 lambda dt: self.app.show_status_popup(
@@ -382,6 +438,19 @@ class HMINode(Node):
     #                     move_to_pre_def_pose_complete=False), 0)
     #     except Exception as e:
     #         self.get_logger().error(f"SaveProgram response handler error: {e}")
+=======
+            def create_and_store_dialog(dt):
+                self.current_status_dialog = StatusPopupDialog.create_new_dialog()
+                self.current_status_dialog.show_status_dialog(
+                    pname, "save_program", bool(success), 
+                    move_to_pre_def_pose_complete=False)
+            
+            if self.app:
+                Clock.schedule_once(create_and_store_dialog, 0)
+                
+        except Exception as e:
+            self.get_logger().error(f"SaveProgram response handler error: {e}")
+>>>>>>> 7ef58367ad391516b5e6ff3be5869ae416bda6f7
 
     # ==================== Topic Callbacks ====================
     
@@ -419,7 +488,6 @@ class HMINode(Node):
             # When operation starts (status=True), reset completion flag
             if status and self.app:
                 self._operation_completed = False
-                print("Operation started - reset completion flag")
 
             # When operation completes (status=False) and we haven't shown success yet
             if not status and self.app and not self._operation_completed:
@@ -434,8 +502,9 @@ class HMINode(Node):
                         self.current_status_dialog.dismiss()
                         self.current_status_dialog = None
 
-                    # Show green success dialog
-                    self.app.show_status_popup(
+                    # Create and store new green success dialog
+                    self.current_status_dialog = StatusPopupDialog.create_new_dialog()
+                    self.current_status_dialog.show_status_dialog(
                         robot_name, goal_name, True, move_to_pre_def_pose_complete=False)
 
                 Clock.schedule_once(show_success_and_close_previous, 0)
@@ -446,27 +515,37 @@ class HMINode(Node):
     def handle_joint_states_callback(self, msg):
         """Handle joint state updates and update GUI"""
         try:
-            # Update Alice joint positions
-            self.alice[0] = msg.position[2]
-            self.alice[1] = msg.position[1]
-            self.alice[2] = msg.position[0]
-            self.alice[3] = msg.position[3]
-            self.alice[4] = msg.position[4]
-            self.alice[5] = msg.position[5]
+            # Throttle updates - kun opdater GUI hvert 0.1 sekund
+            import time
+            current_time = time.time()
+            if current_time - self._last_joint_update < self._joint_update_interval:
+                return
+            
+            self._last_joint_update = current_time
+            
+            # Update Alice joint positions (convert from radians to degrees)
+            self.alice[0] = math.degrees(msg.position[2])
+            self.alice[1] = math.degrees(msg.position[1])
+            self.alice[2] = math.degrees(msg.position[0])
+            self.alice[3] = math.degrees(msg.position[3])
+            self.alice[4] = math.degrees(msg.position[4])
+            self.alice[5] = math.degrees(msg.position[5])
 
-            # Update Bob joint positions
-            self.bob[0] = msg.position[8]
-            self.bob[1] = msg.position[7]
-            self.bob[2] = msg.position[6]
-            self.bob[3] = msg.position[9]
-            self.bob[4] = msg.position[10]
-            self.bob[5] = msg.position[11]
-            # Update GUI in main thread
+            # Update Bob joint positions (convert from radians to degrees)
+            self.bob[0] = math.degrees(msg.position[8])
+            self.bob[1] = math.degrees(msg.position[7])
+            self.bob[2] = math.degrees(msg.position[6])
+            self.bob[3] = math.degrees(msg.position[9])
+            self.bob[4] = math.degrees(msg.position[10])
+            self.bob[5] = math.degrees(msg.position[11])
+            
             if self.app:
-                Clock.schedule_once(
-                    lambda dt: self.app.bob_update_joint_positions(self.bob), 0)
-                Clock.schedule_once(
-                    lambda dt: self.app.alice_update_joint_positions(self.alice), 0)
+                # Batch begge opdateringer i ét Clock.schedule_once
+                def update_both(dt):
+                    self.app.bob_update_joint_positions(self.bob)
+                    self.app.alice_update_joint_positions(self.alice)
+                
+                Clock.schedule_once(update_both, 0)
 
         except Exception as e:
             self.get_logger().error(f"Failed to handle joint states message: {e}")
@@ -634,11 +713,6 @@ class HMIApp(MDApp):
         else:
             print(f"No handler for system action: {action}")
 
-    def show_status_popup(self, robot_name, goal_name, success, message="", move_to_pre_def_pose_complete=False, save_pre_def_pose_complete=False):
-        """Show a popup dialog with status message"""
-        dialog = StatusPopupDialog.create_new_dialog()
-        dialog.show_status(robot_name, goal_name, success, move_to_pre_def_pose_complete, save_pre_def_pose_complete)
-
     def show_md_snackbar(self, severity, message, node_name):
         """Show error snackbar"""
         self.hmi_node.error_snackbar.show_md_snackbar(severity, message, node_name)
@@ -647,8 +721,8 @@ class HMIApp(MDApp):
         """Update BOB joint positions in current page widget"""
         current_widget = self.get_current_page_widget()
         if current_widget and hasattr(current_widget, 'bob_update_joint_positions'):
-            current_widget.bob_update_joint_positions_virk(joint_positions)
-       
+            current_widget.bob_update_joint_positions(joint_positions)
+    
     def alice_update_joint_positions(self, joint_positions):
         """Update ALICE joint positions in current page widget"""
         current_widget = self.get_current_page_widget()
