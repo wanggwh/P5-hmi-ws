@@ -14,13 +14,6 @@ from kivymd.uix.textfield import MDTextField
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.selectioncontrol import MDCheckbox
 
-"""
-Til future jensen:
-Lav en relative mover force enabled version knap
-Lav admittance knappen til at have en on off for hvert led
-"""
-
-
 page = 1
 
 class DragonDrop(MDFloatLayout):
@@ -101,7 +94,7 @@ class DragonDrop(MDFloatLayout):
         buttons = [
             {"id_name": "1", "text": "C move", "bg_color": [0.23, 0.63, 0.92, 1], "command": "c_move", "zones": [alice, bob]},
             {"id_name": "2", "text": "R move", "bg_color": [0.11, 0.74, 0.61, 1], "command": "r_move", "zones": [alice, bob]},
-            {"id_name": "3", "text": "R move F.E.", "bg_color": [0.11, 0.74, 0.61, 1], "command": "r_move_f_e", "zones": [alice, bob]},
+            {"id_name": "3", "text": "R move F.E.", "bg_color": [0.24, 0.80, 0.45, 1], "command": "r_move_f_e", "zones": [alice, bob]},
             {"id_name": "4", "text": "Fra. ava.", "bg_color": [0.54, 0.46, 0.98, 1], "command": "frame_available", "zones": [alice, bob, mir]},
             {"id_name": "5", "text": "Grip", "bg_color": [0.98, 0.78, 0.29, 1], "command": "grip", "zones": [alice, bob]},
             {"id_name": "6", "text": "Admit", "bg_color": [0.94, 0.36, 0.36, 1], "command": "admittance", "zones": [alice, bob]},
