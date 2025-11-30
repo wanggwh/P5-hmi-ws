@@ -25,8 +25,9 @@
                     MDLabel:
                         adaptive_height: True
                         text: "BOB - Admittance Control"
-                        text_color: app.colors['text_light']
+                        color: 0.96, 0.96, 0.98, 1
                         halign: "center"
+                        font_size: "16sp"
 
                     MDBoxLayout:
                         orientation: "horizontal"
@@ -59,8 +60,9 @@
                     MDLabel:
                         adaptive_height: True
                         text: "ALICE - Admittance Control"
-                        text_color: app.colors['text_light']
+                        color: 0.96, 0.96, 0.98, 1
                         halign: "center"
+                        font_size: "16sp"
 
                     MDBoxLayout:
                         orientation: "horizontal"
@@ -87,17 +89,53 @@
         # Separate slider section - placeret længere nede med mere luft
         MDBoxLayout:
             orientation: "vertical"
-            spacing: dp(20)  # Større mellemrum mellem sliders
+            spacing: dp(20)
             size_hint: 0.9, None
-            height: dp(250)  # Mere plads til sliders
-            pos_hint: {'center_x': 0.5, 'center_y': 0.3}  # Placeret længere nede
-                
+            height: dp(250)
+            pos_hint: {'center_x': 0.5, 'center_y': 0.21}
+            
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: "5dp"
+                size_hint_y: None
+                height: dp(80)  # Højde til både label og knapper
+
+                MDLabel:
+                    text: "Tune Admittance Parameters"
+                    color: 1, 1, 1, 1
+                    halign: "center"
+                    font_size: "16sp"
+                    size_hint_y: None
+                    height: dp(30)
+
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    spacing: "4dp"
+                    size_hint_y: None
+                    height: dp(40)
+
+                    MDRaisedButton:
+                        id: bob_tune_btn
+                        text: "BOB"
+                        size_hint_x: 0.5
+                        md_bg_color: app.colors['button_neutral']
+                        text_color: app.colors['text_light']
+                        on_release: root.tune_bob_admittance_control()
+
+                    MDRaisedButton:
+                        id: alice_tune_btn
+                        text: "ALICE"
+                        size_hint_x: 0.5
+                        md_bg_color: app.colors['button_neutral']
+                        text_color: app.colors['text_light']
+                        on_release: root.alice_tune_admittance_control()
+
             # Mass/Inertia Matrix
             MDBoxLayout:
                 orientation: "horizontal"
-                spacing: dp(10)  # Øget spacing mellem elementer
+                spacing: dp(10)
                 size_hint_y: None
-                height: dp(50)  # Højere slider rækker for mere luft
+                height: dp(50)
                         
                 MDLabel:
                     text: "Mass/Inertia Matrix:"
@@ -274,7 +312,7 @@
                 
                 MDLabel:
                     id: matrix_printed
-                    text: "Gulle og Jensen er begge seje"
+                    text: " "
                     pos_hint: {'center_x': 0.5}
                     size_hint: None, None
                     width: dp(50)
