@@ -2,6 +2,7 @@ from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.slider import MDSlider
 from kivy.clock import Clock
 import math
+from kivymd.app import MDApp
 
 class NonInteractiveSlider(MDSlider):
     """A slider that cannot be interacted with but shows values"""
@@ -17,17 +18,12 @@ class NonInteractiveSlider(MDSlider):
 class AdmittanceControl(MDFloatLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.app = None
-        self.bob_admittance_enabled = False  # Default state for BOB - DISABLED
-        self.alice_admittance_enabled = False  # Default state for ALICE - DISABLED
+        self.app = MDApp.get_running_app()
+        self.increment_event = None
+        self.publish_debounce_event = None
         
-        # Slider control variables
-        self.repeat_event = None
-        self.repeat_slider_index = None
-        self.repeat_direction = None
-        self.repeat_interval = 0.3
-        self.repeat_count = 0
-        self.publish_debounce_event = None  # For debouncing parameter publishing
+        # Track which robot is selected for tuning
+        self.tuning_robot = None  # None, 'bob', or 'alice'
 
     def on_parent(self, widget, parent):
         """Called when the widget is added to a parent"""
@@ -126,33 +122,53 @@ class AdmittanceControl(MDFloatLayout):
         self.publish_debounce_event = Clock.schedule_once(
             lambda dt: self.publish_admittance_parameters(), 0.3)
 
+    def tune_bob_admittance_control(self):
+        """Select BOB for tuning"""
+        self.tuning_robot = 'bob'
+        # Update button colors
+        self.ids.bob_tune_btn.md_bg_color = self.app.colors['success']
+        self.ids.alice_tune_btn.md_bg_color = self.app.colors['button_neutral']
+        print(f"Tuning BOB - robot selected: {self.tuning_robot}")
+
+    def alice_tune_admittance_control(self):
+        """Select ALICE for tuning"""
+        self.tuning_robot = 'alice'
+        # Update button colors
+        self.ids.alice_tune_btn.md_bg_color = self.app.colors['success']
+        self.ids.bob_tune_btn.md_bg_color = self.app.colors['button_neutral']
+        print(f"Tuning ALICE - robot selected: {self.tuning_robot}")
+
+    def is_bob_selected(self):
+        """Return True if BOB is selected for tuning"""
+        return self.tuning_robot == 'bob'
+
+    def is_alice_selected(self):
+        """Return True if ALICE is selected for tuning"""
+        return self.tuning_robot == 'alice'
+
+    def get_selected_robot(self):
+        """Return the currently selected robot name or None"""
+        return self.tuning_robot
+
     def publish_admittance_parameters(self):
-        """Publish admittance control parameters to ROS2"""
+        """Publish admittance control parameters to ROS2 for selected robot"""
         if not self.app or not hasattr(self.app, 'hmi_node'):
             return
+        
+        # Only publish if a robot is selected
+        if self.tuning_robot is None:
+            print("No robot selected for tuning")
+            return
+        
         try:
-            # Get current slider values - direct access is faster
-            M = self.ids.M_slider.value
-            D = self.ids.D_slider.value
-            K = self.ids.k_slider.value
-            if M == 0:
-                M = 0.1
-            if D == 0:
-                D = 0.1
-            if K == 0:
-                K = 0.1
-
-            f_scalar = 500.0   #force scalar
-            t_scalar = 10.0    #torque scalar
+            M_value = self.ids.M_slider.value
+            D_value = self.ids.D_slider.value
+            k_value = self.ids.k_slider.value
             
-            M_value = [M*f_scalar, M*f_scalar, M*f_scalar, M*t_scalar, M*t_scalar, M*t_scalar]
-            D_value = [D*f_scalar, D*f_scalar, D*f_scalar, D*t_scalar, D*t_scalar, D*t_scalar]
-            K_value = [K*f_scalar, K*f_scalar, K*f_scalar, K*t_scalar, K*t_scalar, K*t_scalar]
-            # Send to ROS2
-            print(M_value)
-            print(D_value)
-            print(K_value)
-            self.app.hmi_node.publish_admittance_parameters("alice", M_value, D_value, K_value)
+            # Send to the selected robot
+            self.app.hmi_node.publish_admittance_parameters(
+                self.tuning_robot, M_value, D_value, k_value)
+            
         except Exception as e:
             print(f"Failed to publish admittance parameters: {e}")
 
@@ -228,3 +244,19 @@ class AdmittanceControl(MDFloatLayout):
             return False  # Stop this event, new one will continue
         
         return True  # Continue this event
+    
+    def bob_tune_admittance_parameters(self, M, D, K):
+        """Tune BOB admittance parameters directly"""
+        if not self.app or not hasattr(self.app, 'hmi_node'):
+            return
+        try:
+            f_scalar = 500.0   #force scalar
+            t_scalar = 10.0    #torque scalar
+            
+            M_value = [M*f_scalar, M*f_scalar, M*f_scalar, M*t_scalar, M*t_scalar, M*t_scalar]
+            D_value = [D*f_scalar, D*f_scalar, D*f_scalar, D*t_scalar, D*t_scalar, D*t_scalar]
+            K_value = [K*f_scalar, K*f_scalar, K*f_scalar, K*t_scalar, K*t_scalar, K*t_scalar]
+            # Send to ROS2
+            self.app.hmi_node.publish_admittance_parameters("bob", M_value, D_value, K_value)
+        except Exception as e:
+            print(f"Failed to publish BOB admittance parameters: {e}")

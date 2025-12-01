@@ -29,7 +29,7 @@ from pages.alice_configuration_setup import AliceConfigurationSetup
 from pages.mir_system_control import MirSystemControlPage
 from pages.admittance_control import AdmittanceControl
 from pages.dragon_drop import DragonDrop
-from pages.system_logging import SystemLoggingPage
+
 from pages.settings import SettingsPage
 from pages.status_popup_dialog import StatusPopupDialog
 from pages.error_msg_popup import ErrorMsgSnackbar
@@ -565,7 +565,6 @@ class HMIApp(MDApp):
             "MIR - System Control",
             "Admittance Control",
             "Drag and Drop - System Control",
-            "System Logging",
             "Settings"
         ]
 
@@ -605,7 +604,6 @@ class HMIApp(MDApp):
             "MIR - System Control": "kv/mir_system_control.kv",
             "Admittance Control": "kv/admittance_control.kv",
             "Drag and Drop - System Control": "kv/dragon_drop.kv",
-            "System Logging": "kv/system_logging.kv",
             "Settings": "kv/settings.kv"
         }
 
@@ -621,7 +619,7 @@ class HMIApp(MDApp):
         pages = [
             "Start Page", "BOB - Configuration Setup", "ALICE - Configuration Setup",
             "MIR - System Control", "Admittance Control", "Drag and Drop - System Control",
-            "System Logging", "Settings"
+            "Settings"
         ]
         
         for page in pages:
@@ -673,7 +671,6 @@ class HMIApp(MDApp):
                 "MIR - System Control": MirSystemControlPage,
                 "Admittance Control": AdmittanceControl,
                 "Drag and Drop - System Control": DragonDrop,
-                "System Logging": SystemLoggingPage,
                 "Settings": lambda: SettingsPage(self.hmi_node)
             }
 
