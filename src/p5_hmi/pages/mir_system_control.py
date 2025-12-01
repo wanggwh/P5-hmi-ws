@@ -6,6 +6,7 @@ from p5_interfaces.srv import PostMissions, GetMissions
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
+from kivymd.uix.button import MDFlatButton
 
 class MirHMI(Node):
     def __init__(self):
@@ -54,9 +55,9 @@ class MirHMIApp(App):
         self.layout = BoxLayout(orientation='vertical', spacing=10, padding=10)
 
         # Top-level buttons
-        self.start_mission_btn = Button(text="Start Mission", size_hint_y=None, height=50)
+        self.start_mission_btn = MDFlatButton(text="Start Mission", size_hint_y=None, height=50)
         self.start_mission_btn.bind(on_press=self.toggle_mission_buttons)
-        self.status_btn = Button(text="Status", size_hint_y=None, height=50)
+        self.status_btn = MDFlatButton(text="Status", size_hint_y=None, height=50)
         self.status_btn.bind(on_press=self.check_status)
 
         self.layout.add_widget(self.start_mission_btn)
@@ -66,10 +67,10 @@ class MirHMIApp(App):
         self.mission_buttons_layout = BoxLayout(orientation='vertical', spacing=5, size_hint_y=None)
         self.mission_buttons_layout.height = 0  # Start hidden
 
-        self.charge_btn = Button(text="Charge", size_hint_y=None, height=50)
+        self.charge_btn = MDFlatButton(text="Charge", size_hint_y=None, height=50)
         self.charge_btn.bind(on_press=lambda x: self.node.post_mission("ChargeMir"))
 
-        self.start_test_btn = Button(text="Start Test", size_hint_y=None, height=50)
+        self.start_test_btn = MDFlatButton(text="Start Test", size_hint_y=None, height=50)
         self.start_test_btn.bind(on_press=lambda x: self.node.post_mission("MoveLinear"))
 
         self.mission_buttons_layout.add_widget(self.charge_btn)
