@@ -92,14 +92,14 @@ class DragonDrop(MDFloatLayout):
 
         # build buttons programmatically
         buttons = [
-            {"id_name": "1", "text": "C move", "bg_color": [0.23, 0.63, 0.92, 1], "command": "c_move", "zones": [alice, bob]},
-            {"id_name": "2", "text": "R move", "bg_color": [0.11, 0.74, 0.61, 1], "command": "r_move", "zones": [alice, bob]},
-            {"id_name": "3", "text": "R move F.E.", "bg_color": [0.24, 0.80, 0.45, 1], "command": "r_move_f_e", "zones": [alice, bob]},
-            {"id_name": "4", "text": "Fra. ava.", "bg_color": [0.54, 0.46, 0.98, 1], "command": "frame_available", "zones": [alice, bob, mir]},
-            {"id_name": "5", "text": "Grip", "bg_color": [0.98, 0.78, 0.29, 1], "command": "grip", "zones": [alice, bob]},
-            {"id_name": "6", "text": "Admit", "bg_color": [0.94, 0.36, 0.36, 1], "command": "admittance", "zones": [alice, bob]},
-            {"id_name": "7", "text": "Sync", "bg_color": [0.86, 0.52, 0.60, 1], "command": "sync", "zones": [alice, bob, mir]},
-            {"id_name": "8", "text": "MiR", "bg_color": [0.62, 0.65, 0.78, 1], "command": "mir_move", "zones": [mir]},
+            {"id_name": "1", "text": "C move", "bg_color": [0.168, 0.46, 0.672, 1.0], "command": "c_move", "zones": [alice, bob]},
+            {"id_name": "2", "text": "R move", "bg_color": [0.074, 0.496, 0.409, 1.0], "command": "r_move", "zones": [alice, bob]},
+            {"id_name": "3", "text": "R move F.E.", "bg_color": [0.149, 0.496, 0.279, 1.0], "command": "r_move_f_e", "zones": [alice, bob]},
+            {"id_name": "4", "text": "Fra. ava.", "bg_color": [0.443, 0.377, 0.804, 1.0], "command": "frame_available", "zones": [alice, bob, mir]},
+            {"id_name": "5", "text": "Grip", "bg_color": [0.529, 0.421, 0.157, 1.0], "command": "grip", "zones": [alice, bob]},
+            {"id_name": "6", "text": "Admit", "bg_color": [0.743, 0.284, 0.284, 1.0], "command": "admittance", "zones": [alice, bob]},
+            {"id_name": "7", "text": "Sync", "bg_color": [0.611, 0.369, 0.426, 1.0], "command": "sync", "zones": [alice, bob, mir]},
+            {"id_name": "8", "text": "MiR", "bg_color": [0.415, 0.436, 0.523, 1.0], "command": "mir_move", "zones": [mir]},
         ]
 
         self.add_widget(alice)
