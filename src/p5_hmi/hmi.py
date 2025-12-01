@@ -15,7 +15,7 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivy.core.window import Window
 
 from p5_interfaces.srv import PoseConfig
-from p5_interfaces.srv import MoveToPreDefPose#, SaveProgram
+from p5_interfaces.srv import MoveToPreDefPose, LoadRawJSON#, SaveProgram
 from p5_interfaces.srv import AdmittanceSetStatus, AdmittanceConfig
 from p5_interfaces.msg import CommandState
 from p5_interfaces.msg import Error
@@ -37,17 +37,33 @@ from pages.error_msg_popup import ErrorMsgSnackbar
 # Window.borderless = True
 Window.left = 300
 
+# COLORS = {
+#     'bg_primary': (0.11, 0.15, 0.25, 1),      # Deep navy
+#     'bg_secondary': (0.18, 0.24, 0.35, 1),    # Slate blue
+#     'accent_orange': (0.95, 0.61, 0.23, 1),   # Warm orange
+#     'accent_coral': (0.98, 0.45, 0.32, 1),    # Coral red
+#     'button_neutral': (0.55, 0.60, 0.68, 1),  # Neutral gray-blue
+#     'text_light': (0.96, 0.96, 0.98, 1),      # Off-white
+#     'text_muted': (0.75, 0.78, 0.82, 1),      # Light gray
+#     'success': (0.32, 0.78, 0.55, 1),         # Sea green
+# }
+
 COLORS = {
     'bg_primary': (0.11, 0.15, 0.25, 1),      # Deep navy
     'bg_secondary': (0.18, 0.24, 0.35, 1),    # Slate blue
-    'accent_orange': (0.95, 0.61, 0.23, 1),   # Warm orange
-    'accent_coral': (0.98, 0.45, 0.32, 1),    # Coral red
-    'button_neutral': (0.55, 0.60, 0.68, 1),  # Neutral gray-blue
+    'accent_orange': (0.773, 0.496, 0.187, 1),   # Warm orange
+    'accent_orange_light': (0.95, 0.61, 0.23, 1),
+    'accent_coral': (0.896, 0.411, 0.293, 1),    # Coral red
+    'accent_coral_light': (0.98, 0.45, 0.32, 1),
+    'button_neutral': (0.408, 0.445, 0.504, 1),  # Neutral gray-blue
+    'button_neutral_light': (0.55, 0.60, 0.68, 1),
     'text_light': (0.96, 0.96, 0.98, 1),      # Off-white
     'text_muted': (0.75, 0.78, 0.82, 1),      # Light gray
-    'success': (0.32, 0.78, 0.55, 1),         # Sea green
+    'success_light': (0.32, 0.78, 0.55, 1),         # Sea green
+    'success': (0.256, 0.624, 0.440, 1), 
+    'browse_btn': (0.540, 0.460, 0.980, 1),       # Browse button purple
+    'dark_text': (0.247, 0.247, 0.247, 1)        # Dark text
 }
-
 
 class HMINode(Node):
     """ROS2 Node for HMI communication and service handling"""
@@ -84,6 +100,8 @@ class HMINode(Node):
             MoveToPreDefPose, "/p5_move_to_pre_def_pose")
         self.save_pre_def_pose_client = self.create_client(
             PoseConfig, "/p5_pose_config")
+        self.load_raw_JSON_client = self.create_client(
+            LoadRawJSON, "/program_executor/save_program")
         # self.save_program_client = self.create_client(
         #     SaveProgram, "/program_executor/save_program")
 
@@ -319,123 +337,103 @@ class HMINode(Node):
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
 
-    # ==================== Save Program ====================
-    
-    # def call_save_program_request(self, program_name: str, program_json: str, 
-    #                                wait_for_service=True, timeout=0.1) -> bool:
-    #     """
-    #     Send request to save program using reusable SaveProgram client.
-    #     Assigns program_name to first string field and program_json to second.
-    #     """
-    #     if not hasattr(self, 'save_program_client') or self.save_program_client is None:
-    #         self.save_program_client = self.create_client(
-    #             SaveProgram, "/program_executor/save_program")
+    # ================== Load Raw JSON Client ================
 
-    #     client = self.save_program_client
-    #     req = SaveProgram.Request()
+    def call_load_raw_JSON_request(self, program_json: str, wait_for_service=True, timeout=0.1) -> bool:
+        """
+        Send request to load raw JSON program using reusable LoadRawJSON client.
+        Assigns program_json to first string field.
+        """
+        if not hasattr(self, 'load_raw_JSON_client') or self.load_raw_JSON_client is None:
+            self.load_raw_JSON_client = self.create_client(
+                LoadRawJSON, "/program_executor/load_raw_JSON")
 
-    #     # Detect string fields from the generated Request
-    #     try:
-    #         fields = req.get_fields_and_field_types()
-    #     except Exception:
-    #         fields = {}
+        client = self.load_raw_JSON_client
+        req = LoadRawJSON.Request()
 
-    #     string_fields = [n for n, t in fields.items() if 'string' in t]
+        # Detect string fields from the generated Request
+        try:
+            fields = req.get_fields_and_field_types()
+        except Exception:
+            fields = {}
 
-    #     # Assign program_name and program_json to string fields
-    #     assigned = []
-    #     try:
-    #         if string_fields:
-    #             if len(string_fields) >= 1:
-    #                 setattr(req, string_fields[0], program_name)
-    #                 assigned.append(string_fields[0])
-    #             if len(string_fields) >= 2:
-    #                 setattr(req, string_fields[1], program_json)
-    #                 assigned.append(string_fields[1])
-    #         else:
-    #             # Fallback: try common candidate names
-    #             candidates = ['name', 'program', 'program_json', 'program_name', 
-    #                          'data', 'json', 'content', 'file', 'text']
-    #             targets = [program_name, program_json]
-    #             for payload in targets:
-    #                 for cand in candidates:
-    #                     if hasattr(req, cand) and cand not in assigned:
-    #                         try:
-    #                             setattr(req, cand, payload)
-    #                             assigned.append(cand)
-    #                             break
-    #                         except Exception:
-    #                             continue
-    #     except Exception as e:
-    #         self.get_logger().error(f"Failed to populate SaveProgram request fields: {e}")
+        string_fields = [n for n, t in fields.items() if 'string' in t]
 
-    #     if not assigned:
-    #         self.get_logger().error(
-    #             "SaveProgram request: no suitable string fields found on request object")
-    #         return False
+        # Assign program_json to first string field
+        assigned = []
+        try:
+            if string_fields:
+                setattr(req, string_fields[0], program_json)
+                assigned.append(string_fields[0])
+            else:
+                # Fallback: try common candidate names
+                candidates = ['program', 'program_json', 'data', 'json', 
+                             'content', 'file', 'text']
+                for cand in candidates:
+                    if hasattr(req, cand):
+                        try:
+                            setattr(req, cand, program_json)
+                            assigned.append(cand)
+                            break
+                        except Exception:
+                            continue
+        except Exception as e:
+            self.get_logger().error(f"Failed to populate LoadRawJSON request fields: {e}")
 
-    #     def _send_request():
-    #         try:
-    #             future = client.call_async(req)
-    #             future.program_name = program_name
-    #             future.add_done_callback(self._handle_save_program_response_callback)
-    #             self.get_logger().info(
-    #                 f"SaveProgram request sent for '{program_name}' (fields used: {assigned})")
-    #         except Exception as e:
-    #             self.get_logger().error(f"SaveProgram client failed to call service: {e}")
+        if not assigned:
+            self.get_logger().error(
+                "LoadRawJSON request: no suitable string fields found on request object")
+            return False
 
-    #     # Wait for service if requested
-    #     if wait_for_service and not client.wait_for_service(timeout_sec=0.1):
-    #         waiting_popup = StatusPopupDialog.create_new_dialog()
-    #         Clock.schedule_once(
-    #             lambda dt: waiting_popup.waiting_on_service_popup(
-    #                 service_name="/program_executor/save_program"), 0)
+        def _send_request():
+            try:
+                future = client.call_async(req)
+                future.add_done_callback(self._handle_load_raw_JSON_response_callback)
+                self.get_logger().info(
+                    f"LoadRawJSON request sent (fields used: {assigned})")
+            except Exception as e:
+                self.get_logger().error(f"LoadRawJSON client failed to call service: {e}")
 
-    #         check_event = {"evt": None}
+        # Wait for service if requested
+        if wait_for_service and not client.wait_for_service(timeout_sec=0.1):
+            waiting_popup = StatusPopupDialog.create_new_dialog()
+            Clock.schedule_once(
+                lambda dt: waiting_popup.waiting_on_service_popup(
+                    service_name="/program_executor/load_raw_JSON"), 0)
 
-    #         def _check_service(dt):
-    #             if client.wait_for_service(timeout_sec=0.1):
-    #                 try:
-    #                     if waiting_popup:
-    #                         waiting_popup.dismiss()
-    #                 except Exception:
-    #                     pass
-    #                 _send_request()
-    #                 if check_event["evt"]:
-    #                     check_event["evt"].cancel()
-    #                     check_event["evt"] = None
+            check_event = {"evt": None}
 
-    #         check_event["evt"] = Clock.schedule_interval(_check_service, 0.5)
-    #         return True
+            def _check_service(dt):
+                if client.wait_for_service(timeout_sec=0.1):
+                    try:
+                        if waiting_popup:
+                            waiting_popup.dismiss()
+                    except Exception:
+                        pass
+                    _send_request()
+                    if check_event["evt"]:
+                        check_event["evt"].cancel()
+                        check_event["evt"] = None
+            check_event["evt"] = Clock.schedule_interval(_check_service, 0.5)
+            return True
+        try:
+            _send_request()
+            return True
+        except Exception as e:
+            self.get_logger().error(f"LoadRawJSON immediate call failed: {e}")
+            return False
+    def _handle_load_raw_JSON_response_callback(self, future):
+        """Handle LoadRawJSON response"""
+        try:
+            resp = future.result()
+            success = getattr(resp, "success", None)
+            message = getattr(resp, "message", str(resp))
+            self.get_logger().info(
+                f"LoadRawJSON response: success={success}, message={message}")
+        except Exception as e:
+            self.get_logger().error(f"LoadRawJSON response handler error: {e}")
 
-    #     try:
-    #         _send_request()
-    #         return True
-    #     except Exception as e:
-    #         self.get_logger().error(f"SaveProgram immediate call failed: {e}")
-    #         return False
 
-    # def _handle_save_program_response_callback(self, future):
-    #     """Handle SaveProgram response"""
-    #     try:
-    #         resp = future.result()
-    #         success = getattr(resp, "success", None)
-    #         message = getattr(resp, "message", str(resp))
-    #         pname = getattr(future, "program_name", "Unknown")
-    #         self.get_logger().info(
-    #             f"SaveProgram response for '{pname}': success={success}, message={message}")
-
-        #     def create_and_store_dialog(dt):
-        #         self.current_status_dialog = StatusPopupDialog.create_new_dialog()
-        #         self.current_status_dialog.show_status_dialog(
-        #             pname, "save_program", bool(success), 
-        #             move_to_pre_def_pose_complete=False)
-            
-        #     if self.app:
-        #         Clock.schedule_once(create_and_store_dialog, 0)
-                
-        # except Exception as e:
-        #     self.get_logger().error(f"SaveProgram response handler error: {e}")
 
     # ==================== Topic Callbacks ====================
     
