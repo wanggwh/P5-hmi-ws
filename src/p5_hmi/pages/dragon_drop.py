@@ -36,31 +36,31 @@ class DragonDrop(MDFloatLayout):
         # }
 
         information = {
-            "1":{"func_name": "Config move", "func_args": {"config_name": {"type": "TF", "pretty_name": "Config Name", "ugly_name": "config_name", "extra_text": "", "entry": "", "special_parse": False}}},
+            "1":{"func_name": "Config move", "func_args": {"config_name": {"type": "TF", "pretty_name": "Config Name", "ugly_name": "config_name", "extra_text": "", "entry": "", "float_parse": False}}},
             "2":{"func_name": "Relative move", "func_args": {
-                "frame": {"type": "TF", "pretty_name": "Frame", "ugly_name": "frame", "extra_text": "(for apriltag: tag36h11:X)", "entry": "", "special_parse": False}, 
-                "linear": {"type": "bool", "pretty_name": "Linear", "ugly_name": "linear", "extra_text": "", "entry": "", "special_parse": False}, 
-                "use_tracking_velocity": {"type": "bool", "pretty_name": "Use Tracking Velocity", "ugly_name": "use_tracking_velocity", "extra_text": "", "entry": "", "special_parse": False}, 
-                "pose": {"type": "TF", "pretty_name": "Pose", "ugly_name": "pose", "extra_text": "floats: [x, y, z, qx, qy, qz, qw]", "entry": "", "special_parse": True}
+                "frame": {"type": "TF", "pretty_name": "Frame", "ugly_name": "frame", "extra_text": "( for apriltag: tag36h11:X )", "entry": "", "float_parse": False}, 
+                "linear": {"type": "bool", "pretty_name": "Linear", "ugly_name": "linear", "extra_text": "", "entry": "", "float_parse": False}, 
+                "use_tracking_velocity": {"type": "bool", "pretty_name": "Use Tracking Velocity", "ugly_name": "use_tracking_velocity", "extra_text": "", "entry": "", "float_parse": False}, 
+                "pose": {"type": "TF", "pretty_name": "Pose", "ugly_name": "pose", "extra_text": "( [x, y, z, qx, qy, qz, qw], floats split by \",\" )", "entry": "", "float_parse": True}
                 }},
             "3":{"func_name": "Relative move, Force Enabled", "func_args": {
-                "frame": {"type": "TF", "pretty_name": "Frame", "ugly_name": "frame", "extra_text": "(for apriltag: tag36h11:X)", "entry": "", "special_parse": False}, 
-                "linear": {"type": "bool", "pretty_name": "Linear", "ugly_name": "linear", "extra_text": "", "entry": "", "special_parse": False}, 
-                "use_tracking_velocity": {"type": "bool", "pretty_name": "Use Tracking Velocity", "ugly_name": "use_tracking_velocity", "extra_text": "", "entry": "", "special_parse": False}, 
-                "pose": {"type": "TF", "pretty_name": "Pose", "ugly_name": "pose", "extra_text": "floats: [x, y, z, qx, qy, qz, qw]", "entry": "", "special_parse": True}, 
-                "force": {"type": "TF", "pretty_name": "Force Vector", "ugly_name": "force", "extra_text": "floats: [fx, fy, fz, tx, ty, tz]", "entry": "", "special_parse": True}}},
-            "4":{"func_name": "Frame available", "func_args": {"frame_name": {"type": "TF", "pretty_name": "Frame Name", "ugly_name": "frame_name", "extra_text": "", "entry": "", "special_parse": False}}},
-            "5":{"func_name": "Grip", "func_args": {"action": {"type": "bool", "pretty_name": "Action", "ugly_name": "action", "extra_text": "(close/open)", "entry": "", "special_parse": False}}},
+                "frame": {"type": "TF", "pretty_name": "Frame", "ugly_name": "frame", "extra_text": "( for apriltag: tag36h11:X )", "entry": "", "float_parse": False}, 
+                "linear": {"type": "bool", "pretty_name": "Linear", "ugly_name": "linear", "extra_text": "", "entry": "", "float_parse": False}, 
+                "use_tracking_velocity": {"type": "bool", "pretty_name": "Use Tracking Velocity", "ugly_name": "use_tracking_velocity", "extra_text": "", "entry": "", "float_parse": False}, 
+                "pose": {"type": "TF", "pretty_name": "Pose", "ugly_name": "pose", "extra_text": "( [x, y, z, qx, qy, qz, qw], floats split by \",\" )", "entry": "", "float_parse": True}, 
+                "force": {"type": "TF", "pretty_name": "Force Vector", "ugly_name": "force", "extra_text": "( [fx, fy, fz, tx, ty, tz], floats split by \",\" )", "entry": "", "float_parse": True}}},
+            "4":{"func_name": "Frame available", "func_args": {"frame_name": {"type": "TF", "pretty_name": "Frame Name", "ugly_name": "frame_name", "extra_text": "", "entry": "", "float_parse": False}}},
+            "5":{"func_name": "Grip", "func_args": {"action": {"type": "bool", "pretty_name": "Action", "ugly_name": "action", "extra_text": "(close/open)", "entry": "", "float_parse": False}}},
             "6":{"func_name": "Admittance", "func_args": {
-                "link_1": {"type": "bool", "pretty_name": "Link 1", "ugly_name": "link_1", "extra_text": "(on/off)", "entry": "", "special_parse": False},
-                "link_2": {"type": "bool", "pretty_name": "Link 2", "ugly_name": "link_2", "extra_text": "(on/off)", "entry": "", "special_parse": False},
-                "link_3": {"type": "bool", "pretty_name": "Link 3", "ugly_name": "link_3", "extra_text": "(on/off)", "entry": "", "special_parse": False},
-                "link_4": {"type": "bool", "pretty_name": "Link 4", "ugly_name": "link_4", "extra_text": "(on/off)", "entry": "", "special_parse": False},
-                "link_5": {"type": "bool", "pretty_name": "Link 5", "ugly_name": "link_5", "extra_text": "(on/off)", "entry": "", "special_parse": False},
-                "link_6": {"type": "bool", "pretty_name": "Link 6", "ugly_name": "link_6", "extra_text": "(on/off)", "entry": "", "special_parse": False}
+                "x": {"type": "bool", "pretty_name": "x", "ugly_name": "x", "extra_text": "(on/off)", "entry": "", "float_parse": False},
+                "y": {"type": "bool", "pretty_name": "y", "ugly_name": "y", "extra_text": "(on/off)", "entry": "", "float_parse": False},
+                "z": {"type": "bool", "pretty_name": "z", "ugly_name": "z", "extra_text": "(on/off)", "entry": "", "float_parse": False},
+                "tx": {"type": "bool", "pretty_name": "tx", "ugly_name": "tx", "extra_text": "(on/off)", "entry": "", "float_parse": False},
+                "ty": {"type": "bool", "pretty_name": "ty", "ugly_name": "ty", "extra_text": "(on/off)", "entry": "", "float_parse": False},
+                "tz": {"type": "bool", "pretty_name": "tz", "ugly_name": "tz", "extra_text": "(on/off)", "entry": "", "float_parse": False}
                 }},
-            "7":{"func_name": "Sync", "func_args": {"sync_id": {"type": "TF", "pretty_name": "Sync ID", "ugly_name": "sync_id", "extra_text": "", "entry": "", "special_parse": False}, "threads": {"type": "TF", "pretty_name": "Threads", "ugly_name": "threads", "extra_text": "", "entry": "", "special_parse": False}}},
-            "8":{"func_name": "MiR mission", "func_args": {"mission": {"type": "TF", "pretty_name": "Mission", "ugly_name": "mission", "extra_text": "", "entry": "", "special_parse": False}}},
+            "7":{"func_name": "Sync", "func_args": {"sync_id": {"type": "TF", "pretty_name": "Sync ID", "ugly_name": "sync_id", "extra_text": "", "entry": "", "float_parse": False}, "threads": {"type": "TF", "pretty_name": "Threads", "ugly_name": "threads", "extra_text": "", "entry": "", "float_parse": False}}},
+            "8":{"func_name": "MiR mission", "func_args": {"mission": {"type": "TF", "pretty_name": "Mission", "ugly_name": "mission", "extra_text": "", "entry": "", "float_parse": False}}},
         } 
 
         alice = DragonDropZone(
@@ -344,7 +344,7 @@ class DragonDrop(MDFloatLayout):
                 for page_num, pos_idx, entry in sorted_entries:
                     for param in entry.get("params", {}).values():
                         #print(f"Processing param {param} for entry {entry}")
-                        if param.get("special_parse") == True:
+                        if param.get("float_parse") == True:
                             #print(f"Processing special param {param.get('ugly_name')} with raw value: {param.get('entry')}")
                             raw_value = param.get("entry", "")
                             try:
