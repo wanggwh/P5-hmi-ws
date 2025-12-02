@@ -251,7 +251,7 @@ class StartPage(MDBoxLayout):
             print("StartPage: Error list cleared from UI")
     
     def _on_start_button_release(self, instance, *args):
-        """Handler bound to the START button. If a JSON file is selected, send it via HMI node LoadRawJSON service."""
+        """Handler bound to the START button. If a JSON file is selected, send it via HMI node LoadProgram service."""
         # Keep behavior minimal: if no selection, notify user; if selection exists, call HMI node.
         if not self._selected_json:
             dlg = MDDialog(
@@ -278,7 +278,7 @@ class StartPage(MDBoxLayout):
             if sent:
                 dlg = MDDialog(
                     title="JSON sent",
-                    text=f"Sent {self._selected_filename or 'selected file'} to LoadRawJSON service.",
+                    text=f"Sent {self._selected_filename or 'selected file'} to LoadProgram service.",
                     size_hint=(0.9, 0.35),
                     buttons=[MDFlatButton(text="OK", on_release=lambda *a: dlg.dismiss())]
                 )

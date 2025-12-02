@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
+import os
+os.environ['KIVY_CLIPBOARD'] = 'pygame'
+os.environ['KIVY_NO_ARGS'] = '1'
+os.environ['KIVY_NO_CONSOLELOG'] = '1'
 
 from datetime import datetime
+
+from urllib3 import request
 import rclpy
 from rclpy.node import Node
 import os
@@ -15,7 +21,7 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivy.core.window import Window
 
 from p5_interfaces.srv import PoseConfig
-from p5_interfaces.srv import MoveToPreDefPose, LoadRawJSON#, SaveProgram
+from p5_interfaces.srv import MoveToPreDefPose, LoadProgram, RunProgram#, SaveProgram
 from p5_interfaces.srv import AdmittanceSetStatus, AdmittanceConfig
 from p5_interfaces.msg import CommandState
 from p5_interfaces.msg import Error
@@ -101,7 +107,8 @@ class HMINode(Node):
         self.save_pre_def_pose_client = self.create_client(
             PoseConfig, "/p5_pose_config")
         self.load_raw_JSON_client = self.create_client(
-            LoadRawJSON, "/program_executor/load_raw_JSON")
+            LoadProgram, "/program_executor/load_raw_JSON")
+        self.run_program_client = self.create_client(RunProgram, "/program_executor/run_program")
         # self.save_program_client = self.create_client(
         #     SaveProgram, "/program_executor/save_program")
 
@@ -340,15 +347,15 @@ class HMINode(Node):
 
     def call_load_raw_JSON_request(self, program_json: str, wait_for_service=True, timeout=0.1) -> bool:
         """
-        Send request to load raw JSON program using reusable LoadRawJSON client.
+        Send request to load raw JSON program using reusable LoadProgram client.
         Assigns program_json to first string field.
         """
         if not hasattr(self, 'load_raw_JSON_client') or self.load_raw_JSON_client is None:
             self.load_raw_JSON_client = self.create_client(
-                LoadRawJSON, "/program_executor/load_raw_JSON")
+                LoadProgram, "/program_executor/load_raw_JSON")
 
         client = self.load_raw_JSON_client
-        req = LoadRawJSON.Request()
+        req = LoadProgram.Request()
 
         # Detect string fields from the generated Request
         try:
@@ -377,11 +384,11 @@ class HMINode(Node):
                         except Exception:
                             continue
         except Exception as e:
-            self.get_logger().error(f"Failed to populate LoadRawJSON request fields: {e}")
+            self.get_logger().error(f"Failed to populate LoadProgram request fields: {e}")
 
         if not assigned:
             self.get_logger().error(
-                "LoadRawJSON request: no suitable string fields found on request object")
+                "LoadProgram request: no suitable string fields found on request object")
             return False
 
         def _send_request():
@@ -389,9 +396,9 @@ class HMINode(Node):
                 future = client.call_async(req)
                 future.add_done_callback(self._handle_load_raw_JSON_response_callback)
                 self.get_logger().info(
-                    f"LoadRawJSON request sent (fields used: {assigned})")
+                    f"LoadProgram request sent (fields used: {assigned})")
             except Exception as e:
-                self.get_logger().error(f"LoadRawJSON client failed to call service: {e}")
+                self.get_logger().error(f"LoadProgram client failed to call service: {e}")
 
         # Wait for service if requested
         if wait_for_service and not client.wait_for_service(timeout_sec=0.1):
@@ -419,20 +426,39 @@ class HMINode(Node):
             _send_request()
             return True
         except Exception as e:
-            self.get_logger().error(f"LoadRawJSON immediate call failed: {e}")
+            self.get_logger().error(f"LoadProgram immediate call failed: {e}")
             return False
     def _handle_load_raw_JSON_response_callback(self, future):
-        """Handle LoadRawJSON response"""
+        """Handle LoadProgram response"""
         try:
             resp = future.result()
             success = getattr(resp, "success", None)
             message = getattr(resp, "message", str(resp))
             self.get_logger().info(
-                f"LoadRawJSON response: success={success}, message={message}")
+                f"LoadProgram response: success={success}, message={message}")
+            
+            if success is True:
+                self.send_run_program_request()
+            
         except Exception as e:
-            self.get_logger().error(f"LoadRawJSON response handler error: {e}")
+            self.get_logger().error(f"LoadProgram response handler error: {e}")
 
-
+    def send_run_program_request(self):
+        # Check if service is available
+        request = RunProgram.Request()
+        request.status = True
+        if not self.run_program_client.wait_for_service(timeout_sec=0.1):
+            self.get_logger().warning("RunProgram service not available")
+            self.waiting_popup = StatusPopupDialog.create_new_dialog()
+            Clock.schedule_once(
+                lambda dt: self.waiting_popup.waiting_on_service_popup(
+                    service_name="/program_executer/run_program"), 0)
+            return
+        
+        # Send async request
+        self.run_program_client.call_async(request)
+        self.get_logger().info("RunProgram request sent")
+            
 
     # ==================== Topic Callbacks ====================
     
