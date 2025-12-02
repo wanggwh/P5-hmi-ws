@@ -3,8 +3,8 @@ import json
 import os
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivy.properties import StringProperty, NumericProperty, ListProperty, DictProperty, ObjectProperty, BooleanProperty
-from kivymd.uix.label import MDLabel
-from kivy.graphics import Color, RoundedRectangle
+from kivymd.uix.label import MDLabel, MDIcon
+from kivy.graphics import Color, RoundedRectangle, Line
 from kivy.metrics import dp
 from kivymd.app import MDApp
 
@@ -48,7 +48,7 @@ class DragonDrop(MDFloatLayout):
                 "linear": {"type": "bool", "pretty_name": "Linear", "ugly_name": "linear", "extra_text": "", "entry": ""}, 
                 "use_tracking_velocity": {"type": "bool", "pretty_name": "Use Tracking Velocity", "ugly_name": "use_tracking_velocity", "extra_text": "", "entry": ""}, 
                 "pose": {"type": "TF", "pretty_name": "Pose", "ugly_name": "pose", "extra_text": "[x, y, z, qx, qy, qz, qw]", "entry": ""}, 
-                "force": {"type": "TF", "pretty_name": "Force Vector", "ugly_name": "force", "extra_text": "I think this is a vector", "entry": ""}}},
+                "force": {"type": "TF", "pretty_name": "Force Vector", "ugly_name": "force", "extra_text": "[fx, fy, fz, tx, ty, tz]", "entry": ""}}},
             "4":{"func_name": "Frame available", "func_args": {"frame_name": {"type": "TF", "pretty_name": "Frame Name", "ugly_name": "frame_name", "extra_text": "", "entry": ""}}},
             "5":{"func_name": "Grip", "func_args": {"action": {"type": "bool", "pretty_name": "Action", "ugly_name": "action", "extra_text": "(close/open)", "entry": ""}}},
             "6":{"func_name": "Admittance", "func_args": {
@@ -596,7 +596,7 @@ class DragonDropButton(MDFloatLayout):
         self.remove_visual_from_zone(zone, idx)
 
         # Add the label behind other widgets
-        parent.add_widget(label, index=11)
+        parent.add_widget(label, index=14)
 
     def remove_visual_from_zone(self, zone, idx, parent=None):
         global page
@@ -670,6 +670,43 @@ class VisualCue(MDLabel):
         super().__init__(*args, **kwargs)
         self.zone = kwargs.get("zone")
         self.idx = kwargs.get("idx")
+
+        # draw a thin vertical line through the middle (canvas.after so it's above bg)
+        with self.canvas.after:
+            Color(0.75, 0.78, 0.82, 0.8)
+            self._line = Line(points=[], width=1.5)
+        self.bind(pos=self._update_line, size=self._update_line)
+    
+        # purely visual icons in top-left and top-right (no handlers)
+        self._left_icon = MDIcon(
+            icon="pencil",
+            size_hint=(None, None),
+            theme_text_color="Custom",
+            text_color=(0.75, 0.78, 0.82, 0.8),
+        )
+        self._right_icon = MDIcon(
+            icon="close",
+            size_hint=(None, None),
+            theme_text_color="Custom",
+            text_color=(0.75, 0.78, 0.82, 0.8),
+        )
+
+        # add to widget tree and keep positioned when size/pos changes
+        self.add_widget(self._left_icon)
+        self.add_widget(self._right_icon)
+        self.bind(pos=self._update_icons, size=self._update_icons)
+
+    def _update_line(self, *a):
+        x = self.center_x
+        y1 = self.y
+        y2 = self.y + self.height
+        self._line.points = [x, y1, x, y2]
+
+    def _update_icons(self, *a):
+        #Making sure it is centered in the top-left and top-right corners
+        self._left_icon.pos = (self.x + dp(5), self.y + self.height - dp(25))
+        self._right_icon.pos = (self.x + self.width - dp(25), self.y + self.height - dp(25))
+
 
     def on_touch_down(self, touch):
         global page
