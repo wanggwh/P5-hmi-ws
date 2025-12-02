@@ -101,7 +101,7 @@ class HMINode(Node):
         self.save_pre_def_pose_client = self.create_client(
             PoseConfig, "/p5_pose_config")
         self.load_raw_JSON_client = self.create_client(
-            LoadRawJSON, "/program_executor/save_program")
+            LoadRawJSON, "/program_executor/load_raw_JSON")
         # self.save_program_client = self.create_client(
         #     SaveProgram, "/program_executor/save_program")
 
