@@ -107,7 +107,7 @@ class AdmittanceControl(MDFloatLayout):
     # Slider control functions
     def on_joint_change(self, slider_index, value):
         """Called when any slider value changes"""
-        value_float = round(float(value), 1)
+        value_float = round(float(value), 2)
         slider_names = ["M", "D", "k", "alpha"]
         slider_name = slider_names[slider_index]
         
@@ -152,10 +152,18 @@ class AdmittanceControl(MDFloatLayout):
             M_value = self.ids.M_slider.value
             D_value = self.ids.D_slider.value
             k_value = self.ids.k_slider.value
+            alpha_value = self.ids.alpha_slider.value
+            
+            f_scalar = 500.0   #force scalar
+            t_scalar = 10.0    #torque scalar
+            
+            M_value = [M_value*f_scalar, M_value*f_scalar, M_value*f_scalar, M_value*t_scalar, M_value*t_scalar, M_value*t_scalar]
+            D_value = [D_value*f_scalar, D_value*f_scalar, D_value*f_scalar, D_value*t_scalar, D_value*t_scalar, D_value*t_scalar]
+            k_value = [k_value*f_scalar, k_value*f_scalar, k_value*f_scalar, k_value*t_scalar, k_value*t_scalar, k_value*t_scalar]
             
             # Send to the selected robot
             self.app.hmi_node.publish_admittance_parameters(
-                self.tuning_robot, M_value, D_value, k_value)
+                self.tuning_robot, M_value, D_value, k_value, alpha_value)
             
         except Exception as e:
             print(f"Failed to publish admittance parameters: {e}")

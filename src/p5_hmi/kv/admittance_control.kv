@@ -4,7 +4,7 @@
         MDBoxLayout:
             orientation: "vertical"
             padding: "2dp"
-            spacing: "10dp"
+            spacing: "12dp"
             size_hint: 0.9, None
             height: dp(120)
             pos_hint: {'center_x': 0.5, 'top': 1.08}
@@ -157,10 +157,10 @@
                         
                 NonInteractiveSlider:
                     id: M_slider
-                    min: -2
-                    max: 2
-                    value: 0
-                    step: 0.1
+                    min: 0.1
+                    max: 10.1
+                    value: 0.1
+                    step: 0.5
                     theme_thumb_color: "Custom"
                     theme_track_color: "Custom"
                     thumb_color_inactive: (0.3, 0.7, 1.0, 1)
@@ -182,7 +182,7 @@
                         
                 MDLabel:
                     id: M_value
-                    text: "0.0"
+                    text: "0.1"
                     size_hint_x: None
                     width: dp(50)
                     theme_text_color: "Custom"
@@ -215,10 +215,10 @@
                     
                 NonInteractiveSlider:
                     id: D_slider
-                    min: -2.0
-                    max: 2.0
-                    value: 0.0
-                    step: 0.1
+                    min: 0.1
+                    max: 10.1
+                    value: 0.1
+                    step: 0.5
                     theme_thumb_color: "Custom"
                     theme_track_color: "Custom"
                     thumb_color_inactive: (0.3, 0.7, 1.0, 1)
@@ -240,7 +240,7 @@
                     
                 MDLabel:
                     id: D_value
-                    text: "0.0"
+                    text: "0.1"
                     size_hint_x: None
                     width: dp(50)
                     theme_text_color: "Custom"
@@ -273,10 +273,10 @@
                     
                 NonInteractiveSlider:
                     id: k_slider
-                    min: -2
-                    max: 2
-                    value: 0
-                    step: 0.1
+                    min: 0.1
+                    max: 10.1
+                    value: 0.1
+                    step: 0.5
                     theme_thumb_color: "Custom"
                     theme_track_color: "Custom"
                     thumb_color_inactive: (0.3, 0.7, 1.0, 1)
@@ -298,7 +298,7 @@
                     
                 MDLabel:
                     id: k_value
-                    text: "0.0"
+                    text: "0.1"
                     size_hint_x: None
                     width: dp(50)
                     theme_text_color: "Custom"
@@ -330,10 +330,10 @@
                     
                 NonInteractiveSlider:
                     id: alpha_slider
-                    min: 0.0
+                    min: 0.01
                     max: 1.0
-                    value: 0.5
-                    step: 0.1
+                    value: 0.1
+                    step: 0.01
                     thumb_color_inactive: (0.3, 0.7, 1.0, 1)
                     track_color_active: (0.3, 0.7, 1.0, 1)
                     track_color_inactive: app.colors['button_neutral']
@@ -351,7 +351,7 @@
                     
                 MDLabel:
                     id: alpha_value
-                    text: "0.0"
+                    text: "0.01"
                     size_hint_x: None
                     width: dp(50)
                     color: app.colors['text_muted']

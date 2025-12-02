@@ -113,14 +113,14 @@ class HMINode(Node):
 
     # ==================== Admittance Control ====================
     
-    def publish_admittance_parameters(self, robot_name, M_parameter, D_parameter, K_parameter):
+    def publish_admittance_parameters(self, robot_name, M_parameter, D_parameter, K_parameter, alpha_value):
         client = self.create_client(
             AdmittanceConfig, "/" + robot_name + "/p5_admittance_config")
         request = AdmittanceConfig.Request()
         request.m = M_parameter
         request.d = D_parameter
         request.k = K_parameter
-        request.alpha = 0.01
+        request.alpha = alpha_value
         
         if not client.wait_for_service(timeout_sec=0.1):
             self.get_logger().warning(
