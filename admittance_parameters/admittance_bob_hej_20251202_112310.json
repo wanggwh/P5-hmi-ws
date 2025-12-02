@@ -1,0 +1,48 @@
+{
+  "metadata": {
+    "name": "hej",
+    "description": "med",
+    "date": "dig",
+    "author": "Unknown"
+  },
+  "parameters": {
+    "robot": "bob",
+    "raw_values": {
+      "M": 1.6,
+      "D": 1.6,
+      "K": 0.6,
+      "alpha": 0.1
+    },
+    "scaled_values": {
+      "M": [
+        800.0,
+        800.0,
+        800.0,
+        16.0,
+        16.0,
+        16.0
+      ],
+      "D": [
+        800.0,
+        800.0,
+        800.0,
+        16.0,
+        16.0,
+        16.0
+      ],
+      "K": [
+        300.0,
+        300.0,
+        300.0,
+        6.0,
+        6.0,
+        6.0
+      ]
+    },
+    "scalars": {
+      "force_scalar": 500.0,
+      "torque_scalar": 10.0
+    }
+  },
+  "timestamp": "2025-12-02T11:23:10.814439"
+}
