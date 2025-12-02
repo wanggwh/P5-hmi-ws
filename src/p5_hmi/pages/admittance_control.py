@@ -1,8 +1,17 @@
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.slider import MDSlider
+from kivymd.uix.button import MDIconButton
+from kivymd.uix.dialog import MDDialog
+from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.button import MDFlatButton
+from kivymd.uix.textfield import MDTextField
+from kivy.metrics import dp
 from kivy.clock import Clock
 import math
 from kivymd.app import MDApp
+import json
+import os
+from datetime import datetime
 
 class NonInteractiveSlider(MDSlider):
     """A slider that cannot be interacted with but shows values"""
@@ -23,7 +32,165 @@ class AdmittanceControl(MDFloatLayout):
         self.publish_debounce_event = None
         
         # Track which robot is selected for tuning
-        self.tuning_robot = None  # None, 'bob', or 'alice'
+        self.tuning_robot = None
+        
+        # Create save directory if it doesn't exist
+        self.save_directory = os.path.expanduser("admittance_parameters/")
+        os.makedirs(self.save_directory, exist_ok=True)
+        
+        saveAndParse = MDIconButton(
+            icon="content-save",
+            pos_hint={"center_x": 0.98, "center_y": 0.05},
+            theme_icon_color="Custom",
+            on_release=lambda x: self.save_admittance_parameters(),
+            icon_color=[0.86, 0.86, 0.88, 1],
+        )
+        self.add_widget(saveAndParse)
+    
+    def save_admittance_parameters(self):
+        # Make MDDialog with textfields to enter Name, description, date, author
+        naming = {
+            "Admittance tuning name": "",
+            "Description": "",
+            "Date": "",
+            "Author": "",
+        }
+        
+        content = MDBoxLayout(
+            orientation="vertical",
+            spacing=dp(10),
+            size_hint_y=None,
+            height=len(naming) * dp(70),
+        )
+        
+        # Store textfields in a list so we can access them later
+        textfields = []
+        for param in naming:
+            tf = MDTextField(hint_text=f"{param}")
+            content.add_widget(tf)
+            textfields.append(tf)
+        
+        naming_dialog = MDDialog(
+            title="Save Admittance Parameters",
+            type="custom",
+            content_cls=content,
+            buttons=[
+                MDFlatButton(
+                    text="CANCEL", 
+                    on_release=lambda x: naming_dialog.dismiss()
+                ),
+                MDFlatButton(
+                    text="OK", 
+                    on_release=lambda x: self.on_ok(naming_dialog, textfields)
+                ),
+            ],
+        )
+        naming_dialog.open()
+
+    def on_ok(self, dialog, textfields):
+        """Handle OK button press - save parameters with metadata"""
+        if self.tuning_robot is None:
+            print("No robot selected - cannot save parameters")
+            dialog.dismiss()
+            return
+        
+        try:
+            # Get values from textfields
+            metadata = {
+                "name": textfields[0].text or "Unnamed",
+                "description": textfields[1].text or "No description",
+                "date": textfields[2].text or datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "author": textfields[3].text or "Unknown",
+            }
+            
+            # Get current slider values
+            f_scalar = 500.0
+            t_scalar = 10.0
+            
+            M_raw = self.ids.M_slider.value
+            D_raw = self.ids.D_slider.value
+            K_raw = self.ids.k_slider.value
+            alpha_raw = self.ids.alpha_slider.value
+            
+            parameters = {
+                "robot": self.tuning_robot,
+                "raw_values": {
+                    "M": M_raw,
+                    "D": D_raw,
+                    "K": K_raw,
+                    "alpha": alpha_raw,
+                },
+                "scaled_values": {
+                    "M": [M_raw*f_scalar, M_raw*f_scalar, M_raw*f_scalar, 
+                          M_raw*t_scalar, M_raw*t_scalar, M_raw*t_scalar],
+                    "D": [D_raw*f_scalar, D_raw*f_scalar, D_raw*f_scalar, 
+                          D_raw*t_scalar, D_raw*t_scalar, D_raw*t_scalar],
+                    "K": [K_raw*f_scalar, K_raw*f_scalar, K_raw*f_scalar, 
+                          K_raw*t_scalar, K_raw*t_scalar, K_raw*t_scalar],
+                },
+                "scalars": {
+                    "force_scalar": f_scalar,
+                    "torque_scalar": t_scalar,
+                }
+            }
+            
+            # Combine metadata and parameters
+            save_data = {
+                "metadata": metadata,
+                "parameters": parameters,
+                "timestamp": datetime.now().isoformat(),
+            }
+            
+            # Create filename
+            safe_name = metadata['name'].replace(' ', '_').replace('/', '_')
+            filename = f"admittance_{self.tuning_robot}_{safe_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            filepath = os.path.join(self.save_directory, filename)
+            
+            # Save to JSON file
+            with open(filepath, 'w') as f:
+                json.dump(save_data, f, indent=2)
+            
+            print(f"✅ Saved admittance parameters to: {filepath}")
+            print(f"   Robot: {self.tuning_robot}")
+            print(f"   M: {M_raw} (scaled: {M_raw*f_scalar})")
+            print(f"   D: {D_raw} (scaled: {D_raw*f_scalar})")
+            print(f"   K: {K_raw} (scaled: {K_raw*f_scalar})")
+            print(f"   Alpha: {alpha_raw}")
+            
+            # Show success popup (optional)
+            if self.app:
+                success_dialog = MDDialog(
+                    title="Success",
+                    text=f"Parameters saved to:\n{filename}",
+                    buttons=[
+                        MDFlatButton(
+                            text="OK",
+                            on_release=lambda x: success_dialog.dismiss()
+                        )
+                    ],
+                )
+                success_dialog.open()
+            
+            dialog.dismiss()
+            
+        except Exception as e:
+            print(f"❌ Failed to save parameters: {e}")
+            
+            # Show error popup
+            error_dialog = MDDialog(
+                title="Error",
+                text=f"Failed to save parameters:\n{str(e)}",
+                buttons=[
+                    MDFlatButton(
+                        text="OK",
+                        on_release=lambda x: error_dialog.dismiss()
+                    )
+                ],
+            )
+            error_dialog.open()
+            dialog.dismiss()
+    
+        
 
     def on_parent(self, widget, parent):
         """Called when the widget is added to a parent"""
