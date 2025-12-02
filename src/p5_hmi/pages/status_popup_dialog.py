@@ -233,8 +233,8 @@ class StatusPopupDialog(MDDialog):
         # Reset dialog state first
         self.stop_pulsing_animation()
         
-        title = "WAITING FOR SERVICE"
-        subtitle = f"Waiting for {service_name} service to become available..."
+        title = "STATUS UPDATE DIALOG"
+        subtitle = f"Waiting for the system to establish connection..."
         message = "Please wait while the system establishes connection."
 
         # Update content first

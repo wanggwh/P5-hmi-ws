@@ -141,7 +141,6 @@ class HMINode(Node):
             AdmittanceSetStatus, "/" + robot_name + "/p5_admittance_set_state")
         request = AdmittanceSetStatus.Request()
         request.active = enable_admittance
-        request.update_rate = int(update_rate)
 
         if not client.wait_for_service(timeout_sec=0.1):
             self.get_logger().warning(

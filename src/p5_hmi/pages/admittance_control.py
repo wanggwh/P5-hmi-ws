@@ -53,7 +53,7 @@ class AdmittanceControl(MDFloatLayout):
             # Kald eksisterende metode med korrekte parametre
             self.app.hmi_node.send_set_admittance_status_request(
                 robot_name="bob",
-                enable_admittance=True,
+                enable_admittance=[True for i in range(6)],
                 update_rate=100.0  # Juster efter behov
             )
             # Opdater knap farver
@@ -65,7 +65,7 @@ class AdmittanceControl(MDFloatLayout):
         if self.app and hasattr(self.app, 'hmi_node'):
             self.app.hmi_node.send_set_admittance_status_request(
                 robot_name="bob",
-                enable_admittance=False,
+                enable_admittance=[False for i in range(6)],
                 update_rate=100.0
             )
             # Opdater knap farver
@@ -77,7 +77,7 @@ class AdmittanceControl(MDFloatLayout):
         if self.app and hasattr(self.app, 'hmi_node'):
             self.app.hmi_node.send_set_admittance_status_request(
                 robot_name="alice",
-                enable_admittance=True,
+                enable_admittance=[True for i in range(6)],
                 update_rate=100.0
             )
             # Opdater knap farver
@@ -89,7 +89,7 @@ class AdmittanceControl(MDFloatLayout):
         if self.app and hasattr(self.app, 'hmi_node'):
             self.app.hmi_node.send_set_admittance_status_request(
                 robot_name="alice",
-                enable_admittance=False,
+                enable_admittance=[False for i in range(6)],
                 update_rate=100.0
             )
             # Opdater knap farver
