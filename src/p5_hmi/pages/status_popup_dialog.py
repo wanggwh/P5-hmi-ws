@@ -133,9 +133,9 @@ class StatusPopupDialog(MDDialog):
                 target_color = [0.8, 0.6, 0.2, 1.0] # Orange
                 Clock.schedule_once(lambda dt: self.animate_pulsing_status_bar(target_color), 0.1)
                
-            case 2: # Success case
-                target_color = [0.2, 0.8, 0.2, 1.0] # Green
-                Clock.schedule_once(lambda dt: self.animate_status_bar(target_color), 0.1)
+            # case 2: # Success case
+            #     target_color = [0.2, 0.8, 0.2, 1.0] # Green
+            #     Clock.schedule_once(lambda dt: self.animate_status_bar(target_color), 0.1)
 
     def show_status_save_custom_config(self, robot_name, goal_name, success):
         # Don't show if already dismissed
@@ -180,9 +180,9 @@ class StatusPopupDialog(MDDialog):
                 target_color = [0.8, 0.2, 0.2, 1.0] # Red
                 Clock.schedule_once(lambda dt: self.animate_status_bar(target_color), 0.1)
 
-            case 1: # Success case
-                target_color = [0.2, 0.8, 0.2, 1.0] # Green
-                Clock.schedule_once(lambda dt: self.animate_status_bar(target_color), 0.1)
+            # case 1: # Success case
+            #     target_color = [0.2, 0.8, 0.2, 1.0] # Green
+            #     Clock.schedule_once(lambda dt: self.animate_status_bar(target_color), 0.1)
         
     
     def show_in_progress(self, configuration, message="Operation in progress..."):
