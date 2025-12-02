@@ -1,0 +1,63 @@
+{
+    "shit": {
+        "description": "fuck",
+        "date": "jesus",
+        "author": "god",
+        "threads": [
+            {
+                "name": "alice_thread",
+                "robot_name": "alice",
+                "commands": [
+                    {
+                        "command": "r_move",
+                        "args": {
+                            "frame": "tag36h11:0",
+                            "linear": false,
+                            "use_tracking_velocity": false,
+                            "pose": "[0, 0, 0, 0, 0, 0]"
+                        }
+                    },
+                    {
+                        "command": "admittance",
+                        "args": {
+                            "link_1": false,
+                            "link_2": false,
+                            "link_3": true,
+                            "link_4": false,
+                            "link_5": false,
+                            "link_6": false
+                        }
+                    },
+                    {
+                        "command": "grip",
+                        "args": {
+                            "action": true
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "bob_thread",
+                "robot_name": "bob",
+                "commands": [
+                    {
+                        "command": "r_move_f_e",
+                        "args": {
+                            "frame": "alice_tool0",
+                            "linear": false,
+                            "use_tracking_velocity": false,
+                            "pose": "[0, 0, 0, 0, 0, 0]",
+                            "force": "[4.0, 0, 0, 0, 0, 10]"
+                        }
+                    },
+                    {
+                        "command": "grip",
+                        "args": {
+                            "action": false
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}
