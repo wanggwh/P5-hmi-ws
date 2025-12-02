@@ -915,6 +915,7 @@ class InfoEncoder(MDDialog):
                 row.add_widget(row_inner)
                 self._fields[param] = (cb_alice, cb_bob, cb_mir)
                 self.content_cls.add_widget(row)
+                self.content_cls.height += dp(48)  # extra height for 3 checkboxes
             else:
                 print(f"InfoEncoder: unknown parameter type '{ptype}' for param '{param}'")
 
