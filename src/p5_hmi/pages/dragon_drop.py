@@ -6,7 +6,6 @@ from kivy.properties import StringProperty, NumericProperty, ListProperty, DictP
 from kivymd.uix.label import MDLabel, MDIcon
 from kivy.graphics import Color, RoundedRectangle, Line
 from kivy.metrics import dp
-from kivymd.app import MDApp
 
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton, MDIconButton
@@ -59,7 +58,7 @@ class DragonDrop(MDFloatLayout):
                 "ty": {"type": "bool", "pretty_name": "ty", "ugly_name": "ty", "extra_text": "(on/off)", "entry": "", "float_parse": False},
                 "tz": {"type": "bool", "pretty_name": "tz", "ugly_name": "tz", "extra_text": "(on/off)", "entry": "", "float_parse": False}
                 }},
-            "7":{"func_name": "Sync", "func_args": {"sync_id": {"type": "TF", "pretty_name": "Sync ID", "ugly_name": "sync_id", "extra_text": "", "entry": "", "float_parse": False}, "threads": {"type": "TF", "pretty_name": "Threads", "ugly_name": "threads", "extra_text": "", "entry": "", "float_parse": False}}},
+            "7":{"func_name": "Sync", "func_args": {"sync_id": {"type": "TF", "pretty_name": "Sync ID", "ugly_name": "sync_id", "extra_text": "", "entry": "", "float_parse": False}, "threads": {"type": "threads", "pretty_name": "Threads", "ugly_name": "threads", "extra_text": "", "entry": "", "float_parse": False}}},
             "8":{"func_name": "MiR mission", "func_args": {"mission": {"type": "TF", "pretty_name": "Mission", "ugly_name": "mission", "extra_text": "", "entry": "", "float_parse": False}}},
         } 
 
@@ -731,7 +730,6 @@ class VisualCue(MDLabel):
         self._left_icon.pos = (self.x + dp(5), self.y + self.height - dp(25))
         self._right_icon.pos = (self.x + self.width - dp(25), self.y + self.height - dp(25))
 
-
     def on_touch_down(self, touch):
         global page
         if not self.collide_point(*touch.pos):
@@ -892,6 +890,33 @@ class InfoEncoder(MDDialog):
                 row.add_widget(cb)
                 self._fields[param] = cb
                 self.content_cls.add_widget(row)
+            elif ptype == "threads":
+                # Make three checkboxes for Alice, Bob, MiR
+                info["entry"] = info.get("entry", [])
+                row = MDBoxLayout(orientation="vertical", spacing=dp(8), size_hint_y=None, height=dp(96))
+                lbl = MDLabel(
+                    text=f"{pretty} {extra}".strip(),
+                    halign="left",
+                    valign="center",
+                    theme_text_color="Custom",
+                    text_color=[0.65, 0.65, 0.65, 1],
+                )
+                row.add_widget(lbl)
+                cb_alice = MDCheckbox(active="alice" in info["entry"])
+                cb_bob = MDCheckbox(active="bob" in info["entry"])
+                cb_mir = MDCheckbox(active="mir" in info["entry"])
+                row_inner = MDBoxLayout(orientation="horizontal", spacing=dp(8))
+                row_inner.add_widget(MDLabel(text="Alice", halign="center"))
+                row_inner.add_widget(cb_alice)
+                row_inner.add_widget(MDLabel(text="Bob", halign="center"))
+                row_inner.add_widget(cb_bob)
+                row_inner.add_widget(MDLabel(text="MiR", halign="center"))
+                row_inner.add_widget(cb_mir)
+                row.add_widget(row_inner)
+                self._fields[param] = (cb_alice, cb_bob, cb_mir)
+                self.content_cls.add_widget(row)
+            else:
+                print(f"InfoEncoder: unknown parameter type '{ptype}' for param '{param}'")
 
         self._built = True
 
@@ -917,8 +942,20 @@ class InfoEncoder(MDDialog):
             # determine value from widget
             if isinstance(widget, MDCheckbox):
                 val = bool(widget.active)
+            elif isinstance(widget, (tuple, list)):
+                # handle the "threads" case: tuple of checkboxes (alice, bob, mir)
+                names = []
+                labels = ["alice_thread", "bob_thread", "mir_thread"]
+                for i, cb in enumerate(widget):
+                    if isinstance(cb, MDCheckbox) and cb.active:
+                        if i < len(labels):
+                            names.append(labels[i])
+                        else:
+                            names.append(str(i))
+                val = names
             else:
-                val = widget.text.strip()
+                # text-like widget (MDTextField)
+                val = getattr(widget, "text", "").strip()
 
             # preserve the normalized info dict where available, otherwise create a fallback
             orig = params_source.get(param)
