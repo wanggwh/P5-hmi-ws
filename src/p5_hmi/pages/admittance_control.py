@@ -108,7 +108,7 @@ class AdmittanceControl(MDFloatLayout):
     def on_joint_change(self, slider_index, value):
         """Called when any slider value changes"""
         value_float = round(float(value), 1)
-        slider_names = ["M", "D", "k"]
+        slider_names = ["M", "D", "k", "alpha"]
         slider_name = slider_names[slider_index]
         
         # Update the corresponding label immediately for instant feedback
@@ -138,18 +138,6 @@ class AdmittanceControl(MDFloatLayout):
         self.ids.bob_tune_btn.md_bg_color = self.app.colors['button_neutral']
         print(f"Tuning ALICE - robot selected: {self.tuning_robot}")
 
-    def is_bob_selected(self):
-        """Return True if BOB is selected for tuning"""
-        return self.tuning_robot == 'bob'
-
-    def is_alice_selected(self):
-        """Return True if ALICE is selected for tuning"""
-        return self.tuning_robot == 'alice'
-
-    def get_selected_robot(self):
-        """Return the currently selected robot name or None"""
-        return self.tuning_robot
-
     def publish_admittance_parameters(self):
         """Publish admittance control parameters to ROS2 for selected robot"""
         if not self.app or not hasattr(self.app, 'hmi_node'):
@@ -174,7 +162,7 @@ class AdmittanceControl(MDFloatLayout):
 
     def increment_parameter(self, slider_index):
         """Increment parameter by step size"""
-        slider_names = ["M_slider", "D_slider", "k_slider"]
+        slider_names = ["M_slider", "D_slider", "k_slider", "alpha_slider"]
         slider_name = slider_names[slider_index]
         if hasattr(self.ids, slider_name):
             slider = getattr(self.ids, slider_name)
@@ -183,7 +171,7 @@ class AdmittanceControl(MDFloatLayout):
 
     def decrement_parameter(self, slider_index):
         """Decrement parameter by step size"""
-        slider_names = ["M_slider", "D_slider", "k_slider"]
+        slider_names = ["M_slider", "D_slider", "k_slider", "alpha_slider"]
         slider_name = slider_names[slider_index]
         if hasattr(self.ids, slider_name):
             slider = getattr(self.ids, slider_name)

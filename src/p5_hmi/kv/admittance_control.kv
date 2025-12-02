@@ -89,7 +89,7 @@
         # Separate slider section - placeret længere nede med mere luft
         MDBoxLayout:
             orientation: "vertical"
-            spacing: dp(20)
+            spacing: dp(10)
             size_hint: 0.9, None
             height: dp(250)
             pos_hint: {'center_x': 0.5, 'center_y': 0.21}
@@ -98,7 +98,7 @@
                 orientation: "vertical"
                 spacing: "5dp"
                 size_hint_y: None
-                height: dp(80)  # Højde til både label og knapper
+                height: dp(60)  # Højde til både label og knapper
 
                 MDLabel:
                     text: "Tune Admittance Parameters"
@@ -135,7 +135,7 @@
                 orientation: "horizontal"
                 spacing: dp(10)
                 size_hint_y: None
-                height: dp(50)
+                height: dp(40)
                         
                 MDLabel:
                     text: "Mass/Inertia Matrix:"
@@ -193,7 +193,7 @@
                 orientation: "horizontal"
                 spacing: dp(10)  # Øget spacing mellem elementer
                 size_hint_y: None
-                height: dp(50)  # Højere slider rækker for mere luft
+                height: dp(40)  # Højere slider rækker for mere luft
                 
                 MDLabel:
                     text: "Damping Matrix:"
@@ -251,7 +251,7 @@
                 orientation: "horizontal"
                 spacing: dp(10)  # Øget spacing mellem elementer
                 size_hint_y: None
-                height: dp(50)  # Højere slider rækker for mere luft
+                height: dp(40)  # Højere slider rækker for mere luft
                 
                 MDLabel:
                     text: "Stiffness Matrix:"
@@ -303,6 +303,59 @@
                     width: dp(50)
                     theme_text_color: "Custom"
                     text_color: app.colors['text_muted']
+
+            
+            # Alpha Parameter
+            MDBoxLayout:
+                orientation: "horizontal"
+                spacing: dp(10)
+                size_hint_y: None
+                height: dp(40)
+                
+                MDLabel:
+                    text: "Alpha Parameter:"
+                    size_hint_x: None
+                    width: dp(150)
+                    color: app.colors['text_light']
+                    
+                MDIconButton:
+                    icon: "minus"
+                    size_hint: None, None
+                    size: dp(30), dp(30)
+                    theme_icon_color: "Custom"
+                    icon_size: dp(20)
+                    icon_color: app.colors['text_light']
+                    on_press: root.start_decrement(3)
+                    on_release: root.stop_increment_decrement()
+                    
+                NonInteractiveSlider:
+                    id: alpha_slider
+                    min: 0.0
+                    max: 1.0
+                    value: 0.5
+                    step: 0.1
+                    thumb_color_inactive: (0.3, 0.7, 1.0, 1)
+                    track_color_active: (0.3, 0.7, 1.0, 1)
+                    track_color_inactive: app.colors['button_neutral']
+                    on_value: root.on_joint_change(3, self.value)
+                    
+                MDIconButton:
+                    icon: "plus"
+                    size_hint: None, None
+                    size: dp(30), dp(30)
+                    theme_icon_color: "Custom"
+                    icon_size: dp(20)
+                    icon_color: app.colors['text_light']
+                    on_press: root.start_increment(3)
+                    on_release: root.stop_increment_decrement()
+                    
+                MDLabel:
+                    id: alpha_value
+                    text: "0.0"
+                    size_hint_x: None
+                    width: dp(50)
+                    color: app.colors['text_muted']
+
             
             # Matrix display section
             MDBoxLayout:

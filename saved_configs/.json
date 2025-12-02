@@ -1,0 +1,21 @@
+{
+    "": {
+        "description": "",
+        "date": "",
+        "author": "",
+        "threads": [
+            {
+                "name": "alice_thread",
+                "robot_name": "alice",
+                "commands": [
+                    {
+                        "command": "c_move",
+                        "args": {
+                            "config_name": "yh7"
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}
