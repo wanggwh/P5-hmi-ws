@@ -5,8 +5,8 @@
     
     # Button size variables
     button_width: dp(300)
-    button_height: dp(80)
-    button_font_size: "24sp"
+    button_height: dp(120)
+    button_font_size: "30sp"
     
     # Horizontal layout for buttons (centered)
     MDBoxLayout:
@@ -33,32 +33,32 @@
             on_release: app.system_button_callback("start")
         
         # Pause System Button (center)
-        MDRaisedButton:
-            text: "PAUSE"
-            md_bg_color: app.colors['accent_orange']
-            theme_text_color: "Custom"
-            text_color: app.colors['text_light']
-            #text_color: app.colors['text_muted']
-            font_size: root.button_font_size
-            size_hint_x: None
-            width: root.button_width
-            height: root.button_height
-            elevation: 3
-            on_release: app.system_button_callback("pause")
+        #MDRaisedButton:
+        #    text: "PAUSE"
+        #    md_bg_color: app.colors['accent_orange']
+        #    theme_text_color: "Custom"
+        #    text_color: app.colors['text_light']
+        #    #text_color: app.colors['text_muted']
+        #    font_size: root.button_font_size
+        #    size_hint_x: None
+        #    width: root.button_width
+        #    height: root.button_height
+        #    elevation: 3
+        #    on_release: app.system_button_callback("pause")
             
         # Stop System Button
-        MDRaisedButton:
-            text: "STOP"
-            md_bg_color: app.colors['accent_coral']
-            theme_text_color: "Custom"
-            text_color: app.colors['text_light']
-            #text_color: app.colors['text_muted']
-            font_size: root.button_font_size
-            size_hint_x: None
-            width: root.button_width
-            height: root.button_height
-            elevation: 3
-            on_release: app.system_button_callback("stop")
+        #MDRaisedButton:
+        #    text: "STOP"
+        #    md_bg_color: app.colors['accent_coral']
+        #    theme_text_color: "Custom"
+        #    text_color: app.colors['text_light']
+        #    #text_color: app.colors['text_muted']
+        #    font_size: root.button_font_size
+        #    size_hint_x: None
+        #    width: root.button_width
+        #    height: root.button_height
+        #    elevation: 3
+        #    on_release: app.system_button_callback("stop")
     
         # Browse button
         MDRaisedButton:

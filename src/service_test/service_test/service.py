@@ -14,7 +14,7 @@ class ServiceNode(Node):
     def robot_configurations_callback(self, request, response):
         request.robot_name
         request.goal_name
-        response.success = True
+        response.success = False
         self.get_logger().info('Received request for robot: %s, goal: %s' % (request.robot_name, request.goal_name) + 
                                " Resonded with status: " + str(response.success))
 

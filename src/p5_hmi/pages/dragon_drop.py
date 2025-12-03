@@ -3,10 +3,9 @@ import json
 import os
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivy.properties import StringProperty, NumericProperty, ListProperty, DictProperty, ObjectProperty, BooleanProperty
-from kivymd.uix.label import MDLabel
-from kivy.graphics import Color, RoundedRectangle
+from kivymd.uix.label import MDLabel, MDIcon
+from kivy.graphics import Color, RoundedRectangle, Line
 from kivy.metrics import dp
-from kivymd.app import MDApp
 
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton, MDIconButton
@@ -36,31 +35,31 @@ class DragonDrop(MDFloatLayout):
         # }
 
         information = {
-            "1":{"func_name": "Config move", "func_args": {"config_name": {"type": "TF", "pretty_name": "Config Name", "ugly_name": "config_name", "extra_text": "", "entry": ""}}},
+            "1":{"func_name": "Config move", "func_args": {"config_name": {"type": "TF", "pretty_name": "Config Name", "ugly_name": "config_name", "extra_text": "", "entry": "", "float_parse": False}}},
             "2":{"func_name": "Relative move", "func_args": {
-                "frame": {"type": "TF", "pretty_name": "Frame", "ugly_name": "frame", "extra_text": "(for apriltag: tag36h11:X)", "entry": ""}, 
-                "linear": {"type": "bool", "pretty_name": "Linear", "ugly_name": "linear", "extra_text": "", "entry": ""}, 
-                "use_tracking_velocity": {"type": "bool", "pretty_name": "Use Tracking Velocity", "ugly_name": "use_tracking_velocity", "extra_text": "", "entry": ""}, 
-                "pose": {"type": "TF", "pretty_name": "Pose", "ugly_name": "pose", "extra_text": "[x, y, z, qx, qy, qz, qw]", "entry": ""}
+                "frame": {"type": "TF", "pretty_name": "Frame", "ugly_name": "frame", "extra_text": "( for apriltag: tag36h11:X )", "entry": "", "float_parse": False}, 
+                "linear": {"type": "bool", "pretty_name": "Linear", "ugly_name": "linear", "extra_text": "", "entry": "", "float_parse": False}, 
+                "use_tracking_velocity": {"type": "bool", "pretty_name": "Use Tracking Velocity", "ugly_name": "use_tracking_velocity", "extra_text": "", "entry": "", "float_parse": False}, 
+                "pose": {"type": "TF", "pretty_name": "Pose", "ugly_name": "pose", "extra_text": "( [x, y, z, qx, qy, qz, qw], floats split by \",\" )", "entry": "", "float_parse": True}
                 }},
             "3":{"func_name": "Relative move, Force Enabled", "func_args": {
-                "frame": {"type": "TF", "pretty_name": "Frame", "ugly_name": "frame", "extra_text": "(for apriltag: tag36h11:X)", "entry": ""}, 
-                "linear": {"type": "bool", "pretty_name": "Linear", "ugly_name": "linear", "extra_text": "", "entry": ""}, 
-                "use_tracking_velocity": {"type": "bool", "pretty_name": "Use Tracking Velocity", "ugly_name": "use_tracking_velocity", "extra_text": "", "entry": ""}, 
-                "pose": {"type": "TF", "pretty_name": "Pose", "ugly_name": "pose", "extra_text": "[x, y, z, qx, qy, qz, qw]", "entry": ""}, 
-                "force": {"type": "TF", "pretty_name": "Force Vector", "ugly_name": "force", "extra_text": "I think this is a vector", "entry": ""}}},
-            "4":{"func_name": "Frame available", "func_args": {"frame_name": {"type": "TF", "pretty_name": "Frame Name", "ugly_name": "frame_name", "extra_text": "", "entry": ""}}},
-            "5":{"func_name": "Grip", "func_args": {"action": {"type": "bool", "pretty_name": "Action", "ugly_name": "action", "extra_text": "(close/open)", "entry": ""}}},
+                "frame": {"type": "TF", "pretty_name": "Frame", "ugly_name": "frame", "extra_text": "( for apriltag: tag36h11:X )", "entry": "", "float_parse": False}, 
+                "linear": {"type": "bool", "pretty_name": "Linear", "ugly_name": "linear", "extra_text": "", "entry": "", "float_parse": False}, 
+                "use_tracking_velocity": {"type": "bool", "pretty_name": "Use Tracking Velocity", "ugly_name": "use_tracking_velocity", "extra_text": "", "entry": "", "float_parse": False}, 
+                "pose": {"type": "TF", "pretty_name": "Pose", "ugly_name": "pose", "extra_text": "( [x, y, z, qx, qy, qz, qw], floats split by \",\" )", "entry": "", "float_parse": True}, 
+                "force": {"type": "TF", "pretty_name": "Force Vector", "ugly_name": "force", "extra_text": "( [fx, fy, fz, tx, ty, tz], floats split by \",\" )", "entry": "", "float_parse": True}}},
+            "4":{"func_name": "Frame available", "func_args": {"frame_name": {"type": "TF", "pretty_name": "Frame Name", "ugly_name": "frame_name", "extra_text": "", "entry": "", "float_parse": False}}},
+            "5":{"func_name": "Grip", "func_args": {"action": {"type": "bool", "pretty_name": "Action", "ugly_name": "action", "extra_text": "(close/open)", "entry": "", "float_parse": False}}},
             "6":{"func_name": "Admittance", "func_args": {
-                "link_1": {"type": "bool", "pretty_name": "Link 1", "ugly_name": "link_1", "extra_text": "(on/off)", "entry": ""},
-                "link_2": {"type": "bool", "pretty_name": "Link 2", "ugly_name": "link_2", "extra_text": "(on/off)", "entry": ""},
-                "link_3": {"type": "bool", "pretty_name": "Link 3", "ugly_name": "link_3", "extra_text": "(on/off)", "entry": ""},
-                "link_4": {"type": "bool", "pretty_name": "Link 4", "ugly_name": "link_4", "extra_text": "(on/off)", "entry": ""},
-                "link_5": {"type": "bool", "pretty_name": "Link 5", "ugly_name": "link_5", "extra_text": "(on/off)", "entry": ""},
-                "link_6": {"type": "bool", "pretty_name": "Link 6", "ugly_name": "link_6", "extra_text": "(on/off)", "entry": ""}
+                "x": {"type": "bool", "pretty_name": "x", "ugly_name": "x", "extra_text": "(on/off)", "entry": "", "float_parse": False},
+                "y": {"type": "bool", "pretty_name": "y", "ugly_name": "y", "extra_text": "(on/off)", "entry": "", "float_parse": False},
+                "z": {"type": "bool", "pretty_name": "z", "ugly_name": "z", "extra_text": "(on/off)", "entry": "", "float_parse": False},
+                "tx": {"type": "bool", "pretty_name": "tx", "ugly_name": "tx", "extra_text": "(on/off)", "entry": "", "float_parse": False},
+                "ty": {"type": "bool", "pretty_name": "ty", "ugly_name": "ty", "extra_text": "(on/off)", "entry": "", "float_parse": False},
+                "tz": {"type": "bool", "pretty_name": "tz", "ugly_name": "tz", "extra_text": "(on/off)", "entry": "", "float_parse": False}
                 }},
-            "7":{"func_name": "Sync", "func_args": {"sync_id": {"type": "TF", "pretty_name": "Sync ID", "ugly_name": "sync_id", "extra_text": "", "entry": ""}, "threads": {"type": "TF", "pretty_name": "Threads", "ugly_name": "threads", "extra_text": "", "entry": ""}}},
-            "8":{"func_name": "MiR mission", "func_args": {"mission": {"type": "TF", "pretty_name": "Mission", "ugly_name": "mission", "extra_text": "", "entry": ""}}},
+            "7":{"func_name": "Sync", "func_args": {"sync_id": {"type": "TF", "pretty_name": "Sync ID", "ugly_name": "sync_id", "extra_text": "", "entry": "", "float_parse": False}, "threads": {"type": "threads", "pretty_name": "Threads", "ugly_name": "threads", "extra_text": "", "entry": "", "float_parse": False}}},
+            "8":{"func_name": "MiR mission", "func_args": {"mission": {"type": "TF", "pretty_name": "Mission", "ugly_name": "mission", "extra_text": "", "entry": "", "float_parse": False}}},
         } 
 
         alice = DragonDropZone(
@@ -329,7 +328,7 @@ class DragonDrop(MDFloatLayout):
 
             # 3. For each zone, extract its order dict and fill in commands
             for zone in zones:
-                print(f"zone {zone.zone_id} order: {zone.order}")
+                #print(f"zone {zone.zone_id} order: {zone.order}")
                 zone_id = zone.zone_id.lower()
                 thread_entry = next((t for t in json_data[naming["name"]]["threads"] if t["robot_name"] == zone_id), None)
                 if thread_entry is None:
@@ -342,15 +341,39 @@ class DragonDrop(MDFloatLayout):
                         entry = zone.order[page_num][zone.zone_id][pos_str]
                         sorted_entries.append((page_num, int(pos_str), entry))
                 for page_num, pos_idx, entry in sorted_entries:
-                    print("\n\nAdding entry:", entry, "\n\n")
+                    for param in entry.get("params", {}).values():
+                        #print(f"Processing param {param} for entry {entry}")
+                        if param.get("float_parse") == True:
+                            #print(f"Processing special param {param.get('ugly_name')} with raw value: {param.get('entry')}")
+                            raw_value = param.get("entry", "")
+                            try:
+                                # Expecting a string like "[x, y, z, qx, qy, qz, qw]"
+                                cleaned = raw_value.strip().lstrip("[").rstrip("]")
+                                float_list = [float(x.strip()) for x in cleaned.split(",")]
+                                print(float_list)
+                                param["entry"] = float_list
+                            except Exception as e:
+                                print(f"Error parsing {param.get('ugly_name')} value '{raw_value}': {e}")
+                                
                     func_id = entry.get("value")
                     params = entry.get("params", {})
-                    args = {entry.get("ugly_name"): entry.get("entry") for entry in params.values()}
+                    args = {param.get("ugly_name"): param.get("entry") for param in params.values()}
                     command = {
                         "command": buttons[int(func_id)-1]["command"],
                         "args": args,
                     }
                     thread_entry["commands"].append(command)
+                    #print("\n\nAdding entry:", entry, "\n\n")
+                    # if entry.get("ugly_name") == "pose" or entry.get("ugly_name") == "force":
+                    #     print(f"Processing special entry {entry.get('ugly_name')} with raw value: {entry.get('entry')}")
+                    # func_id = entry.get("value")
+                    # params = entry.get("params", {})
+                    # args = {entry.get("ugly_name"): entry.get("entry") for entry in params.values()}
+                    # command = {
+                    #     "command": buttons[int(func_id)-1]["command"],
+                    #     "args": args,
+                    # }
+                    # thread_entry["commands"].append(command)
 
             #print(f"Final JSON data:\n{json_data}")
 
@@ -596,7 +619,7 @@ class DragonDropButton(MDFloatLayout):
         self.remove_visual_from_zone(zone, idx)
 
         # Add the label behind other widgets
-        parent.add_widget(label, index=11)
+        parent.add_widget(label, index=14)
 
     def remove_visual_from_zone(self, zone, idx, parent=None):
         global page
@@ -670,6 +693,42 @@ class VisualCue(MDLabel):
         super().__init__(*args, **kwargs)
         self.zone = kwargs.get("zone")
         self.idx = kwargs.get("idx")
+
+        # draw a thin vertical line through the middle (canvas.after so it's above bg)
+        with self.canvas.after:
+            Color(0.75, 0.78, 0.82, 0.8)
+            self._line = Line(points=[], width=1.5)
+        self.bind(pos=self._update_line, size=self._update_line)
+    
+        # purely visual icons in top-left and top-right (no handlers)
+        self._left_icon = MDIcon(
+            icon="pencil",
+            size_hint=(None, None),
+            theme_text_color="Custom",
+            text_color=(0.75, 0.78, 0.82, 0.8),
+        )
+        self._right_icon = MDIcon(
+            icon="close",
+            size_hint=(None, None),
+            theme_text_color="Custom",
+            text_color=(0.75, 0.78, 0.82, 0.8),
+        )
+
+        # add to widget tree and keep positioned when size/pos changes
+        self.add_widget(self._left_icon)
+        self.add_widget(self._right_icon)
+        self.bind(pos=self._update_icons, size=self._update_icons)
+
+    def _update_line(self, *a):
+        x = self.center_x
+        y1 = self.y
+        y2 = self.y + self.height
+        self._line.points = [x, y1, x, y2]
+
+    def _update_icons(self, *a):
+        #Making sure it is centered in the top-left and top-right corners
+        self._left_icon.pos = (self.x + dp(5), self.y + self.height - dp(25))
+        self._right_icon.pos = (self.x + self.width - dp(25), self.y + self.height - dp(25))
 
     def on_touch_down(self, touch):
         global page
@@ -831,6 +890,34 @@ class InfoEncoder(MDDialog):
                 row.add_widget(cb)
                 self._fields[param] = cb
                 self.content_cls.add_widget(row)
+            elif ptype == "threads":
+                # Make three checkboxes for Alice, Bob, MiR
+                info["entry"] = info.get("entry", [])
+                row = MDBoxLayout(orientation="vertical", spacing=dp(8), size_hint_y=None, height=dp(96))
+                lbl = MDLabel(
+                    text=f"{pretty} {extra}".strip(),
+                    halign="left",
+                    valign="center",
+                    theme_text_color="Custom",
+                    text_color=[0.65, 0.65, 0.65, 1],
+                )
+                row.add_widget(lbl)
+                cb_alice = MDCheckbox(active="alice" in info["entry"])
+                cb_bob = MDCheckbox(active="bob" in info["entry"])
+                cb_mir = MDCheckbox(active="mir" in info["entry"])
+                row_inner = MDBoxLayout(orientation="horizontal", spacing=dp(8))
+                row_inner.add_widget(MDLabel(text="Alice", halign="center"))
+                row_inner.add_widget(cb_alice)
+                row_inner.add_widget(MDLabel(text="Bob", halign="center"))
+                row_inner.add_widget(cb_bob)
+                row_inner.add_widget(MDLabel(text="MiR", halign="center"))
+                row_inner.add_widget(cb_mir)
+                row.add_widget(row_inner)
+                self._fields[param] = (cb_alice, cb_bob, cb_mir)
+                self.content_cls.add_widget(row)
+                self.content_cls.height += dp(48)  # extra height for 3 checkboxes
+            else:
+                print(f"InfoEncoder: unknown parameter type '{ptype}' for param '{param}'")
 
         self._built = True
 
@@ -856,8 +943,20 @@ class InfoEncoder(MDDialog):
             # determine value from widget
             if isinstance(widget, MDCheckbox):
                 val = bool(widget.active)
+            elif isinstance(widget, (tuple, list)):
+                # handle the "threads" case: tuple of checkboxes (alice, bob, mir)
+                names = []
+                labels = ["alice_thread", "bob_thread", "mir_thread"]
+                for i, cb in enumerate(widget):
+                    if isinstance(cb, MDCheckbox) and cb.active:
+                        if i < len(labels):
+                            names.append(labels[i])
+                        else:
+                            names.append(str(i))
+                val = names
             else:
-                val = widget.text.strip()
+                # text-like widget (MDTextField)
+                val = getattr(widget, "text", "").strip()
 
             # preserve the normalized info dict where available, otherwise create a fallback
             orig = params_source.get(param)
