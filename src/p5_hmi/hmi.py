@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
+import os
+os.environ['KIVY_CLIPBOARD'] = 'pygame'
+os.environ['KIVY_NO_ARGS'] = '1'
+os.environ['KIVY_NO_CONSOLELOG'] = '1'
 
 from datetime import datetime
+
+from urllib3 import request
 import rclpy
 from rclpy.node import Node
 import os
@@ -15,11 +21,12 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivy.core.window import Window
 
 from p5_interfaces.srv import PoseConfig
-from p5_interfaces.srv import MoveToPreDefPose, LoadRawJSON#, SaveProgram
+from p5_interfaces.srv import LoadProgram, RunProgram#, SaveProgram
 from p5_interfaces.srv import AdmittanceSetStatus, AdmittanceConfig
 from p5_interfaces.msg import CommandState
 from p5_interfaces.msg import Error
 from sensor_msgs.msg import JointState
+from p5_interfaces.srv import SendJsonData
 
 
 # Import page classes
@@ -29,8 +36,6 @@ from pages.alice_configuration_setup import AliceConfigurationSetup
 from pages.mir_system_control import MirSystemControlPage
 from pages.admittance_control import AdmittanceControl
 from pages.dragon_drop import DragonDrop
-
-from pages.settings import SettingsPage
 from pages.status_popup_dialog import StatusPopupDialog
 from pages.error_msg_popup import ErrorMsgSnackbar
 
@@ -78,6 +83,8 @@ class HMINode(Node):
         self.current_status_dialog = None
         self.start_page_widget = None
         self._operation_completed = False
+        self.pose_configuration_data = "hej"
+
 
         # Initialize robot joint positions
         self.alice = [0.0] * 6
@@ -96,16 +103,14 @@ class HMINode(Node):
             JointState, '/joint_states', self.handle_joint_states_callback, 10)
 
         # Service clients
-        self.move_to_pre_def_pose_client = self.create_client(
-            MoveToPreDefPose, "/p5_move_to_pre_def_pose")
         self.save_pre_def_pose_client = self.create_client(
             PoseConfig, "/p5_pose_config")
         self.load_raw_JSON_client = self.create_client(
-            LoadRawJSON, "/program_executor/load_raw_JSON")
+            LoadProgram, "/program_executor/load_raw_JSON")
+        self.run_program_client = self.create_client(RunProgram, "/program_executor/run_program")
+        self.get_config_poses_client = self.create_client(SendJsonData, "/p5_send_pose_configs")
         # self.save_program_client = self.create_client(
         #     SaveProgram, "/program_executor/save_program")
-
-        self.get_logger().info('HMI Node has been started')
 
     def set_app(self, app):
         """Set reference to Kivy app"""
@@ -205,28 +210,25 @@ class HMINode(Node):
 
     # ==================== Move to Predefined Pose ====================
     
-    def send_move_to_pre_def_pose_request(self, robot_name, goal_name):
+    def send_move_to_pre_def_pose_request(self, json_data):
         """Send request to move robot to predefined pose"""
-        request = MoveToPreDefPose.Request()
-        request.robot_name = robot_name
-        request.goal_name = goal_name
-        print(f"Preparing to send move_to_pre_def_pose request for {robot_name} to {goal_name}")
+        request = LoadProgram.Request()
+        request.json_data = json_data
 
-        if not self.move_to_pre_def_pose_client.wait_for_service(timeout_sec=0.1):
+        if not self.load_raw_JSON_client.wait_for_service(timeout_sec=0.1):
             self.waiting_popup = StatusPopupDialog.create_new_dialog()
             Clock.schedule_once(
                 lambda dt: self.waiting_popup.waiting_on_service_popup(
                     service_name="/p5_move_to_pre_def_pose"), 0)
-            self._pending_service_request = (request, robot_name, goal_name)
+            self._pending_service_request = (request, json_data)
             self._service_check_event = Clock.schedule_interval(
                 self._check_service_available_and_send, 0.5)
             return
-
-        self._send_pre_def_pose_request(request, robot_name, goal_name)
+        self._send_pre_def_pose_request(request, json_data)
 
     def _check_service_available_and_send(self, dt):
         """Periodically check if move service is available and send pending request"""
-        if self.move_to_pre_def_pose_client.wait_for_service(timeout_sec=0.1):
+        if self.load_raw_JSON_client.wait_for_service(timeout_sec=0.1):
             if self.waiting_popup:
                 self.waiting_popup.dismiss()
                 self.waiting_popup = None
@@ -236,21 +238,19 @@ class HMINode(Node):
                 del self._service_check_event
             
             if hasattr(self, '_pending_service_request'):
-                request, robot_name, goal_name = self._pending_service_request
-                self._send_pre_def_pose_request(request, robot_name, goal_name)
+                request, json_data = self._pending_service_request
+                self._send_pre_def_pose_request(request, json_data)
                 del self._pending_service_request
 
-    def _send_pre_def_pose_request(self, request, robot_name, goal_name):
+    def _send_pre_def_pose_request(self, request, json_data):
         """Send predefined pose request to service"""
         # Store robot info for status callback
-        self._current_robot_name = robot_name
-        self._current_goal_name = goal_name
+        self._json_data = json_data
         self._operation_completed = False
 
-        future = self.move_to_pre_def_pose_client.call_async(request)
+        future = self.load_raw_JSON_client.call_async(request)
         print("Service call sent, adding callback")
-        future.robot_name = robot_name
-        future.goal_name = goal_name
+        future.json_data = json_data
         future.add_done_callback(self.handle_move_to_pre_def_pose_response_callback)
 
     def handle_move_to_pre_def_pose_response_callback(self, future):
@@ -259,15 +259,14 @@ class HMINode(Node):
         try:
             response = future.result()
             success = response.success
-            robot_name = getattr(future, "robot_name", None)
-            goal_name = getattr(future, "goal_name", None)
-            print("robot_name: " + robot_name)
-            def create_and_store_dialog(dt):
-                self.current_status_dialog = StatusPopupDialog.create_new_dialog()
-                self.current_status_dialog.show_status_dialog(
-                    robot_name, goal_name, success, move_to_pre_def_pose_complete=True)
+            json_data = getattr(future, "json_data", None)
+            print("json_data: " + json_data)
+            # def create_and_store_dialog(dt):
+            #     self.current_status_dialog = StatusPopupDialog.create_new_dialog()
+            #     self.current_status_dialog.show_status_dialog(
+            #         robot_name, goal_name, success, move_to_pre_def_pose_complete=True)
 
-            Clock.schedule_once(create_and_store_dialog, 0)
+            # Clock.schedule_once(create_and_store_dialog, 0)
             
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
@@ -336,19 +335,110 @@ class HMINode(Node):
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
 
-    # ================== Load Raw JSON Client ================
+        # ================== Load Raw JSON Client ================
+        
+    def receive_pose_configurations_data(self):
+        """Send request to save current pose as predefined pose"""
+        request = SendJsonData.Request()
+
+        if not self.get_config_poses_client.wait_for_service(timeout_sec=0.1):
+            self.waiting_popup = StatusPopupDialog.create_new_dialog()
+            Clock.schedule_once(
+                lambda dt: self.waiting_popup.waiting_on_service_popup(
+                    service_name="/jensen"), 0)
+            self._pending_service_request = (request)
+            self._service_check_event = Clock.schedule_interval(
+                self._check_receive_pose_configurations_data, 0.5)
+            return
+        self._receive_pose_configurations_data(request)
+        
+    def _check_receive_pose_configurations_data(self, dt):
+        """Periodically check if save pose service is available and send pending request"""
+        if self.get_config_poses_client.wait_for_service(timeout_sec=0.1):
+            if self.waiting_popup:
+                self.waiting_popup.dismiss()
+                self.waiting_popup = None
+            
+            if hasattr(self, '_service_check_event'):
+                self._service_check_event.cancel()
+                del self._service_check_event
+            
+            if hasattr(self, '_pending_service_request'):
+                request, robot_name, goal_name = self._pending_service_request
+                self._receive_pose_configurations_data(request)
+                del self._pending_service_request
+
+    def _receive_pose_configurations_data(self, request):
+        #Send save pose request to service
+        print(request)
+        future = self.get_config_poses_client.call_async(request)
+        print("Service call sent, adding callback")
+        future.add_done_callback(self.handle_receive_pose_configurations_data_callback)
+
+    def handle_receive_pose_configurations_data_callback(self, future):
+        #Handle response from receive pose configurations data service
+        print("Handling receive_pose_configurations_data_response")
+        try:
+            response = future.result()
+            self.pose_configuration_data = response.data
+            success = response.success
+            print("success: ", success)
+        except Exception as e:
+            self.get_logger().error(f"Service call failed: {e}")
+    
+    def pass_pose_configuration_data(self):
+        return self.pose_configuration_data
+
+        
+    # def receive_pose_configurations_data(self):
+    #     """Send request to get pose configurations JSON data"""
+    #     print("Okay den er her nu")
+    #     if not self.get_config_poses_client.wait_for_service(timeout_sec=1.0):
+    #         self.get_logger().warning("SendJsonData service not available")
+    #         return None
+
+    #     try:
+    #         # Request er tom - opret bare en tom Request instance
+    #         request = SendJsonData.Request()
+            
+    #         # Send async request
+    #         future = self.get_config_poses_client.call_async(request)
+    #         rclpy.spin_until_future_complete(self, future, timeout_sec=2.0)
+            
+    #         if future.result() is not None:
+    #             response = future.result()
+                
+    #             # Tjek success flag
+    #             if response.success:
+    #                 json_data = response.data  # ÆNDRET: 'data' ikke 'json_data'
+    #                 self.get_logger().info(f"Received pose configurations: {len(json_data)} bytes")
+    #                 return json_data
+    #             else:
+    #                 self.get_logger().warning("Service returned success=False")
+    #                 return None
+    #         else:
+    #             self.get_logger().error("SendJsonData service call failed - no result")
+    #             return None
+                
+    #     except Exception as e:
+    #         self.get_logger().error(f"SendJsonData service call exception: {e}")
+    #         import traceback
+    #         traceback.print_exc()
+    #         return None
+            
+        
 
     def call_load_raw_JSON_request(self, program_json: str, wait_for_service=True, timeout=0.1) -> bool:
         """
-        Send request to load raw JSON program using reusable LoadRawJSON client.
+        Send request to load raw JSON program using reusable LoadProgram client.
         Assigns program_json to first string field.
         """
         if not hasattr(self, 'load_raw_JSON_client') or self.load_raw_JSON_client is None:
             self.load_raw_JSON_client = self.create_client(
-                LoadRawJSON, "/program_executor/load_raw_JSON")
+                LoadProgram, "/program_executor/load_raw_JSON")
 
         client = self.load_raw_JSON_client
-        req = LoadRawJSON.Request()
+        req = LoadProgram.Request()
 
         # Detect string fields from the generated Request
         try:
@@ -377,11 +467,11 @@ class HMINode(Node):
                         except Exception:
                             continue
         except Exception as e:
-            self.get_logger().error(f"Failed to populate LoadRawJSON request fields: {e}")
+            self.get_logger().error(f"Failed to populate LoadProgram request fields: {e}")
 
         if not assigned:
             self.get_logger().error(
-                "LoadRawJSON request: no suitable string fields found on request object")
+                "LoadProgram request: no suitable string fields found on request object")
             return False
 
         def _send_request():
@@ -389,9 +479,9 @@ class HMINode(Node):
                 future = client.call_async(req)
                 future.add_done_callback(self._handle_load_raw_JSON_response_callback)
                 self.get_logger().info(
-                    f"LoadRawJSON request sent (fields used: {assigned})")
+                    f"LoadProgram request sent (fields used: {assigned})")
             except Exception as e:
-                self.get_logger().error(f"LoadRawJSON client failed to call service: {e}")
+                self.get_logger().error(f"LoadProgram client failed to call service: {e}")
 
         # Wait for service if requested
         if wait_for_service and not client.wait_for_service(timeout_sec=0.1):
@@ -419,20 +509,39 @@ class HMINode(Node):
             _send_request()
             return True
         except Exception as e:
-            self.get_logger().error(f"LoadRawJSON immediate call failed: {e}")
+            self.get_logger().error(f"LoadProgram immediate call failed: {e}")
             return False
     def _handle_load_raw_JSON_response_callback(self, future):
-        """Handle LoadRawJSON response"""
+        """Handle LoadProgram response"""
         try:
             resp = future.result()
             success = getattr(resp, "success", None)
             message = getattr(resp, "message", str(resp))
             self.get_logger().info(
-                f"LoadRawJSON response: success={success}, message={message}")
+                f"LoadProgram response: success={success}, message={message}")
+            
+            if success is True:
+                self.send_run_program_request()
+            
         except Exception as e:
-            self.get_logger().error(f"LoadRawJSON response handler error: {e}")
+            self.get_logger().error(f"LoadProgram response handler error: {e}")
 
-
+    def send_run_program_request(self):
+        # Check if service is available
+        request = RunProgram.Request()
+        request.status = True
+        if not self.run_program_client.wait_for_service(timeout_sec=0.1):
+            self.get_logger().warning("RunProgram service not available")
+            self.waiting_popup = StatusPopupDialog.create_new_dialog()
+            Clock.schedule_once(
+                lambda dt: self.waiting_popup.waiting_on_service_popup(
+                    service_name="/program_executer/run_program"), 0)
+            return
+        
+        # Send async request
+        self.run_program_client.call_async(request)
+        self.get_logger().info("RunProgram request sent")
+            
 
     # ==================== Topic Callbacks ====================
     
@@ -563,8 +672,7 @@ class HMIApp(MDApp):
             "ALICE - Configuration Setup",
             "MIR - System Control",
             "Admittance Control",
-            "Drag and Drop - System Control",
-            "Settings"
+            "Drag and Drop - System Control"
         ]
 
         menu_items = [
@@ -602,8 +710,7 @@ class HMIApp(MDApp):
             "ALICE - Configuration Setup": "kv/alice_configuration_setup.kv",
             "MIR - System Control": "kv/mir_system_control.kv",
             "Admittance Control": "kv/admittance_control.kv",
-            "Drag and Drop - System Control": "kv/dragon_drop.kv",
-            "Settings": "kv/settings.kv"
+            "Drag and Drop - System Control": "kv/dragon_drop.kv"
         }
 
         if page_name in kv_files:
@@ -617,8 +724,7 @@ class HMIApp(MDApp):
         """Called when the app starts - load all KV files"""
         pages = [
             "Start Page", "BOB - Configuration Setup", "ALICE - Configuration Setup",
-            "MIR - System Control", "Admittance Control", "Drag and Drop - System Control",
-            "Settings"
+            "MIR - System Control", "Admittance Control", "Drag and Drop - System Control"
         ]
         
         for page in pages:
@@ -669,8 +775,7 @@ class HMIApp(MDApp):
                 "ALICE - Configuration Setup": AliceConfigurationSetup,
                 "MIR - System Control": MirSystemControlPage,
                 "Admittance Control": AdmittanceControl,
-                "Drag and Drop - System Control": DragonDrop,
-                "Settings": lambda: SettingsPage(self.hmi_node)
+                "Drag and Drop - System Control": DragonDrop
             }
 
             if self.current_page in page_widgets:

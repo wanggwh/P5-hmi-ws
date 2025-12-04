@@ -21,10 +21,12 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/PoseConfig.srv"
   "srv/AdmittanceSetStatus.srv"
   "srv/AdmittanceConfig.srv"
-  "srv/LoadRawJSON.srv"
+  "srv/LoadProgram.srv"
   #"srv/SaveProgram.srv"
   "srv/GetMissions.srv"
   "srv/PostMissions.srv"
+  "srv/RunProgram.srv"
+  "srv/SendJsonData.srv"
 
   DEPENDENCIES geometry_msgs
   DEPENDENCIES std_msgs

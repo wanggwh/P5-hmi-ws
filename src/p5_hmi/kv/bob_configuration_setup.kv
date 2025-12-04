@@ -12,7 +12,7 @@
     
     # Instruction 2
     MDLabel:
-        text: "Assign af custom name to the configuration and press SAVE"
+        text: "Assign a custom name to the configuration and press SAVE"
         font_style: "Body1"
         theme_text_color: "Custom"
         text_color: app.colors['text_muted']
@@ -155,13 +155,13 @@
 
     # Configuration Name Label
     MDLabel:
-        text: "BOB - Custom Configuration Name"
+        text: "BOB - Custom Configuration Name. Name must start with <BOB_>"
         font_style: "Body1"
         theme_text_color: "Custom"
         text_color: app.colors['text_light']
         halign: "center"
         size_hint: None, None
-        size: dp(400), dp(30)
+        size: dp(500), dp(30)
         pos_hint: {'center_x': 0.5, 'center_y': 0.50}
 
     MDTextField:
@@ -199,7 +199,7 @@
         padding: dp(40)
         pos_hint: {'center_x': 0.5}
 
-        # Default configurations row
+        # Predefined configurations row (auto-loaded from JSON)
         MDBoxLayout:
             orientation: "horizontal"
             size_hint: None, None
@@ -207,7 +207,7 @@
             spacing: dp(10)
 
             MDLabel:
-                text: "Default configurations:"
+                text: "Predefined configurations:"
                 font_style: "Body1"
                 theme_text_color: "Custom"
                 text_color: app.colors['text_light']
@@ -215,20 +215,23 @@
                 size_hint: None, None
                 size: dp(180), dp(30)
 
-            MDRaisedButton:
-                text: "HOME"
-                md_bg_color: app.colors['button_neutral']
+            ScrollView:
                 size_hint: None, None
-                size: dp(120), dp(50)
-                on_release: root.move_to_home()
+                size: dp(500), dp(60)
+                do_scroll_x: True
+                do_scroll_y: False
+                bar_width: dp(10)
+                scroll_type: ['bars']
 
-            MDRaisedButton:
-                text: "UPRIGHT"
-                md_bg_color: app.colors['button_neutral']
-                size_hint: None, None
-                size: dp(120), dp(50)
-                on_release: root.move_to_upright() 
+                MDBoxLayout:
+                    id: predefined_poses_container
+                    orientation: "horizontal"
+                    spacing: dp(5)
+                    size_hint_x: None
+                    width: self.minimum_width
+                    height: dp(50)
 
+        # Custom configurations row
         MDBoxLayout:
             orientation: "horizontal"
             size_hint: None, None
@@ -246,11 +249,11 @@
 
             ScrollView:
                 size_hint: None, None
-                size: dp(500), dp(60)  # Fast bredde og højde for scroll area
-                do_scroll_x: True      # Tillad horizontal scroll
-                do_scroll_y: False     # Ingen vertikal scroll
-                bar_width: dp(10)      # Bredde af scrollbar
-                scroll_type: ['bars']  # Vis scrollbars
+                size: dp(500), dp(60)
+                do_scroll_x: True
+                do_scroll_y: False
+                bar_width: dp(10)
+                scroll_type: ['bars']
 
                 MDBoxLayout:
                     id: custom_config_container
@@ -258,7 +261,6 @@
                     spacing: dp(5)
                     size_hint_x: None
                     width: self.minimum_width
-                    height: dp(50)     # Fast højde for knapperne
+                    height: dp(50)
 
 
- 
