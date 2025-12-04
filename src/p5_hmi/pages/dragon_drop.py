@@ -24,16 +24,6 @@ class DragonDrop(MDFloatLayout):
             {"zone_id": "MiR", "pos_hint": {"x": 0.1, "y": 0.2}, "size_hint": {0.85,0.01}, "bg_color": [1, 0.8, 0.8, 0.3], "split_amount": 7},
         ]
 
-        # information = {
-        #     "1":{"config_name": ""},
-        #     "2":{"frame": "", "linear": "", "use_tracking_velocity": "", "pose": ""},
-        #     "3":{"frame_name": ""},
-        #     "4":{"action": ""},
-        #     "5":{"action": ""},
-        #     "6":{"sync_id": "", "threads": ""},
-        #     "7":{"mission": ""},
-        # }
-
         information = {
             "1":{"func_name": "Config move", "func_args": {"config_name": {"type": "TF", "pretty_name": "Config Name", "ugly_name": "config_name", "extra_text": "", "entry": "", "float_parse": False}}},
             "2":{"func_name": "Relative move", "func_args": {
@@ -49,17 +39,19 @@ class DragonDrop(MDFloatLayout):
                 "pose": {"type": "TF", "pretty_name": "Pose", "ugly_name": "pose", "extra_text": "( [x, y, z, qx, qy, qz, qw], floats split by \",\" )", "entry": "", "float_parse": True}, 
                 "force": {"type": "TF", "pretty_name": "Force Vector", "ugly_name": "force", "extra_text": "( [fx, fy, fz, tx, ty, tz], floats split by \",\" )", "entry": "", "float_parse": True}}},
             "4":{"func_name": "Frame available", "func_args": {"frame_name": {"type": "TF", "pretty_name": "Frame Name", "ugly_name": "frame_name", "extra_text": "", "entry": "", "float_parse": False}}},
-            "5":{"func_name": "Grip", "func_args": {"action": {"type": "bool", "pretty_name": "Action", "ugly_name": "action", "extra_text": "(close/open)", "entry": "", "float_parse": False}}},
+            "5":{"func_name": "Grip", "func_args": {"action": {"type": "TF", "pretty_name": "Action", "ugly_name": "action", "extra_text": "(open/close/none)", "entry": "", "float_parse": False}}},
             "6":{"func_name": "Admittance", "func_args": {
-                "x": {"type": "bool", "pretty_name": "x", "ugly_name": "x", "extra_text": "(on/off)", "entry": "", "float_parse": False},
-                "y": {"type": "bool", "pretty_name": "y", "ugly_name": "y", "extra_text": "(on/off)", "entry": "", "float_parse": False},
-                "z": {"type": "bool", "pretty_name": "z", "ugly_name": "z", "extra_text": "(on/off)", "entry": "", "float_parse": False},
+                "fx": {"type": "bool", "pretty_name": "fx", "ugly_name": "fx", "extra_text": "(on/off)", "entry": "", "float_parse": False},
+                "fy": {"type": "bool", "pretty_name": "fy", "ugly_name": "fy", "extra_text": "(on/off)", "entry": "", "float_parse": False},
+                "fz": {"type": "bool", "pretty_name": "fz", "ugly_name": "fz", "extra_text": "(on/off)", "entry": "", "float_parse": False},
                 "tx": {"type": "bool", "pretty_name": "tx", "ugly_name": "tx", "extra_text": "(on/off)", "entry": "", "float_parse": False},
                 "ty": {"type": "bool", "pretty_name": "ty", "ugly_name": "ty", "extra_text": "(on/off)", "entry": "", "float_parse": False},
-                "tz": {"type": "bool", "pretty_name": "tz", "ugly_name": "tz", "extra_text": "(on/off)", "entry": "", "float_parse": False}
+                "tz": {"type": "bool", "pretty_name": "tz", "ugly_name": "tz", "extra_text": "(on/off)", "entry": "", "float_parse": False},
+                "Parameter name": {"type": "TF", "pretty_name": "Parameter name", "ugly_name": "parameter_name", "extra_text": "", "entry": "", "float_parse": False}
                 }},
-            "7":{"func_name": "Sync", "func_args": {"sync_id": {"type": "TF", "pretty_name": "Sync ID", "ugly_name": "sync_id", "extra_text": "", "entry": "", "float_parse": False}, "threads": {"type": "threads", "pretty_name": "Threads", "ugly_name": "threads", "extra_text": "", "entry": "", "float_parse": False}}},
-            "8":{"func_name": "MiR mission", "func_args": {"mission": {"type": "TF", "pretty_name": "Mission", "ugly_name": "mission", "extra_text": "", "entry": "", "float_parse": False}}},
+            "7":{"func_name": "MiR mission", "func_args": {"mission": {"type": "TF", "pretty_name": "Mission", "ugly_name": "mission", "extra_text": "", "entry": "", "float_parse": False}}},
+            "8":{"func_name": "Sync", "func_args": {"sync_id": {"type": "TF", "pretty_name": "Sync ID", "ugly_name": "sync_id", "extra_text": "", "entry": "", "float_parse": False}, "threads": {"type": "threads", "pretty_name": "Threads", "ugly_name": "threads", "extra_text": "", "entry": "", "float_parse": False}}},
+            "9":{"func_name": "Delay", "func_args": {"delay": {"type": "TF", "pretty_name": "Delay", "ugly_name": "delay", "extra_text": "(s)", "entry": "", "float_parse": True}}},
         } 
 
         alice = DragonDropZone(
@@ -97,8 +89,9 @@ class DragonDrop(MDFloatLayout):
             {"id_name": "4", "text": "Fra. ava.", "bg_color": [0.443, 0.377, 0.804, 1.0], "command": "frame_available", "zones": [alice, bob, mir]},
             {"id_name": "5", "text": "Grip", "bg_color": [0.529, 0.421, 0.157, 1.0], "command": "grip", "zones": [alice, bob]},
             {"id_name": "6", "text": "Admit", "bg_color": [0.743, 0.284, 0.284, 1.0], "command": "admittance", "zones": [alice, bob]},
-            {"id_name": "7", "text": "Sync", "bg_color": [0.611, 0.369, 0.426, 1.0], "command": "sync", "zones": [alice, bob, mir]},
-            {"id_name": "8", "text": "MiR", "bg_color": [0.415, 0.436, 0.523, 1.0], "command": "mir_move", "zones": [mir]},
+            {"id_name": "7", "text": "MiR", "bg_color": [0.415, 0.436, 0.523, 1.0], "command": "mir_move", "zones": [mir]},
+            {"id_name": "8", "text": "Sync", "bg_color": [0.611, 0.369, 0.426, 1.0], "command": "sync", "zones": [alice, bob, mir]},
+            {"id_name": "9", "text": "Delay", "bg_color": (0.496, 0.353, 0.688, 1), "command": "delay", "zones": [alice, bob, mir]},
         ]
 
         self.add_widget(alice)
@@ -344,14 +337,18 @@ class DragonDrop(MDFloatLayout):
                     for param in entry.get("params", {}).values():
                         #print(f"Processing param {param} for entry {entry}")
                         if param.get("float_parse") == True:
-                            #print(f"Processing special param {param.get('ugly_name')} with raw value: {param.get('entry')}")
                             raw_value = param.get("entry", "")
                             try:
                                 # Expecting a string like "[x, y, z, qx, qy, qz, qw]"
                                 cleaned = raw_value.strip().lstrip("[").rstrip("]")
                                 float_list = [float(x.strip()) for x in cleaned.split(",")]
                                 print(float_list)
-                                param["entry"] = float_list
+                                if len(float_list) > 1:
+                                    param["entry"] = float_list
+                                elif len(float_list) == 1:
+                                    param["entry"] = float_list[0]
+                                else:
+                                    param["entry"] = []
                             except Exception as e:
                                 print(f"Error parsing {param.get('ugly_name')} value '{raw_value}': {e}")
                                 
@@ -828,7 +825,7 @@ class InfoEncoder(MDDialog):
                 orientation="vertical",
                 spacing=dp(10),
                 size_hint_y=None,
-                height=num_fields * dp(60),
+                height=dp(8),
             ),
             buttons=[
                 MDFlatButton(text="CANCEL", on_release=self.dismiss),
@@ -846,6 +843,16 @@ class InfoEncoder(MDDialog):
         # ensure building only once
         if self._built:
             return
+
+        # Compute exact content height from added widgets to avoid lots of white space
+        total_height = dp(8)
+        spacing = self.content_cls.spacing or dp(8)
+        # Use compact heights
+        TF_HEIGHT = dp(52)
+        BOOL_HEIGHT = dp(40)
+        THREADS_HEIGHT = dp(52)
+        ADMIT_HEADER_H = dp(20)
+        ADMIT_ROW_H = dp(40)
 
         # Normalize the function-args source so every entry is a dict
         normalized = {}
@@ -865,59 +872,153 @@ class InfoEncoder(MDDialog):
         # keep normalized param dict available for on_ok
         self._params = normalized
 
+        # Ensure TF-type entries are presented as strings for text fields.
+        # If entry is a list/dict/number (result of earlier float parsing), stringify it
+        # so MDTextField receives a str and doesn't crash.
+        for p, info in self._params.items():
+            if info.get("type", "TF") == "TF":
+                entry = info.get("entry", "")
+                if not isinstance(entry, str):
+                    try:
+                        # prefer JSON-like representation for lists/dicts
+                        info["entry"] = json.dumps(entry)
+                    except Exception:
+                        info["entry"] = str(entry)
+
+        print(self.information.get("func_args", {}))
+        print(len(self.information.get("func_args", {})))
+        #print the name of the first arg
+        print(self.information.get("func_args", {}).keys())
         # create widgets from normalized info
-        for param, info in self._params.items():
-            ptype = info.get("type", "TF")
-            pretty = info.get("pretty_name", param)
-            extra = info.get("extra_text", "")
-            if ptype == "TF":
-                info["entry"] = info.get("entry", "")
-                tf = MDTextField(hint_text=f"{pretty} {extra}".strip(), text=info.get("entry", ""))
-                self._fields[param] = tf
-                self.content_cls.add_widget(tf)
-            elif ptype == "bool":
-                info["entry"] = bool(info.get("entry", False))
-                row = MDBoxLayout(orientation="horizontal", spacing=dp(8), size_hint_y=None, height=dp(48))
-                lbl = MDLabel(
-                    text=f"{pretty} {extra}".strip(),
-                    halign="left",
-                    valign="center",
-                    theme_text_color="Custom",
-                    text_color=[0.65, 0.65, 0.65, 1],
-                )
-                cb = MDCheckbox(active=info["entry"])
-                row.add_widget(lbl)
-                row.add_widget(cb)
-                self._fields[param] = cb
-                self.content_cls.add_widget(row)
-            elif ptype == "threads":
-                # Make three checkboxes for Alice, Bob, MiR
-                info["entry"] = info.get("entry", [])
-                row = MDBoxLayout(orientation="vertical", spacing=dp(8), size_hint_y=None, height=dp(96))
-                lbl = MDLabel(
-                    text=f"{pretty} {extra}".strip(),
-                    halign="left",
-                    valign="center",
-                    theme_text_color="Custom",
-                    text_color=[0.65, 0.65, 0.65, 1],
-                )
-                row.add_widget(lbl)
-                cb_alice = MDCheckbox(active="alice" in info["entry"])
-                cb_bob = MDCheckbox(active="bob" in info["entry"])
-                cb_mir = MDCheckbox(active="mir" in info["entry"])
-                row_inner = MDBoxLayout(orientation="horizontal", spacing=dp(8))
-                row_inner.add_widget(MDLabel(text="Alice", halign="center"))
-                row_inner.add_widget(cb_alice)
-                row_inner.add_widget(MDLabel(text="Bob", halign="center"))
-                row_inner.add_widget(cb_bob)
-                row_inner.add_widget(MDLabel(text="MiR", halign="center"))
-                row_inner.add_widget(cb_mir)
-                row.add_widget(row_inner)
-                self._fields[param] = (cb_alice, cb_bob, cb_mir)
-                self.content_cls.add_widget(row)
-                self.content_cls.height += dp(48)  # extra height for 3 checkboxes
-            else:
-                print(f"InfoEncoder: unknown parameter type '{ptype}' for param '{param}'")
+        if len(self.information.get("func_args", {})) == 7 and self.information.get("func_name") == "Admittance":
+            print("InfoEncoder: detected 6 func_args, Admittance special-case")
+            # Single shared label above two rows with three checkboxes each, and a TF for the 7th param.
+            params_list = list(self._params.items())  # preserve order of params as given
+            container = MDBoxLayout(orientation="vertical", spacing=dp(6), size_hint_y=None)
+            header = MDLabel(
+                text="Coords (on/off)",
+                halign="left",
+                valign="center",
+                theme_text_color="Custom",
+                text_color=[0.65, 0.65, 0.65, 1],
+                size_hint_y=None,
+                height=ADMIT_HEADER_H,
+            )
+            container.add_widget(header)
+
+            row1 = MDBoxLayout(orientation="horizontal", spacing=dp(6), size_hint_y=None, height=ADMIT_ROW_H)
+            row2 = MDBoxLayout(orientation="horizontal", spacing=dp(6), size_hint_y=None, height=ADMIT_ROW_H)
+            tf_row = None
+
+            # Create three cells per row for the first 6 params; the 7th becomes a TF row
+            for i, (param, info) in enumerate(params_list):
+                pretty = info.get("pretty_name", param)
+                if i < 6:
+                    active = bool(info.get("entry", False))
+                    cb = MDCheckbox(active=active)
+                    lbl = MDLabel(text=pretty, halign="center", size_hint_x=None, width=dp(64))
+                    cell = MDBoxLayout(orientation="horizontal", spacing=dp(4), size_hint=(None, 1))
+                    cell.width = dp(120)
+                    cell.add_widget(lbl)
+                    cell.add_widget(cb)
+                    if i < 3:
+                        row1.add_widget(cell)
+                    else:
+                        row2.add_widget(cell)
+                    # store checkbox for on_ok
+                    self._fields[param] = cb
+                else:
+                    # 7th parameter: make a compact textfield with a label
+                    info["entry"] = info.get("entry", "")
+                    tf = MDTextField(hint_text=pretty, text=info.get("entry", ""), size_hint=(1, None))
+                    tf.height = TF_HEIGHT + dp(10)
+                    tf_row = MDBoxLayout(orientation="horizontal", spacing=dp(8), size_hint_y=None, height=TF_HEIGHT)
+                    lbl = MDLabel(
+                        text=pretty,
+                        halign="left",
+                        valign="center",
+                        theme_text_color="Custom",
+                        text_color=[0.65, 0.65, 0.65, 1],
+                        size_hint_x=None,
+                        width=dp(90),
+                    )
+                    tf_row.add_widget(lbl)
+                    tf_row.add_widget(tf)
+                    self._fields[param] = tf
+
+            # assemble and add to dialog content; set container height to accommodate header + 2 rows (+ TF if present)
+            container.add_widget(row1)
+            container.add_widget(row2)
+            if tf_row is not None:
+                container.add_widget(tf_row)
+            # compute container height: header + rows + optional TF + small padding
+            container.height = ADMIT_HEADER_H + ADMIT_ROW_H * 2 + (TF_HEIGHT if tf_row is not None else 0) + dp(6)
+            self.content_cls.add_widget(container)
+            total_height += container.height + spacing
+            self.content_cls.height = total_height
+
+        else:
+            for param, info in self._params.items():
+                ptype = info.get("type", "TF")
+                pretty = info.get("pretty_name", param)
+                extra = info.get("extra_text", "")
+                if ptype == "TF":
+                    info["entry"] = info.get("entry", "")
+                    tf = MDTextField(hint_text=f"{pretty} {extra}".strip(), text=info.get("entry", ""))
+                    self._fields[param] = tf
+                    self.content_cls.add_widget(tf)
+                    total_height += TF_HEIGHT + spacing
+                elif ptype == "bool":
+                    info["entry"] = bool(info.get("entry", False))
+                    row = MDBoxLayout(orientation="horizontal", spacing=dp(8), size_hint_y=None, height=dp(48))
+                    lbl = MDLabel(
+                        text=f"{pretty} {extra}".strip(),
+                        halign="left",
+                        valign="center",
+                        theme_text_color="Custom",
+                        text_color=[0.65, 0.65, 0.65, 1],
+                    )
+                    cb = MDCheckbox(active=info["entry"])
+                    row.add_widget(lbl)
+                    row.add_widget(cb)
+                    self._fields[param] = cb
+                    self.content_cls.add_widget(row)
+                    total_height += BOOL_HEIGHT + spacing
+                elif ptype == "threads":
+                    # Make three checkboxes for Alice, Bob, MiR
+                    info["entry"] = info.get("entry", [])
+                    row = MDBoxLayout(orientation="vertical", spacing=dp(8), size_hint_y=None, height=dp(96))
+                    lbl = MDLabel(
+                        text=f"{pretty} {extra}".strip(),
+                        halign="left",
+                        valign="center",
+                        theme_text_color="Custom",
+                        text_color=[0.65, 0.65, 0.65, 1],
+                    )
+                    row.add_widget(lbl)
+                    cb_alice = MDCheckbox(active="alice" in info["entry"])
+                    cb_bob = MDCheckbox(active="bob" in info["entry"])
+                    cb_mir = MDCheckbox(active="mir" in info["entry"])
+                    row_inner = MDBoxLayout(orientation="horizontal", spacing=dp(8))
+                    row_inner.add_widget(MDLabel(text="Alice", halign="center"))
+                    row_inner.add_widget(cb_alice)
+                    row_inner.add_widget(MDLabel(text="Bob", halign="center"))
+                    row_inner.add_widget(cb_bob)
+                    row_inner.add_widget(MDLabel(text="MiR", halign="center"))
+                    row_inner.add_widget(cb_mir)
+                    row.add_widget(row_inner)
+                    self._fields[param] = (cb_alice, cb_bob, cb_mir)
+                    self.content_cls.add_widget(row)
+                    total_height += THREADS_HEIGHT + spacing
+                else:
+                    print(f"InfoEncoder: unknown parameter type '{ptype}' for param '{param}'")
+
+
+            # apply computed height
+            # ensure we always have a small margin
+            if total_height <= dp(8):
+                total_height = dp(48)
+            self.content_cls.height = total_height
 
         self._built = True
 
