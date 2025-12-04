@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.slider import MDSlider
 from kivy.clock import Clock
@@ -18,10 +19,19 @@ class BobConfigurationSetup(MDFloatLayout):
         # Initialiser app storage for konfigurationer hvis det ikke findes
         if not hasattr(self.app, 'bob_saved_configurations'):
             self.app.bob_saved_configurations = []
+            
+        #Path til JSON fil med pre-defined poses
+        self.poses_json_path = os.path.expanduser("~/Documents/P5-hmi-ws/config/pre_config_poses.json")
+
+        # Load predefined poses fra JSON og opret knapper
+        Clock.schedule_once(self.load_predefined_poses, 0.1)
+                
 
         # Path to predefined poses JSON file
-        self.app.hmi_node.receive_pose_configurations_data()        
-
+        self.app.hmi_node.receive_pose_configurations_data()  
+        time.sleep(0.5)      
+        self.pose_configuration_data = self.app.hmi_node.pass_pose_configuration_data()
+        #print(self.pose_configuration_data) 
         # Gendan gemte konfigurationer når siden loades
         Clock.schedule_once(self.restore_saved_configurations, 0.2)
 
@@ -38,9 +48,10 @@ class BobConfigurationSetup(MDFloatLayout):
                 Clock.schedule_once(self.load_predefined_poses, 0.1)
                 return
             
-            with open(self.poses_json_path, 'r') as f:
-                all_poses = json.load(f)
-            
+            # with open(self.poses_json_path, 'r') as f:
+            #     all_poses = json.load(f)
+            all_poses = json.loads(self.pose_configuration_data)
+            print(all_poses)
             # Filter poses for BOB robot (predefined = starts with BOB_)
             bob_predefined_poses = {name: positions for name, positions in all_poses.items() 
                                    if name.startswith("BOB_")}
@@ -207,3 +218,4 @@ class BobConfigurationSetup(MDFloatLayout):
             pre_def_poses = self.app.hmi_node.receive_pose_configurations_data()
             print("OKAYYY")
             print(pre_def_poses)
+            

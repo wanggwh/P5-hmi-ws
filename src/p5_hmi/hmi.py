@@ -83,6 +83,7 @@ class HMINode(Node):
         self.current_status_dialog = None
         self.start_page_widget = None
         self._operation_completed = False
+        self.pose_configuration_data = "hej"
 
 
         # Initialize robot joint positions
@@ -387,11 +388,14 @@ class HMINode(Node):
         print("Handling receive_pose_configurations_data_response")
         try:
             response = future.result()
-            data = response.data
+            self.pose_configuration_data = response.data
             success = response.success
-            print("Received pose configurations data:", data, "Success:", success)
+            print("success: ", success)
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
+    
+    def pass_pose_configuration_data(self):
+        return self.pose_configuration_data
 
         
     # def receive_pose_configurations_data(self):
