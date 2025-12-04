@@ -1,123 +1,113 @@
-# mir_system_control.py
-
-import rclpy
-from rclpy.node import Node
-from p5_interfaces.srv import PostMissions, GetMissions
-
+from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.button import Button
-from kivymd.uix.button import MDFlatButton
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.anchorlayout import AnchorLayout
+from kivymd.uix.button import MDRaisedButton
+from kivymd.uix.card import MDCard
+from kivymd.uix.label import MDLabel
+from kivy.app import App
 
-
-# -----------------------------
-# ROS2 client node
-# -----------------------------
-
-class MirHMI(Node):
-    def __init__(self):
-        super().__init__('mir_hmi_node')
-
-        # Clients for ROS2 services
-        self.post_client = self.create_client(PostMissions, 'post_mission')
-        self.get_client = self.create_client(GetMissions, 'get_missions')
-
-        # Wait for service availability
-        while not self.post_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Waiting for /post_mission service...')
-
-        while not self.get_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Waiting for /get_missions service...')
-
-    def post_mission(self, mission_name):
-        # Request missions first to get GUID
-        req = GetMissions.Request()
-        future = self.get_client.call_async(req)
-        rclpy.spin_until_future_complete(self, future)
-
-        if future.result() is None or not future.result().success:
-            self.get_logger().error("Failed to get missions")
-            return
-
-        missions = dict(zip(future.result().names, future.result().guids))
-        guid = missions.get(mission_name)
-
-        if not guid:
-            self.get_logger().error(f"Mission '{mission_name}' not found")
-            return
-
-        # Post mission
-        req_post = PostMissions.Request()
-        req_post.mission_guid = guid
-
-        future_post = self.post_client.call_async(req_post)
-        rclpy.spin_until_future_complete(self, future_post)
-
-        if future_post.result() is not None and future_post.result().success:
-            self.get_logger().info(f"Mission '{mission_name}' queued successfully!")
-        else:
-            msg = future_post.result().message if future_post.result() else "No response"
-            self.get_logger().error(f"Failed to queue '{mission_name}': {msg}")
-
-
-# -----------------------------
-# Kivy Page Wrapper
-# -----------------------------
 
 class MirSystemControlPage(BoxLayout):
-    """
-    This Kivy Page is loaded by hmi.py.
-    It uses the MAIN app's existing ROS2 node.
-    """
 
     def __init__(self, **kwargs):
-        super().__init__(orientation='vertical', spacing=10, padding=10, **kwargs)
+        super().__init__(
+            orientation="vertical",
+            spacing=dp(20),
+            padding=dp(20),
+            **kwargs
+        )
 
-        # ------------------------------------
-        # IMPORTANT: get the ROS node from main HMI app
-        # ------------------------------------
-        from kivy.app import App
         self.node = App.get_running_app().hmi_node
 
-        # ------------------------------------
-        # Create UI elements
-        # ------------------------------------
-        self.start_mission_btn = Button(text="Start Mission", size_hint_y=None, height=50)
-        self.start_mission_btn.bind(on_press=self.toggle_mission_buttons)
+        buttons_anchor = AnchorLayout(
+            anchor_x="center",
+            anchor_y="top",
+            size_hint=(1, None),
+        )
 
-        self.status_btn = Button(text="Status", size_hint_y=None, height=50)
-        self.status_btn.bind(on_press=self.check_status)
+        buttons_row = BoxLayout(
+            orientation="horizontal",
+            spacing=dp(20),
+            size_hint=(0.7, None),
+            height=dp(100)
+        )
 
-        self.add_widget(self.start_mission_btn)
-        self.add_widget(self.status_btn)
+        btn_linear = MDRaisedButton(
+            text="Linear Move",
+            md_bg_color=(0.149, 0.496, 0.279, 1.0),
+            size_hint=(0.7, None),
+        )
+        btn_linear.bind(on_release=lambda x: self.log(
+            self.node.send_mission_by_name("MoveLinear")
+        ))
 
-        # Hidden mission buttons
-        self.mission_buttons_layout = BoxLayout(orientation='vertical', spacing=5, size_hint_y=None)
-        self.mission_buttons_layout.height = 0  # hidden by default
+        btn_charge = MDRaisedButton(
+            text="Charge",
+            md_bg_color=(0.529, 0.421, 0.157, 1.0),
+            size_hint=(0.7, None),
+        )
+        btn_charge.bind(on_release=lambda x: self.log(
+            self.node.send_mission_by_name("ChargeMir")
+        ))
 
-        self.charge_btn = MDFlatButton(text="Charge", size_hint_y=None, height=50)
-        self.charge_btn.bind(on_press=lambda x: self.node.post_mission("ChargeMir"))
+        btn_status = MDRaisedButton(
+            text="Status",
+            md_bg_color=(0.443, 0.377, 0.804, 1.0),
+            size_hint=(0.7, None),
+        )
+        btn_status.bind(on_release=lambda x: self.log("Status not implemented yet"))
 
-        self.start_test_btn = MDFlatButton(text="Start Test", size_hint_y=None, height=50)
-        self.start_test_btn.bind(on_press=lambda x: self.node.post_mission("MoveLinear"))
+        buttons_row.add_widget(btn_linear)
+        buttons_row.add_widget(btn_charge)
+        buttons_row.add_widget(btn_status)
 
-        self.mission_buttons_layout.add_widget(self.charge_btn)
-        self.mission_buttons_layout.add_widget(self.start_test_btn)
+        buttons_anchor.add_widget(buttons_row)
+        self.add_widget(buttons_anchor)
 
-        self.add_widget(self.mission_buttons_layout)
+        card = MDCard(
+            radius=[20],
+            style="elevated",
+            padding=dp(20),
+            size_hint=(1, None),
+            height=dp(330),
+            md_bg_color=(0.1, 0.15, 0.30, 1)
+        )
 
-    # -----------------------------
-    # UI Functions
-    # -----------------------------
+        card_layout = BoxLayout(
+            orientation="vertical",
+            spacing=dp(10)
+        )
 
-    def toggle_mission_buttons(self, instance):
-        if self.mission_buttons_layout.height == 0:
-            self.mission_buttons_layout.height = 110
-        else:
-            self.mission_buttons_layout.height = 0
+        title = MDLabel(
+            text="--- MiR Log Output ---",
+            theme_text_color="Custom",
+            text_color=(1, 1, 1, 1),
+            font_size=dp(16),
+            size_hint=(1, None),
+            height=dp(30),
+            halign="center"
+        )
+        card_layout.add_widget(title)
 
-    def check_status(self, instance):
-        print("Status button pressed")
+        scroll = ScrollView()
+        self.log_text = MDLabel(
+            text="",
+            halign="left",
+            valign="top",
+            size_hint_y=None,
+            theme_text_color="Custom",
+            text_color=(1, 1, 1, 1)
+        )
+        self.log_text.bind(texture_size=self._update_log_height)
+        scroll.add_widget(self.log_text)
 
+        card_layout.add_widget(scroll)
+        card.add_widget(card_layout)
+        self.add_widget(card)
 
-# Do NOT put rclpy.init() or App().run() here.
-# This file is only a PAGE used by the main HMI app.
+    def _update_log_height(self, instance, size):
+        instance.height = size[1]
+
+    def log(self, message: str):
+        self.log_text.text += f"{message}\n"
