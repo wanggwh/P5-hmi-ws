@@ -26,6 +26,7 @@ from p5_interfaces.srv import AdmittanceSetStatus, AdmittanceConfig
 from p5_interfaces.msg import CommandState
 from p5_interfaces.msg import Error
 from sensor_msgs.msg import JointState
+from p5_interfaces.srv import SendJsonData
 
 
 # Import page classes
@@ -35,8 +36,6 @@ from pages.alice_configuration_setup import AliceConfigurationSetup
 from pages.mir_system_control import MirSystemControlPage
 from pages.admittance_control import AdmittanceControl
 from pages.dragon_drop import DragonDrop
-
-from pages.settings import SettingsPage
 from pages.status_popup_dialog import StatusPopupDialog
 from pages.error_msg_popup import ErrorMsgSnackbar
 
@@ -85,6 +84,7 @@ class HMINode(Node):
         self.start_page_widget = None
         self._operation_completed = False
 
+
         # Initialize robot joint positions
         self.alice = [0.0] * 6
         self.bob = [0.0] * 6
@@ -109,10 +109,9 @@ class HMINode(Node):
         self.load_raw_JSON_client = self.create_client(
             LoadProgram, "/program_executor/load_raw_JSON")
         self.run_program_client = self.create_client(RunProgram, "/program_executor/run_program")
+        self.get_config_poses_client = self.create_client(SendJsonData, "/p5_send_pose_configs")
         # self.save_program_client = self.create_client(
         #     SaveProgram, "/program_executor/save_program")
-
-        self.get_logger().info('HMI Node has been started')
 
     def set_app(self, app):
         """Set reference to Kivy app"""
@@ -343,7 +342,95 @@ class HMINode(Node):
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
 
-    # ================== Load Raw JSON Client ================
+        # ================== Load Raw JSON Client ================
+        
+    def receive_pose_configurations_data(self):
+        """Send request to save current pose as predefined pose"""
+        request = SendJsonData.Request()
+
+        if not self.get_config_poses_client.wait_for_service(timeout_sec=0.1):
+            self.waiting_popup = StatusPopupDialog.create_new_dialog()
+            Clock.schedule_once(
+                lambda dt: self.waiting_popup.waiting_on_service_popup(
+                    service_name="/jensen"), 0)
+            self._pending_service_request = (request)
+            self._service_check_event = Clock.schedule_interval(
+                self._check_receive_pose_configurations_data, 0.5)
+            return
+        self._receive_pose_configurations_data(request)
+        
+    def _check_receive_pose_configurations_data(self, dt):
+        """Periodically check if save pose service is available and send pending request"""
+        if self.get_config_poses_client.wait_for_service(timeout_sec=0.1):
+            if self.waiting_popup:
+                self.waiting_popup.dismiss()
+                self.waiting_popup = None
+            
+            if hasattr(self, '_service_check_event'):
+                self._service_check_event.cancel()
+                del self._service_check_event
+            
+            if hasattr(self, '_pending_service_request'):
+                request, robot_name, goal_name = self._pending_service_request
+                self._receive_pose_configurations_data(request)
+                del self._pending_service_request
+
+    def _receive_pose_configurations_data(self, request):
+        #Send save pose request to service
+        print(request)
+        future = self.get_config_poses_client.call_async(request)
+        print("Service call sent, adding callback")
+        future.add_done_callback(self.handle_receive_pose_configurations_data_callback)
+
+    def handle_receive_pose_configurations_data_callback(self, future):
+        #Handle response from receive pose configurations data service
+        print("Handling receive_pose_configurations_data_response")
+        try:
+            response = future.result()
+            data = response.data
+            success = response.success
+            print("Received pose configurations data:", data, "Success:", success)
+        except Exception as e:
+            self.get_logger().error(f"Service call failed: {e}")
+
+        
+    # def receive_pose_configurations_data(self):
+    #     """Send request to get pose configurations JSON data"""
+    #     print("Okay den er her nu")
+    #     if not self.get_config_poses_client.wait_for_service(timeout_sec=1.0):
+    #         self.get_logger().warning("SendJsonData service not available")
+    #         return None
+
+    #     try:
+    #         # Request er tom - opret bare en tom Request instance
+    #         request = SendJsonData.Request()
+            
+    #         # Send async request
+    #         future = self.get_config_poses_client.call_async(request)
+    #         rclpy.spin_until_future_complete(self, future, timeout_sec=2.0)
+            
+    #         if future.result() is not None:
+    #             response = future.result()
+                
+    #             # Tjek success flag
+    #             if response.success:
+    #                 json_data = response.data  # ÆNDRET: 'data' ikke 'json_data'
+    #                 self.get_logger().info(f"Received pose configurations: {len(json_data)} bytes")
+    #                 return json_data
+    #             else:
+    #                 self.get_logger().warning("Service returned success=False")
+    #                 return None
+    #         else:
+    #             self.get_logger().error("SendJsonData service call failed - no result")
+    #             return None
+                
+    #     except Exception as e:
+    #         self.get_logger().error(f"SendJsonData service call exception: {e}")
+    #         import traceback
+    #         traceback.print_exc()
+    #         return None
+            
+        
 
     def call_load_raw_JSON_request(self, program_json: str, wait_for_service=True, timeout=0.1) -> bool:
         """
@@ -589,8 +676,7 @@ class HMIApp(MDApp):
             "ALICE - Configuration Setup",
             "MIR - System Control",
             "Admittance Control",
-            "Drag and Drop - System Control",
-            "Settings"
+            "Drag and Drop - System Control"
         ]
 
         menu_items = [
@@ -628,8 +714,7 @@ class HMIApp(MDApp):
             "ALICE - Configuration Setup": "kv/alice_configuration_setup.kv",
             "MIR - System Control": "kv/mir_system_control.kv",
             "Admittance Control": "kv/admittance_control.kv",
-            "Drag and Drop - System Control": "kv/dragon_drop.kv",
-            "Settings": "kv/settings.kv"
+            "Drag and Drop - System Control": "kv/dragon_drop.kv"
         }
 
         if page_name in kv_files:
@@ -643,8 +728,7 @@ class HMIApp(MDApp):
         """Called when the app starts - load all KV files"""
         pages = [
             "Start Page", "BOB - Configuration Setup", "ALICE - Configuration Setup",
-            "MIR - System Control", "Admittance Control", "Drag and Drop - System Control",
-            "Settings"
+            "MIR - System Control", "Admittance Control", "Drag and Drop - System Control"
         ]
         
         for page in pages:
@@ -695,8 +779,7 @@ class HMIApp(MDApp):
                 "ALICE - Configuration Setup": AliceConfigurationSetup,
                 "MIR - System Control": MirSystemControlPage,
                 "Admittance Control": AdmittanceControl,
-                "Drag and Drop - System Control": DragonDrop,
-                "Settings": lambda: SettingsPage(self.hmi_node)
+                "Drag and Drop - System Control": DragonDrop
             }
 
             if self.current_page in page_widgets:

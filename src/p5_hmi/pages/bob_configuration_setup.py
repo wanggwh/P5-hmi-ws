@@ -15,16 +15,13 @@ class BobConfigurationSetup(MDFloatLayout):
         super().__init__(**kwargs)
         self.app = MDApp.get_running_app()
         
-        # Path til JSON fil med pre-defined poses
-        self.poses_json_path = os.path.expanduser("~/Documents/P5-hmi-ws/config/pre_config_poses.json")
-        
         # Initialiser app storage for konfigurationer hvis det ikke findes
         if not hasattr(self.app, 'bob_saved_configurations'):
             self.app.bob_saved_configurations = []
-        
-        # Load predefined poses fra JSON og opret knapper
-        Clock.schedule_once(self.load_predefined_poses, 0.1)
-        
+
+        # Path to predefined poses JSON file
+        self.app.hmi_node.receive_pose_configurations_data()        
+
         # Gendan gemte konfigurationer når siden loades
         Clock.schedule_once(self.restore_saved_configurations, 0.2)
 
@@ -204,3 +201,9 @@ class BobConfigurationSetup(MDFloatLayout):
                     value = 0.0
                 self.ids[label_id].text = f"{value:.1f} deg"
 
+
+    def get_pre_def_poses(self):
+        if self.app and hasattr(self.app, 'hmi_node'):
+            pre_def_poses = self.app.hmi_node.receive_pose_configurations_data()
+            print("OKAYYY")
+            print(pre_def_poses)
