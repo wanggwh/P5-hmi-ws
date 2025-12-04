@@ -21,7 +21,7 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivy.core.window import Window
 
 from p5_interfaces.srv import PoseConfig
-from p5_interfaces.srv import MoveToPreDefPose, LoadProgram, RunProgram#, SaveProgram
+from p5_interfaces.srv import LoadProgram, RunProgram#, SaveProgram
 from p5_interfaces.srv import AdmittanceSetStatus, AdmittanceConfig
 from p5_interfaces.msg import CommandState
 from p5_interfaces.msg import Error
@@ -103,8 +103,6 @@ class HMINode(Node):
             JointState, '/joint_states', self.handle_joint_states_callback, 10)
 
         # Service clients
-        self.move_to_pre_def_pose_client = self.create_client(
-            MoveToPreDefPose, "/p5_move_to_pre_def_pose")
         self.save_pre_def_pose_client = self.create_client(
             PoseConfig, "/p5_pose_config")
         self.load_raw_JSON_client = self.create_client(
@@ -212,28 +210,25 @@ class HMINode(Node):
 
     # ==================== Move to Predefined Pose ====================
     
-    def send_move_to_pre_def_pose_request(self, robot_name, goal_name):
+    def send_move_to_pre_def_pose_request(self, json_data):
         """Send request to move robot to predefined pose"""
-        request = MoveToPreDefPose.Request()
-        request.robot_name = robot_name
-        request.goal_name = goal_name
-        print(f"Preparing to send move_to_pre_def_pose request for {robot_name} to {goal_name}")
+        request = LoadProgram.Request()
+        request.json_data = json_data
 
-        if not self.move_to_pre_def_pose_client.wait_for_service(timeout_sec=0.1):
+        if not self.load_raw_JSON_client.wait_for_service(timeout_sec=0.1):
             self.waiting_popup = StatusPopupDialog.create_new_dialog()
             Clock.schedule_once(
                 lambda dt: self.waiting_popup.waiting_on_service_popup(
                     service_name="/p5_move_to_pre_def_pose"), 0)
-            self._pending_service_request = (request, robot_name, goal_name)
+            self._pending_service_request = (request, json_data)
             self._service_check_event = Clock.schedule_interval(
                 self._check_service_available_and_send, 0.5)
             return
-
-        self._send_pre_def_pose_request(request, robot_name, goal_name)
+        self._send_pre_def_pose_request(request, json_data)
 
     def _check_service_available_and_send(self, dt):
         """Periodically check if move service is available and send pending request"""
-        if self.move_to_pre_def_pose_client.wait_for_service(timeout_sec=0.1):
+        if self.load_raw_JSON_client.wait_for_service(timeout_sec=0.1):
             if self.waiting_popup:
                 self.waiting_popup.dismiss()
                 self.waiting_popup = None
@@ -243,21 +238,19 @@ class HMINode(Node):
                 del self._service_check_event
             
             if hasattr(self, '_pending_service_request'):
-                request, robot_name, goal_name = self._pending_service_request
-                self._send_pre_def_pose_request(request, robot_name, goal_name)
+                request, json_data = self._pending_service_request
+                self._send_pre_def_pose_request(request, json_data)
                 del self._pending_service_request
 
-    def _send_pre_def_pose_request(self, request, robot_name, goal_name):
+    def _send_pre_def_pose_request(self, request, json_data):
         """Send predefined pose request to service"""
         # Store robot info for status callback
-        self._current_robot_name = robot_name
-        self._current_goal_name = goal_name
+        self._json_data = json_data
         self._operation_completed = False
 
-        future = self.move_to_pre_def_pose_client.call_async(request)
+        future = self.load_raw_JSON_client.call_async(request)
         print("Service call sent, adding callback")
-        future.robot_name = robot_name
-        future.goal_name = goal_name
+        future.json_data = json_data
         future.add_done_callback(self.handle_move_to_pre_def_pose_response_callback)
 
     def handle_move_to_pre_def_pose_response_callback(self, future):
@@ -266,15 +259,14 @@ class HMINode(Node):
         try:
             response = future.result()
             success = response.success
-            robot_name = getattr(future, "robot_name", None)
-            goal_name = getattr(future, "goal_name", None)
-            print("robot_name: " + robot_name)
-            def create_and_store_dialog(dt):
-                self.current_status_dialog = StatusPopupDialog.create_new_dialog()
-                self.current_status_dialog.show_status_dialog(
-                    robot_name, goal_name, success, move_to_pre_def_pose_complete=True)
+            json_data = getattr(future, "json_data", None)
+            print("json_data: " + json_data)
+            # def create_and_store_dialog(dt):
+            #     self.current_status_dialog = StatusPopupDialog.create_new_dialog()
+            #     self.current_status_dialog.show_status_dialog(
+            #         robot_name, goal_name, success, move_to_pre_def_pose_complete=True)
 
-            Clock.schedule_once(create_and_store_dialog, 0)
+            # Clock.schedule_once(create_and_store_dialog, 0)
             
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")

@@ -104,21 +104,51 @@ class BobConfigurationSetup(MDFloatLayout):
         # Tilføj til predefined poses container
         if hasattr(self.ids, 'predefined_poses_container'):
             self.ids.predefined_poses_container.add_widget(button)
-            print(f"✅ Added button: {display_name}")
+            print(f"Added button: {display_name}")
         else:
             print("Warning: predefined_poses_container not found in KV file")
 
     def send_predefined_pose(self, pose_name):
         """Send request to move to predefined pose"""
         if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.send_move_to_pre_def_pose_request("bob", pose_name)
+            json_data = self.make_json_data(pose_name)
+            self.app.hmi_node.call_load_raw_JSON_request(json_data, wait_for_service=True)
             print(f"Sent {pose_name} configuration request for BOB")
 
-    
+    def make_json_data(self, pose_name):
+        json_data = {
+                        "bob_move_to_pose": 
+                        {
+                            "description": "",
+                            "date": "",
+                            "author": "",
+                            "threads": 
+                            [
+                                {
+                                    "name": "bob_thread",
+                                    "robot_name": "bob",
+                                    "commands": 
+                                    [
+                                        {
+                                            "command": "c_move",
+                                            "args": 
+                                            {
+                                                "config_name": pose_name
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+        return json.dumps(json_data)
     
     def send_custom_configuration(self, config_name):
+        print(config_name)
         if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.send_move_to_pre_def_pose_request("bob", str(config_name))
+            json_data = self.make_json_data(config_name)
+            print(json_data)
+            self.app.hmi_node.call_load_raw_JSON_request(json_data, wait_for_service=True)
             print(f"Sent {config_name} configuration request for BOB")
 
     def restore_saved_configurations(self, dt):
@@ -185,11 +215,6 @@ class BobConfigurationSetup(MDFloatLayout):
         # Tilføj knappen til custom configurations container
         self.ids.custom_config_container.add_widget(button)
     
-    def send_custom_configuration(self, config_name):
-        if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.send_move_to_pre_def_pose_request("bob", str(config_name))
-            print(f"Sent {config_name} configuration request for BOB")
-
     def restore_saved_configurations(self, dt):
         """Gendan alle gemte konfigurationer når siden loades"""
         if hasattr(self.app, 'bob_saved_configurations'):
