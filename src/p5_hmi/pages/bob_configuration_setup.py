@@ -72,7 +72,7 @@ class BobConfigurationSetup(MDFloatLayout):
             # Store custom configuration names
             self.app.bob_saved_configurations = list(bob_custom_poses.keys())
             
-            print("✅ All predefined pose buttons created")
+            print("All predefined pose buttons created")
                 
         except Exception as e:
             print(f"Error loading predefined poses: {e}")
