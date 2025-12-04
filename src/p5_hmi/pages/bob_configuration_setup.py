@@ -114,80 +114,7 @@ class BobConfigurationSetup(MDFloatLayout):
             self.app.hmi_node.send_move_to_pre_def_pose_request("bob", pose_name)
             print(f"Sent {pose_name} configuration request for BOB")
 
-    def save_configuration(self):
-        """Save custom configuration to JSON file"""
-        config_name = self.ids.configuration_name_field.text.strip()
-        
-        if not config_name:
-            print("Please enter a configuration name")
-            return
-            
-        if config_name in self.app.bob_saved_configurations:
-            print("Configuration name already exists")
-            return
-        
-        try:
-            # Get current joint positions from HMI node
-            if not (self.app and hasattr(self.app, 'hmi_node') 
-                   and hasattr(self.app.hmi_node, 'bob_joint_positions')):
-                print("❌ Current joint positions not available")
-                return
-            
-            joint_positions = self.app.hmi_node.bob_joint_positions
-            
-            # Load existing JSON file
-            with open(self.poses_json_path, 'r') as f:
-                all_poses = json.load(f)
-            
-            # Add new custom configuration
-            all_poses[config_name] = joint_positions
-            
-            # Save back to JSON file
-            with open(self.poses_json_path, 'w') as f:
-                json.dump(all_poses, f, indent=2)
-            
-            # Update app storage
-            self.app.bob_saved_configurations.append(config_name)
-            
-            # Create button
-            self.create_custom_config_button(config_name)
-            
-            # Clear input field
-            self.ids.configuration_name_field.text = ""
-            
-            # Send ROS2 save request
-            self.app.hmi_node.save_pre_def_pose_request("bob", config_name)
-            
-            print(f"✅ Saved configuration '{config_name}' to JSON: {joint_positions}")
-            
-        except Exception as e:
-            print(f"❌ Error saving configuration: {e}")
-            import traceback
-            traceback.print_exc()
     
-    def create_custom_config_button(self, config_name):
-        # Safely get colors with fallback
-        accent_color = (1.0, 0.5, 0.3, 1)
-        text_color = (1, 1, 1, 1)
-        
-        if hasattr(self.app, 'colors') and self.app.colors:
-            accent_color = self.app.colors.get('accent_coral', accent_color)
-            text_color = self.app.colors.get('text_light', text_color)
-        
-        button = MDRaisedButton(
-            text=config_name,
-            size_hint=(None, None),
-            size=("120dp", "50dp"),
-            md_bg_color=accent_color,
-            text_color=text_color,
-            on_release=lambda x: self.send_custom_configuration(config_name)
-        )
-        
-        # Tilføj knappen til custom configurations container
-        if hasattr(self.ids, 'custom_config_container'):
-            self.ids.custom_config_container.add_widget(button)
-        else:
-            print("Warning: custom_config_container not found in KV file")
     
     def send_custom_configuration(self, config_name):
         if self.app and hasattr(self.app, 'hmi_node'):
@@ -218,4 +145,68 @@ class BobConfigurationSetup(MDFloatLayout):
             pre_def_poses = self.app.hmi_node.receive_pose_configurations_data()
             print("OKAYYY")
             print(pre_def_poses)
+            
+    def move_to_home(self):
+        if self.app and hasattr(self.app, 'hmi_node'):
+            self.app.hmi_node.send_move_to_pre_def_pose_request("bob", "BOB_HOME")
+            print("Sent HOME_BOB configuration request for BOB")
+
+    def move_to_upright(self):
+        print("Moving BOB to UPRIGHT position")
+        if self.app and hasattr(self.app, 'hmi_node'):
+            self.app.hmi_node.send_move_to_pre_def_pose_request("bob", "UPRIGHT")
+            print("Sent UPRIGHT configuration request for BOB")
+
+    def save_configuration(self):
+        config_name = self.ids.configuration_name_field.text.strip()
+        
+        if config_name and config_name not in self.app.bob_saved_configurations:
+            # Gem konfigurationen i app storage
+            self.app.bob_saved_configurations.append(config_name)
+            print(f"Saved configuration: {config_name}")
+            
+            self.create_custom_config_button(config_name)
+            
+            # Clear tekstfeltet
+            self.ids.configuration_name_field.text = ""
+            self.app.hmi_node.save_pre_def_pose_request("bob", config_name)
+        else:
+            print("Please enter a valid, unique configuration name")
+    
+    def create_custom_config_button(self, config_name): 
+        button = MDRaisedButton(
+            text=config_name,
+            size_hint=(None, None),
+            size=("120dp", "50dp"),
+            md_bg_color=self.app.theme_cls.primary_color if self.app else (0.2, 0.6, 1.0, 1),
+            on_release=lambda x: self.send_custom_configuration(config_name)
+        )
+        
+        # Tilføj knappen til custom configurations container
+        self.ids.custom_config_container.add_widget(button)
+    
+    def send_custom_configuration(self, config_name):
+        if self.app and hasattr(self.app, 'hmi_node'):
+            self.app.hmi_node.send_move_to_pre_def_pose_request("bob", str(config_name))
+            print(f"Sent {config_name} configuration request for BOB")
+
+    def restore_saved_configurations(self, dt):
+        """Gendan alle gemte konfigurationer når siden loades"""
+        if hasattr(self.app, 'bob_saved_configurations'):
+            for config_name in self.app.bob_saved_configurations:
+                self.create_custom_config_button(config_name)
+
+    def bob_update_joint_positions(self, joint_positions):
+        """Update joint position labels with current robot positions"""
+        joint_label_ids = ['joint1_label', 'joint2_label', 'joint3_label', 
+                        'joint4_label', 'joint5_label', 'joint6_label']
+        
+        for i, label_id in enumerate(joint_label_ids):
+            if i < len(joint_positions) and hasattr(self.ids, label_id):
+                value = joint_positions[i]
+                if abs(value) < 0.05:  
+                    value = 0.0
+                self.ids[label_id].text = f"{value:.1f} deg"
+
+
             
