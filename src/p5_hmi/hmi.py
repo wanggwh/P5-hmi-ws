@@ -22,7 +22,7 @@ from kivy.core.window import Window
 
 from p5_interfaces.srv import PoseConfig
 from p5_interfaces.srv import LoadProgram, RunProgram#, SaveProgram
-from p5_interfaces.srv import AdmittanceSetStatus, AdmittanceConfig
+from p5_interfaces.srv import AdmittanceSetStatus, AdmittanceConfig, SaveAdmittanceParam
 from p5_interfaces.msg import CommandState
 from p5_interfaces.msg import Error
 from sensor_msgs.msg import JointState
@@ -109,6 +109,7 @@ class HMINode(Node):
             LoadProgram, "/program_executor/load_raw_JSON")
         self.run_program_client = self.create_client(RunProgram, "/program_executor/run_program")
         self.get_config_poses_client = self.create_client(SendJsonData, "/p5_send_pose_configs")
+        
         # self.save_program_client = self.create_client(
         #     SaveProgram, "/program_executor/save_program")
 
@@ -134,50 +135,12 @@ class HMINode(Node):
             Clock.schedule_once(
                 lambda dt: self.waiting_popup.waiting_on_service_popup(
                     service_name="/" + robot_name + "/p5_admittance_config"), 0)
-            self._pending_service_request = (client, request, M_parameter, D_parameter, K_parameter)
+            self._pending_service_request = (client, request)
             self._service_check_event = Clock.schedule_interval(
                 self._check_admittance_config_service_available_and_send, 0.5)
             return
-        self._send_admittance_config_request(client, request, M_parameter, D_parameter, K_parameter)
+        self._send_admittance_config_request(client, request)
         
-    def send_set_admittance_status_request(self, robot_name, enable_admittance, update_rate):
-        """Send admittance control status request"""
-        client = self.create_client(
-            AdmittanceSetStatus, "/" + robot_name + "/p5_admittance_set_state")
-        request = AdmittanceSetStatus.Request()
-        request.active = enable_admittance
-
-        if not client.wait_for_service(timeout_sec=0.1):
-            self.get_logger().warning(
-                f"AdmittanceSetStatus service not available, cannot send request for {robot_name}")
-            self.get_logger()
-            self.waiting_popup = StatusPopupDialog.create_new_dialog()
-            Clock.schedule_once(
-                lambda dt: self.waiting_popup.waiting_on_service_popup(
-                    service_name="/" + robot_name + "/p5_admittance_set_state"), 0)
-            self._pending_service_request = (client, request, enable_admittance, update_rate)
-            self._service_check_event = Clock.schedule_interval(
-                self._check_admittance_service_available_and_send, 0.5)
-            return
-        
-        self._send_set_admittance_request(client, request, enable_admittance, update_rate)
-
-    def _check_admittance_service_available_and_send(self, dt):
-        """Periodically check if admittance service is available and send pending request"""
-        #if self.set_admittance_status_client.wait_for_service(timeout_sec=0.1):
-        if self.waiting_popup:
-            self.waiting_popup.dismiss()
-            self.waiting_popup = None
-            
-        if hasattr(self, '_service_check_event'):
-            self._service_check_event.cancel()
-            del self._service_check_event
-            
-        if hasattr(self, '_pending_service_request'):
-            client, request, enable_admittance, update_rate = self._pending_service_request
-            self._send_set_admittance_request(client, request, enable_admittance, update_rate)
-            del self._pending_service_request
-                
     def _check_admittance_config_service_available_and_send(self, dt):
         """Periodically check if admittance service is available and send pending request"""
         #if self.set_admittance_status_client.wait_for_service(timeout_sec=0.1):
@@ -190,86 +153,59 @@ class HMINode(Node):
             del self._service_check_event
             
         if hasattr(self, '_pending_service_request'):
-            client, request, M_parameter, D_parameter, K_parameter = self._pending_service_request
-            self._send_admittance_config_request(client, request, M_parameter, D_parameter, K_parameter)
+            client, request = self._pending_service_request
+            self._send_admittance_config_request(client, request)
             del self._pending_service_request
-
-    def _send_set_admittance_request(self, client, request, enable_admittance, update_rate):
+    
+    def _send_admittance_config_request(self, client, request):
         """Send admittance request to service"""
         self._operation_completed = False
         future = client.call_async(request)
         future.add_done_callback(
-            lambda f: self.get_logger().info(f"Admittance status set to {enable_admittance}"))
-    
-    def _send_admittance_config_request(self, client, request, M_parameter, D_parameter, K_parameter):
-        """Send admittance request to service"""
-        self._operation_completed = False
-        future = client.call_async(request)
-        future.add_done_callback(
-            lambda f: self.get_logger().info(f"Admittance parameter set to {M_parameter}"))
+            lambda f: self.get_logger().info(f"Admittance parameter set to "))
 
-    # ==================== Move to Predefined Pose ====================
     
-    def send_move_to_pre_def_pose_request(self, json_data):
-        """Send request to move robot to predefined pose"""
-        request = LoadProgram.Request()
-        request.json_data = json_data
-
-        if not self.load_raw_JSON_client.wait_for_service(timeout_sec=0.1):
+    def save_admittance_parameters(self, robot_name, name):
+        client = self.create_client(
+            SaveAdmittanceParam, "/" + robot_name + "/p5_save_admittance_param")
+        request = SaveAdmittanceParam.Request()
+        request.param_name = name
+        
+        if not client.wait_for_service(timeout_sec=0.1):
+            self.get_logger().warning(
+                f"AdmittanceConfig service not available, cannot send request for {robot_name}")
             self.waiting_popup = StatusPopupDialog.create_new_dialog()
             Clock.schedule_once(
                 lambda dt: self.waiting_popup.waiting_on_service_popup(
-                    service_name="/p5_move_to_pre_def_pose"), 0)
-            self._pending_service_request = (request, json_data)
+                    service_name="/" + robot_name + "/p5_save_admittance_param"), 0)
+            self._pending_service_request = (client, request)
             self._service_check_event = Clock.schedule_interval(
-                self._check_service_available_and_send, 0.5)
+                self._check_admittance_config_service_available_and_send, 0.5)
             return
-        self._send_pre_def_pose_request(request, json_data)
-
-    def _check_service_available_and_send(self, dt):
-        """Periodically check if move service is available and send pending request"""
-        if self.load_raw_JSON_client.wait_for_service(timeout_sec=0.1):
-            if self.waiting_popup:
-                self.waiting_popup.dismiss()
-                self.waiting_popup = None
+        self._send_admittance_config_request(client, request)
+                 
+    def _check_admittance_config_service_available_and_send(self, dt):
+        """Periodically check if admittance service is available and send pending request"""
+        #if self.set_admittance_status_client.wait_for_service(timeout_sec=0.1):
+        if self.waiting_popup:
+            self.waiting_popup.dismiss()
+            self.waiting_popup = None
             
-            if hasattr(self, '_service_check_event'):
-                self._service_check_event.cancel()
-                del self._service_check_event
+        if hasattr(self, '_service_check_event'):
+            self._service_check_event.cancel()
+            del self._service_check_event
             
-            if hasattr(self, '_pending_service_request'):
-                request, json_data = self._pending_service_request
-                self._send_pre_def_pose_request(request, json_data)
-                del self._pending_service_request
+        if hasattr(self, '_pending_service_request'):
+            client, request = self._pending_service_request
+            self._send_admittance_config_request(client, request)
+            del self._pending_service_request
 
-    def _send_pre_def_pose_request(self, request, json_data):
-        """Send predefined pose request to service"""
-        # Store robot info for status callback
-        self._json_data = json_data
+    def _send_admittance_config_request(self, client, request):
+        """Send admittance request to service"""
         self._operation_completed = False
-
-        future = self.load_raw_JSON_client.call_async(request)
-        print("Service call sent, adding callback")
-        future.json_data = json_data
-        future.add_done_callback(self.handle_move_to_pre_def_pose_response_callback)
-
-    def handle_move_to_pre_def_pose_response_callback(self, future):
-        """Handle response from move to predefined pose service"""
-        print("Handling move_to_pre_def_pose_response")
-        try:
-            response = future.result()
-            success = response.success
-            json_data = getattr(future, "json_data", None)
-            print("json_data: " + json_data)
-            # def create_and_store_dialog(dt):
-            #     self.current_status_dialog = StatusPopupDialog.create_new_dialog()
-            #     self.current_status_dialog.show_status_dialog(
-            #         robot_name, goal_name, success, move_to_pre_def_pose_complete=True)
-
-            # Clock.schedule_once(create_and_store_dialog, 0)
-            
-        except Exception as e:
-            self.get_logger().error(f"Service call failed: {e}")
+        future = client.call_async(request)
+        future.add_done_callback(
+            lambda f: self.get_logger().info(f"Admittance parameter set to {request}"))
 
     # ==================== Save Predefined Pose ====================
     
@@ -335,7 +271,7 @@ class HMINode(Node):
         except Exception as e:
             self.get_logger().error(f"Service call failed: {e}")
 
-        # ================== Load Raw JSON Client ================
+    # ================== Load Raw JSON Client ================
         
     def receive_pose_configurations_data(self):
         """Send request to save current pose as predefined pose"""
@@ -388,45 +324,6 @@ class HMINode(Node):
     
     def pass_pose_configuration_data(self):
         return self.pose_configuration_data
-
-        
-    # def receive_pose_configurations_data(self):
-    #     """Send request to get pose configurations JSON data"""
-    #     print("Okay den er her nu")
-    #     if not self.get_config_poses_client.wait_for_service(timeout_sec=1.0):
-    #         self.get_logger().warning("SendJsonData service not available")
-    #         return None
-
-    #     try:
-    #         # Request er tom - opret bare en tom Request instance
-    #         request = SendJsonData.Request()
-            
-    #         # Send async request
-    #         future = self.get_config_poses_client.call_async(request)
-    #         rclpy.spin_until_future_complete(self, future, timeout_sec=2.0)
-            
-    #         if future.result() is not None:
-    #             response = future.result()
-                
-    #             # Tjek success flag
-    #             if response.success:
-    #                 json_data = response.data  # ÆNDRET: 'data' ikke 'json_data'
-    #                 self.get_logger().info(f"Received pose configurations: {len(json_data)} bytes")
-    #                 return json_data
-    #             else:
-    #                 self.get_logger().warning("Service returned success=False")
-    #                 return None
-    #         else:
-    #             self.get_logger().error("SendJsonData service call failed - no result")
-    #             return None
-                
-    #     except Exception as e:
-    #         self.get_logger().error(f"SendJsonData service call exception: {e}")
-    #         import traceback
-    #         traceback.print_exc()
-    #         return None
-            
-        
 
     def call_load_raw_JSON_request(self, program_json: str, wait_for_service=True, timeout=0.1) -> bool:
         """

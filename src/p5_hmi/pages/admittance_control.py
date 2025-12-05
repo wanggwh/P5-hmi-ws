@@ -81,6 +81,19 @@ class AdmittanceControl(MDFloatLayout):
                                             }
                                         },
                                         {
+                                            "command": "admittance",
+                                            "args":
+                                            {
+                                                "parameter_name": "default",
+                                                "fx": False,
+                                                "fy": False,
+                                                "fz": False,
+                                                "tx": False,
+                                                "ty": False,
+                                                "tz": False        
+                                            }
+                                        },
+                                        {
                                             "command": "r_move",
                                             "args":
                                             {
@@ -158,7 +171,8 @@ class AdmittanceControl(MDFloatLayout):
             return
         
         try:
-            # Get values from textfields
+            
+             # Get values from textfields
             metadata = {
                 "name": textfields[0].text or "Unnamed",
                 "description": textfields[1].text or "No description",
@@ -166,75 +180,9 @@ class AdmittanceControl(MDFloatLayout):
                 "author": textfields[3].text or "Unknown",
             }
             
-            # Get current slider values
-            f_scalar = 500.0
-            t_scalar = 10.0
-            
-            M_raw = self.ids.M_slider.value
-            D_raw = self.ids.D_slider.value
-            K_raw = self.ids.k_slider.value
-            alpha_raw = self.ids.alpha_slider.value
-            
-            parameters = {
-                "robot": self.tuning_robot,
-                "raw_values": {
-                    "M": M_raw,
-                    "D": D_raw,
-                    "K": K_raw,
-                    "alpha": alpha_raw,
-                },
-                "scaled_values": {
-                    "M": [M_raw*f_scalar, M_raw*f_scalar, M_raw*f_scalar, 
-                          M_raw*t_scalar, M_raw*t_scalar, M_raw*t_scalar],
-                    "D": [D_raw*f_scalar, D_raw*f_scalar, D_raw*f_scalar, 
-                          D_raw*t_scalar, D_raw*t_scalar, D_raw*t_scalar],
-                    "K": [K_raw*f_scalar, K_raw*f_scalar, K_raw*f_scalar, 
-                          K_raw*t_scalar, K_raw*t_scalar, K_raw*t_scalar],
-                },
-                "scalars": {
-                    "force_scalar": f_scalar,
-                    "torque_scalar": t_scalar,
-                }
-            }
-            
-            # Combine metadata and parameters
-            save_data = {
-                "metadata": metadata,
-                "parameters": parameters,
-                "timestamp": datetime.now().isoformat(),
-            }
-            
-            # Create filename
-            safe_name = metadata['name'].replace(' ', '_').replace('/', '_')
-            filename = f"admittance_{self.tuning_robot}_{safe_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-            filepath = os.path.join(self.save_directory, filename)
-            
-            # Save to JSON file
-            with open(filepath, 'w') as f:
-                json.dump(save_data, f, indent=2)
-            
-            print(f" Saved admittance parameters to: {filepath}")
-            print(f"   Robot: {self.tuning_robot}")
-            print(f"   M: {M_raw} (scaled: {M_raw*f_scalar})")
-            print(f"   D: {D_raw} (scaled: {D_raw*f_scalar})")
-            print(f"   K: {K_raw} (scaled: {K_raw*f_scalar})")
-            print(f"   Alpha: {alpha_raw}")
-            
-            # Show success popup (optional)
-            if self.app:
-                success_dialog = MDDialog(
-                    title="Success",
-                    text=f"Parameters saved to:\n{filename}",
-                    buttons=[
-                        MDFlatButton(
-                            text="OK",
-                            on_release=lambda x: success_dialog.dismiss()
-                        )
-                    ],
-                )
-                success_dialog.open()
-            
-            dialog.dismiss()
+            """Send request to move to predefined pose"""
+            if self.app and hasattr(self.app, 'hmi_node'):
+                self.app.hmi_node.save_admittance_parameters(self.tuning_robot, metadata["name"])
             
         except Exception as e:
             print(f" Failed to save parameters: {e}")
@@ -251,7 +199,7 @@ class AdmittanceControl(MDFloatLayout):
                 ],
             )
             error_dialog.open()
-            dialog.dismiss()
+        dialog.dismiss()
     
         
 

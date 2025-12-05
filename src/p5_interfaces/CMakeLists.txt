@@ -27,6 +27,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/PostMissions.srv"
   "srv/RunProgram.srv"
   "srv/SendJsonData.srv"
+  "srv/SaveAdmittanceParam.srv"
 
   DEPENDENCIES geometry_msgs
   DEPENDENCIES std_msgs
