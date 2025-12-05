@@ -46,6 +46,69 @@ class AdmittanceControl(MDFloatLayout):
             icon_color=[0.86, 0.86, 0.88, 1],
         )
         self.add_widget(saveAndParse)
+        
+    def send_admittance_state(self, status, robot_name):
+        """Send request to move to predefined pose"""
+        if self.app and hasattr(self.app, 'hmi_node'):
+            json_data = self.make_json_data(status, robot_name)
+            self.app.hmi_node.call_load_raw_JSON_request(json_data, wait_for_service=True)
+            
+    
+    def make_json_data(self, state, robot_name):
+        if robot_name == "bob":
+            pose = [0.167, -0.558, 0.824, 0.535, -0.530, 0.480, 0.450]
+        else:
+            pose = [-0.181, -0.534, 0.792, -0.518, 0.519, -0.482, -0.749]
+        robot_name_uppercase = robot_name.upper()
+        json_data = {
+                        "": 
+                        {
+                            "description": "",
+                            "date": "",
+                            "author": "",
+                            "threads": 
+                            [
+                                {
+                                    "name": f"{robot_name}_thread",
+                                    "robot_name": robot_name,
+                                    "commands": 
+                                    [
+                                        {
+                                            "command": "c_move",
+                                            "args": 
+                                            {
+                                                "config_name": f"{robot_name_uppercase}_TEST_ADMITTANCE" 
+                                            }
+                                        },
+                                        {
+                                            "command": "r_move",
+                                            "args":
+                                            {
+                                                "frame": "mir",
+                                                "linear": False,
+                                                "use_tracking_velocity": False,
+                                                "pose": pose
+                                            }
+                                        },
+                                        {
+                                            "command": "admittance",
+                                            "args":
+                                            {
+                                                "parameter_name": "default",
+                                                "fx": state,
+                                                "fy": state,
+                                                "fz": state,
+                                                "tx": state,
+                                                "ty": state,
+                                                "tz": state        
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+        return json.dumps(json_data)
     
     def save_admittance_parameters(self):
         # Make MDDialog with textfields to enter Name, description, date, author
@@ -150,7 +213,7 @@ class AdmittanceControl(MDFloatLayout):
             with open(filepath, 'w') as f:
                 json.dump(save_data, f, indent=2)
             
-            print(f"✅ Saved admittance parameters to: {filepath}")
+            print(f" Saved admittance parameters to: {filepath}")
             print(f"   Robot: {self.tuning_robot}")
             print(f"   M: {M_raw} (scaled: {M_raw*f_scalar})")
             print(f"   D: {D_raw} (scaled: {D_raw*f_scalar})")
@@ -174,7 +237,7 @@ class AdmittanceControl(MDFloatLayout):
             dialog.dismiss()
             
         except Exception as e:
-            print(f"❌ Failed to save parameters: {e}")
+            print(f" Failed to save parameters: {e}")
             
             # Show error popup
             error_dialog = MDDialog(
@@ -218,11 +281,7 @@ class AdmittanceControl(MDFloatLayout):
         """Enable BOB admittance control"""
         if self.app and hasattr(self.app, 'hmi_node'):
             # Kald eksisterende metode med korrekte parametre
-            self.app.hmi_node.send_set_admittance_status_request(
-                robot_name="bob",
-                enable_admittance=[True for i in range(6)],
-                update_rate=100.0  # Juster efter behov
-            )
+            self.send_admittance_state(True, "bob")
             # Opdater knap farver
             self.ids.bob_enable_btn.md_bg_color = self.app.colors['success']
             self.ids.bob_disable_btn.md_bg_color = self.app.colors['button_neutral']
@@ -230,11 +289,7 @@ class AdmittanceControl(MDFloatLayout):
     def disable_bob_admittance_control(self):
         """Disable BOB admittance control"""
         if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.send_set_admittance_status_request(
-                robot_name="bob",
-                enable_admittance=[False for i in range(6)],
-                update_rate=100.0
-            )
+            self.send_admittance_state(False, "bob")
             # Opdater knap farver
             self.ids.bob_enable_btn.md_bg_color = self.app.colors['button_neutral']
             self.ids.bob_disable_btn.md_bg_color = self.app.colors['accent_coral']
@@ -242,11 +297,7 @@ class AdmittanceControl(MDFloatLayout):
     def enable_alice_admittance_control(self):
         """Enable ALICE admittance control"""
         if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.send_set_admittance_status_request(
-                robot_name="alice",
-                enable_admittance=[True for i in range(6)],
-                update_rate=100.0
-            )
+            self.send_admittance_state(True, "alice")
             # Opdater knap farver
             self.ids.alice_enable_btn.md_bg_color = self.app.colors['success']
             self.ids.alice_disable_btn.md_bg_color = self.app.colors['button_neutral']
@@ -254,11 +305,7 @@ class AdmittanceControl(MDFloatLayout):
     def disable_alice_admittance_control(self):
         """Disable ALICE admittance control"""
         if self.app and hasattr(self.app, 'hmi_node'):
-            self.app.hmi_node.send_set_admittance_status_request(
-                robot_name="alice",
-                enable_admittance=[False for i in range(6)],
-                update_rate=100.0
-            )
+            self.send_admittance_state(False, "alice")
             # Opdater knap farver
             self.ids.alice_enable_btn.md_bg_color = self.app.colors['button_neutral']
             self.ids.alice_disable_btn.md_bg_color = self.app.colors['accent_coral']
