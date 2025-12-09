@@ -174,20 +174,21 @@ class StartPage(MDBoxLayout):
                 err.open()
             finally:
                 try:
-                    confirm_dialog.dismiss()
+                    _do_load()
+                    # confirm_dialog.dismiss()
                 except Exception:
                     pass
 
-        confirm_dialog = MDDialog(
-            title="Load JSON",
-            text=body_text,
-            size_hint=(0.9, 0.5),
-            buttons=[
-                MDFlatButton(text="CANCEL", on_release=lambda *a: confirm_dialog.dismiss()),
-                MDFlatButton(text="LOAD", on_release=_do_load),
-            ],
-        )
-        confirm_dialog.open()
+        # confirm_dialog = MDDialog(
+        #     title="Load JSON",
+        #     text=body_text,
+        #     size_hint=(0.9, 0.5),
+        #     buttons=[
+        #         MDFlatButton(text="CANCEL", on_release=lambda *a: confirm_dialog.dismiss()),
+        #         MDFlatButton(text="LOAD", on_release=_do_load),
+        #     ],
+        # )
+        # confirm_dialog.open()
 
     def _on_saved_config_selected(self, filename, save_dir, dialog=None):
         """Handle selection of a saved config file (dialog optional)"""
