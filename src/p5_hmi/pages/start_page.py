@@ -174,11 +174,12 @@ class StartPage(MDBoxLayout):
                 err.open()
             finally:
                 try:
-                    _do_load()
+                    print("Skibidi wap pap pap")
                     # confirm_dialog.dismiss()
                 except Exception:
                     pass
-
+        
+        _do_load()
         # confirm_dialog = MDDialog(
         #     title="Load JSON",
         #     text=body_text,
