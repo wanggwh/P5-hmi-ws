@@ -21,7 +21,7 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivy.core.window import Window
 
 from p5_interfaces.srv import PoseConfig
-from p5_interfaces.srv import LoadProgram, RunProgram#, SaveProgram
+from p5_interfaces.srv import LoadProgram, RunProgram, LoadRawJSON#, SaveProgram
 from p5_interfaces.srv import AdmittanceSetStatus, AdmittanceConfig
 from p5_interfaces.msg import CommandState
 from p5_interfaces.msg import Error
@@ -106,7 +106,7 @@ class HMINode(Node):
         self.save_pre_def_pose_client = self.create_client(
             PoseConfig, "/p5_pose_config")
         self.load_raw_JSON_client = self.create_client(
-            LoadProgram, "/program_executor/load_raw_JSON")
+            LoadRawJSON, "/program_executor/load_raw_JSON")
         self.run_program_client = self.create_client(RunProgram, "/program_executor/run_program")
         self.get_config_poses_client = self.create_client(SendJsonData, "/p5_send_pose_configs")
         # self.save_program_client = self.create_client(
@@ -389,45 +389,6 @@ class HMINode(Node):
     def pass_pose_configuration_data(self):
         return self.pose_configuration_data
 
-        
-    # def receive_pose_configurations_data(self):
-    #     """Send request to get pose configurations JSON data"""
-    #     print("Okay den er her nu")
-    #     if not self.get_config_poses_client.wait_for_service(timeout_sec=1.0):
-    #         self.get_logger().warning("SendJsonData service not available")
-    #         return None
-
-    #     try:
-    #         # Request er tom - opret bare en tom Request instance
-    #         request = SendJsonData.Request()
-            
-    #         # Send async request
-    #         future = self.get_config_poses_client.call_async(request)
-    #         rclpy.spin_until_future_complete(self, future, timeout_sec=2.0)
-            
-    #         if future.result() is not None:
-    #             response = future.result()
-                
-    #             # Tjek success flag
-    #             if response.success:
-    #                 json_data = response.data  # ÆNDRET: 'data' ikke 'json_data'
-    #                 self.get_logger().info(f"Received pose configurations: {len(json_data)} bytes")
-    #                 return json_data
-    #             else:
-    #                 self.get_logger().warning("Service returned success=False")
-    #                 return None
-    #         else:
-    #             self.get_logger().error("SendJsonData service call failed - no result")
-    #             return None
-                
-    #     except Exception as e:
-    #         self.get_logger().error(f"SendJsonData service call exception: {e}")
-    #         import traceback
-    #         traceback.print_exc()
-    #         return None
-            
-        
-
     def call_load_raw_JSON_request(self, program_json: str, wait_for_service=True, timeout=0.1) -> bool:
         """
         Send request to load raw JSON program using reusable LoadProgram client.
@@ -435,10 +396,10 @@ class HMINode(Node):
         """
         if not hasattr(self, 'load_raw_JSON_client') or self.load_raw_JSON_client is None:
             self.load_raw_JSON_client = self.create_client(
-                LoadProgram, "/program_executor/load_raw_JSON")
+                LoadRawJSON, "/program_executor/load_raw_JSON")
 
         client = self.load_raw_JSON_client
-        req = LoadProgram.Request()
+        req = LoadRawJSON.Request()
 
         # Detect string fields from the generated Request
         try:

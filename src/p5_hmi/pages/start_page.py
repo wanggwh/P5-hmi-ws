@@ -300,3 +300,20 @@ class StartPage(MDBoxLayout):
                 buttons=[MDFlatButton(text="OK", on_release=lambda *a: dlg.dismiss())]
             )
             dlg.open() 
+    
+    def system_button_callback(self, action):
+        """
+        Called by HMIApp.system_button_callback for top-level buttons.
+        Handle 'start' by delegating to the page's start handler.
+        """
+        if action == "start":
+            # call the same handler used when the local start button is pressed
+            try:
+                # pass None as instance because _on_start_button_release expects (instance, *args)
+                self._on_start_button_release(None)
+            except Exception as e:
+                print(f"StartPage: error handling 'start' action: {e}")
+        elif action == "clear_errors":
+            self.clear_error_messages()
+        else:
+            print(f"StartPage: unhandled system action: {action}")
