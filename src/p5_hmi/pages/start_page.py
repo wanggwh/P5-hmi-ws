@@ -174,20 +174,22 @@ class StartPage(MDBoxLayout):
                 err.open()
             finally:
                 try:
-                    confirm_dialog.dismiss()
+                    print("Skibidi wap pap pap")
+                    # confirm_dialog.dismiss()
                 except Exception:
                     pass
-
-        confirm_dialog = MDDialog(
-            title="Load JSON",
-            text=body_text,
-            size_hint=(0.9, 0.5),
-            buttons=[
-                MDFlatButton(text="CANCEL", on_release=lambda *a: confirm_dialog.dismiss()),
-                MDFlatButton(text="LOAD", on_release=_do_load),
-            ],
-        )
-        confirm_dialog.open()
+        
+        _do_load()
+        # confirm_dialog = MDDialog(
+        #     title="Load JSON",
+        #     text=body_text,
+        #     size_hint=(0.9, 0.5),
+        #     buttons=[
+        #         MDFlatButton(text="CANCEL", on_release=lambda *a: confirm_dialog.dismiss()),
+        #         MDFlatButton(text="LOAD", on_release=_do_load),
+        #     ],
+        # )
+        # confirm_dialog.open()
 
     def _on_saved_config_selected(self, filename, save_dir, dialog=None):
         """Handle selection of a saved config file (dialog optional)"""
@@ -303,3 +305,20 @@ class StartPage(MDBoxLayout):
                 buttons=[MDFlatButton(text="OK", on_release=lambda *a: dlg.dismiss())]
             )
             dlg.open() 
+    
+    def system_button_callback(self, action):
+        """
+        Called by HMIApp.system_button_callback for top-level buttons.
+        Handle 'start' by delegating to the page's start handler.
+        """
+        if action == "start":
+            # call the same handler used when the local start button is pressed
+            try:
+                # pass None as instance because _on_start_button_release expects (instance, *args)
+                self._on_start_button_release(None)
+            except Exception as e:
+                print(f"StartPage: error handling 'start' action: {e}")
+        elif action == "clear_errors":
+            self.clear_error_messages()
+        else:
+            print(f"StartPage: unhandled system action: {action}")

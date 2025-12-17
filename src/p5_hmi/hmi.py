@@ -21,7 +21,7 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivy.core.window import Window
 
 from p5_interfaces.srv import PoseConfig
-from p5_interfaces.srv import LoadProgram, RunProgram#, SaveProgram
+from p5_interfaces.srv import LoadProgram, RunProgram, LoadRawJSON#, SaveProgram
 from p5_interfaces.srv import AdmittanceSetStatus, AdmittanceConfig, SaveAdmittanceParam
 from p5_interfaces.msg import CommandState
 from p5_interfaces.msg import Error
@@ -106,7 +106,7 @@ class HMINode(Node):
         self.save_pre_def_pose_client = self.create_client(
             PoseConfig, "/p5_pose_config")
         self.load_raw_JSON_client = self.create_client(
-            LoadProgram, "/program_executor/load_raw_JSON")
+            LoadRawJSON, "/program_executor/load_raw_JSON")
         self.run_program_client = self.create_client(RunProgram, "/program_executor/run_program")
         self.get_config_poses_client = self.create_client(SendJsonData, "/p5_send_pose_configs")
         
@@ -332,10 +332,10 @@ class HMINode(Node):
         """
         if not hasattr(self, 'load_raw_JSON_client') or self.load_raw_JSON_client is None:
             self.load_raw_JSON_client = self.create_client(
-                LoadProgram, "/program_executor/load_raw_JSON")
+                LoadRawJSON, "/program_executor/load_raw_JSON")
 
         client = self.load_raw_JSON_client
-        req = LoadProgram.Request()
+        req = LoadRawJSON.Request()
 
         # Detect string fields from the generated Request
         try:
