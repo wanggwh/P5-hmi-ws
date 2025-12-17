@@ -124,7 +124,10 @@ class AdmittanceControl(MDFloatLayout):
         return json.dumps(json_data)
     
     def save_admittance_parameters(self):
-        # Make MDDialog with textfields to enter Name, description, date, author
+        # Safe color access med fallback
+        primary_color = self.app.colors.get('primary', [0.2, 0.6, 1.0, 1]) if self.app and hasattr(self.app, 'colors') else [0.2, 0.6, 1.0, 1]
+        text_light = self.app.colors.get('text_light', [1, 1, 1, 1]) if self.app and hasattr(self.app, 'colors') else [1, 1, 1, 1]
+        
         naming = {
             "Admittance tuning name": "",
             "Description": "",
@@ -137,15 +140,23 @@ class AdmittanceControl(MDFloatLayout):
             spacing=dp(10),
             size_hint_y=None,
             height=len(naming) * dp(70),
+            md_bg_color=primary_color,
+            padding=dp(15)
         )
-        
-        # Store textfields in a list so we can access them later
+
         textfields = []
         for param in naming:
-            tf = MDTextField(hint_text=f"{param}")
+            tf = MDTextField(
+                hint_text=f"{param}",
+                theme_text_color="Custom",
+                text_color=text_light,
+                hint_text_color=[0.8, 0.8, 0.8, 1],
+                line_color_normal=[1, 1, 1, 0.7],
+                line_color_focus=[1, 0.7, 0.3, 1],
+            )
             content.add_widget(tf)
             textfields.append(tf)
-        
+            
         naming_dialog = MDDialog(
             title="Save Admittance Parameters",
             type="custom",

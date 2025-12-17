@@ -229,11 +229,16 @@ class StartPage(MDBoxLayout):
             
             # Add all messages (newest first)
             for error_msg in reversed(self.error_messages):
-                item = OneLineListItem(
+                item = MDLabel(
                     text=error_msg,
                     theme_text_color="Custom",
                     text_color=(0.96, 0.96, 0.98, 1),  # text_light color
-                    font_style="Caption"
+                    font_size="18sp",  # Nu virker det!
+                    size_hint_y=None,
+                    height=dp(50),  # Tilpas højde til font størrelse
+                    halign="left",
+                    valign="center",
+                    padding=[dp(10), 0]
                 )
                 self.ids.error_list.add_widget(item)
                 print(f"StartPage: Added error item: {error_msg}")
