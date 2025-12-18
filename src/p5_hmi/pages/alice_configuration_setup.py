@@ -38,9 +38,9 @@ class AliceConfigurationSetup(MDFloatLayout):
     def load_predefined_poses(self, dt):
         """Load predefined poses from JSON and create buttons"""
         try:
-            if not os.path.exists(self.poses_json_path):
-                print(f"Predefined poses file not found: {self.poses_json_path}")
-                return
+            #if not os.path.exists(self.poses_json_path):
+            #    print(f"Predefined poses file not found: {self.poses_json_path}")
+            #    return
             
             # Vent til app.colors er klar
             if not hasattr(self.app, 'colors') or not self.app.colors:

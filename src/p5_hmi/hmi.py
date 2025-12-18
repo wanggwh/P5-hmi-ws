@@ -39,7 +39,7 @@ from pages.dragon_drop import DragonDrop
 from pages.status_popup_dialog import StatusPopupDialog
 from pages.error_msg_popup import ErrorMsgSnackbar
 
-# Window.borderless = True
+Window.borderless = True
 Window.left = 300
 
 # COLORS = {
